@@ -35,44 +35,99 @@ The application includes two configuration parameters accessible via LuCI:
    - Default: 30 seconds
    - Description: Interval in seconds to check WAN connections
 
-## Installation
+## Building the Package
 
-### Building for OpenWRT
+### Prerequisites
 
-1. Copy this directory to your OpenWRT buildroot:
-   ```bash
-   cp -r mini-mwan/ <openwrt-buildroot>/package/network/services/
-   ```
+- Docker Desktop installed on macOS
+- Your OpenWRT device info (for this example: ASUS RT-AX53U with ramips/mt7621 architecture)
 
-2. Copy the LuCI app to the feeds:
-   ```bash
-   cp -r luci-app-mini-mwan/ <openwrt-buildroot>/feeds/luci/applications/
-   ```
+### Quick Build with Docker
 
-3. Update and install feeds:
-   ```bash
-   cd <openwrt-buildroot>
-   ./scripts/feeds update -a
-   ./scripts/feeds install -a
-   ```
+The easiest way to build the package is using the provided Docker setup:
 
-4. Configure and build:
-   ```bash
-   make menuconfig
-   # Select: Network -> mini-mwan
-   # Select: LuCI -> Applications -> luci-app-mini-mwan
-   make package/mini-mwan/compile V=s
-   make package/luci-app-mini-mwan/compile V=s
-   ```
+```bash
+# Simply run the build script
+./build.sh
+```
 
-### Installing on OpenWRT Device
+This will:
+1. Build/start a Docker container with the OpenWRT SDK for ramips/mt7621
+2. Compile the mini-mwan package
+3. Output the .ipk files to the `./bin` directory
 
-1. Copy the built packages to your device
-2. Install using opkg:
-   ```bash
-   opkg install mini-mwan_*.ipk
-   opkg install luci-app-mini-mwan_*.ipk
-   ```
+The built packages will be:
+- `mini-mwan_1.0.0-1_all.ipk` - Main package
+- `luci-app-mini-mwan_*.ipk` - LuCI web interface (if included)
+
+### Manual Docker Build
+
+If you prefer to build manually:
+
+```bash
+# Build the Docker image
+docker-compose build
+
+# Start the container
+docker-compose up -d
+
+# Enter the container
+docker-compose exec openwrt-sdk bash
+
+# Inside the container:
+./scripts/feeds update -a
+./scripts/feeds install -a
+make package/mini-mwan/compile V=s
+
+# Copy packages to output
+mkdir -p /home/build/bin
+find bin/packages -name 'mini-mwan*.ipk' -exec cp {} /home/build/bin/ \;
+
+# Exit container
+exit
+
+# Stop container
+docker-compose down
+```
+
+### Building for Different Architecture
+
+If your device has a different architecture, edit the `Dockerfile` and change:
+```dockerfile
+FROM openwrt/sdk:ramips-mt7621-24.10.0
+```
+
+Common architectures:
+- `x86-64-24.10.0` - x86 64-bit devices
+- `ramips-mt7621-24.10.0` - MediaTek MT7621 (ASUS RT-AX53U, etc.)
+- `ath79-generic-24.10.0` - Atheros AR71xx/AR9xxx
+- `bcm27xx-bcm2711-24.10.0` - Raspberry Pi 4
+
+Find your architecture at: https://downloads.openwrt.org/releases/24.10.0/targets/
+
+## Installing on OpenWRT Device
+
+### Option 1: Via SCP and SSH
+
+```bash
+# Copy packages to your router
+scp bin/*.ipk root@192.168.1.1:/tmp/
+
+# SSH into your router
+ssh root@192.168.1.1
+
+# Install the packages
+opkg install /tmp/mini-mwan_*.ipk
+opkg install /tmp/luci-app-mini-mwan_*.ipk
+```
+
+### Option 2: Via LuCI Web Interface
+
+1. Open your router's web interface (e.g., http://192.168.1.1)
+2. Navigate to: System → Software
+3. Click "Upload Package..."
+4. Upload `mini-mwan_*.ipk` and click "Install"
+5. Repeat for `luci-app-mini-mwan_*.ipk`
 
 ## Usage
 
