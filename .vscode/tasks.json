@@ -36,12 +36,18 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Copy built packages to bin/",
+			"label": "List built packages",
 			"type": "shell",
-			"command": "bash",
+			"command": "find",
 			"args": [
-				"-c",
-				"mkdir -p /builder/bin_output && find /builder/bin/packages -name 'mini-mwan*.ipk' -exec cp -v {} /builder/bin_output/ \\;"
+				"/builder/bin/packages",
+				"-name",
+				"mini-mwan*.ipk",
+				"-exec",
+				"ls",
+				"-lh",
+				"{}",
+				";"
 			],
 			"problemMatcher": [],
 			"presentation": {
@@ -49,11 +55,11 @@
 			}
 		},
 		{
-			"label": "Build and copy packages",
+			"label": "Build and list packages",
 			"dependsOrder": "sequence",
 			"dependsOn": [
 				"Build mini-mwan package",
-				"Copy built packages to bin/"
+				"List built packages"
 			],
 			"problemMatcher": []
 		}
