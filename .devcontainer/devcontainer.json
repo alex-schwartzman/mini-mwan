@@ -1,0 +1,69 @@
+{
+	"name": "Mini-MWAN OpenWRT Development",
+
+	// Use the existing Dockerfile (one level up from .devcontainer/)
+	"dockerFile": "../Dockerfile",
+
+	// Workspace mount and settings
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/build/openwrt/package/mini-mwan,type=bind",
+	"workspaceFolder": "/home/build/openwrt/package/mini-mwan",
+
+	// Additional mounts for build output
+	"mounts": [
+		"source=${localWorkspaceFolder}/bin,target=/home/build/bin,type=bind"
+	],
+
+	// Set container user
+	"remoteUser": "build",
+
+	// VS Code customizations
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				// Lua language support for LuCI files
+				"sumneko.lua",
+				"actboy168.lua-debug",
+
+				// Shell script support for .sh files
+				"timonwong.shellcheck",
+				"foxundermoon.shell-format",
+
+				// General utilities
+				"editorconfig.editorconfig",
+				"streetsidesoftware.code-spell-checker"
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"files.eol": "\n",
+				"files.insertFinalNewline": true,
+				"files.trimTrailingWhitespace": true,
+
+				// Lua settings
+				"Lua.diagnostics.globals": [
+					"translate",
+					"Map",
+					"TypedSection",
+					"Flag",
+					"Value"
+				],
+				"Lua.workspace.library": [
+					"/usr/share/lua"
+				]
+			}
+		}
+	},
+
+	// Commands to run after container is created
+	"postCreateCommand": "bash -c 'cd /home/build/openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a'",
+
+	// Keep container running
+	"overrideCommand": true,
+
+	// Forward ports if needed (optional)
+	// "forwardPorts": [],
+
+	// Features to add (optional - uncomment if needed)
+	// "features": {
+	// 	"ghcr.io/devcontainers/features/git:1": {}
+	// }
+}
