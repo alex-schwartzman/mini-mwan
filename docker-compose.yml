@@ -6,10 +6,19 @@ services:
     image: mini-mwan-builder
     container_name: mini-mwan-builder
     volumes:
-      # Mount the package source
-      - ./:/builder/package/mini-mwan:ro
+      # Mount only package source files (following OpenWRT SDK pattern)
+      - ./files:/builder/package/mini-mwan/files:ro
+      - ./luasrc:/builder/package/mini-mwan/luasrc:ro
+      - ./Makefile:/builder/package/mini-mwan/Makefile:ro
       # Mount output directory for built packages
-      - ./bin:/builder/bin_output
+      - ./bin:/builder/bin
+      # Use named volume for feeds (faster than macOS filesystem)
+      - openwrt-feeds:/builder/feeds
+      - openwrt-dl:/builder/dl
     working_dir: /builder
     stdin_open: true
     tty: true
+
+volumes:
+  openwrt-feeds:
+  openwrt-dl:

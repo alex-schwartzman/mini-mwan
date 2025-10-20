@@ -4,13 +4,17 @@
 	// Use the existing Dockerfile (one level up from .devcontainer/)
 	"dockerFile": "../Dockerfile",
 
-	// Workspace mount and settings
+	// Workspace mount and settings (following OpenWRT SDK pattern)
 	"workspaceMount": "source=${localWorkspaceFolder},target=/builder/package/mini-mwan,type=bind",
 	"workspaceFolder": "/builder/package/mini-mwan",
 
-	// Additional mounts for build output
+	// Additional mounts
 	"mounts": [
-		"source=${localWorkspaceFolder}/bin,target=/builder/bin_output,type=bind"
+		// Mount output directory for built packages
+		"source=${localWorkspaceFolder}/bin,target=/builder/bin,type=bind",
+		// Use named volumes for feeds (much faster than macOS filesystem)
+		"source=mini-mwan-feeds,target=/builder/feeds,type=volume",
+		"source=mini-mwan-dl,target=/builder/dl,type=volume"
 	],
 
 	// Set container user
