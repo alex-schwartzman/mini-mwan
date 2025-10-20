@@ -5,16 +5,16 @@
 	"dockerFile": "../Dockerfile",
 
 	// Workspace mount and settings
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/build/openwrt/package/mini-mwan,type=bind",
-	"workspaceFolder": "/home/build/openwrt/package/mini-mwan",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/builder/package/mini-mwan,type=bind",
+	"workspaceFolder": "/builder/package/mini-mwan",
 
 	// Additional mounts for build output
 	"mounts": [
-		"source=${localWorkspaceFolder}/bin,target=/home/build/bin,type=bind"
+		"source=${localWorkspaceFolder}/bin,target=/builder/bin_output,type=bind"
 	],
 
 	// Set container user
-	"remoteUser": "build",
+	"remoteUser": "buildbot",
 
 	// VS Code customizations
 	"customizations": {
@@ -54,7 +54,7 @@
 	},
 
 	// Commands to run after container is created
-	"postCreateCommand": "bash -c 'cd /home/build/openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a'",
+	"postCreateCommand": "bash -c 'cd /builder && ./scripts/feeds update -a && ./scripts/feeds install -a'",
 
 	// Keep container running
 	"overrideCommand": true,

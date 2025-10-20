@@ -10,7 +10,7 @@ docker-compose up -d
 
 # Run the build inside the container
 docker-compose exec -T openwrt-sdk bash -c "
-    # Update feeds
+    # Update feeds (first time only, but safe to run again)
     ./scripts/feeds update -a
     ./scripts/feeds install -a
 
@@ -18,9 +18,8 @@ docker-compose exec -T openwrt-sdk bash -c "
     make package/mini-mwan/compile V=s
 
     # Copy built packages to output directory
-    mkdir -p /home/build/bin
-    find bin/packages -name 'mini-mwan*.ipk' -exec cp {} /home/build/bin/ \;
-    find bin/packages -name 'luci-app-mini-mwan*.ipk' -exec cp {} /home/build/bin/ \;
+    mkdir -p /builder/bin_output
+    find bin/packages -name 'mini-mwan*.ipk' -exec cp -v {} /builder/bin_output/ \;
 "
 
 echo ""
@@ -35,4 +34,3 @@ echo "To install on your device:"
 echo "  scp bin/*.ipk root@<router-ip>:/tmp/"
 echo "  ssh root@<router-ip>"
 echo "  opkg install /tmp/mini-mwan*.ipk"
-echo "  opkg install /tmp/luci-app-mini-mwan*.ipk"
