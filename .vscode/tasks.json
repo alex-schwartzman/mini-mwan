@@ -10,7 +10,7 @@
 				"V=s"
 			],
 			"options": {
-				"cwd": "/home/build/openwrt"
+				"cwd": "/builder"
 			},
 			"group": {
 				"kind": "build",
@@ -31,7 +31,7 @@
 				"V=s"
 			],
 			"options": {
-				"cwd": "/home/build/openwrt"
+				"cwd": "/builder"
 			},
 			"problemMatcher": []
 		},
@@ -41,7 +41,7 @@
 			"command": "bash",
 			"args": [
 				"-c",
-				"mkdir -p /home/build/bin && find /home/build/openwrt/bin/packages -name 'mini-mwan*.ipk' -exec cp -v {} /home/build/bin/ \\;"
+				"mkdir -p /builder/bin_output && find /builder/bin/packages -name 'mini-mwan*.ipk' -exec cp -v {} /builder/bin_output/ \\;"
 			],
 			"problemMatcher": [],
 			"presentation": {
