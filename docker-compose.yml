@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  openwrt-sdk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mini-mwan-builder
+    container_name: mini-mwan-builder
+    volumes:
+      # Mount the package source
+      - ./:/home/build/openwrt/package/mini-mwan:ro
+      # Mount output directory for built packages
+      - ./bin:/home/build/bin
+    working_dir: /home/build/openwrt
+    stdin_open: true
+    tty: true
