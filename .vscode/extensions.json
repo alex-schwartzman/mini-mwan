@@ -1,0 +1,10 @@
+{
+	"recommendations": [
+		"ms-vscode-remote.remote-containers",
+		"sumneko.lua",
+		"actboy168.lua-debug",
+		"timonwong.shellcheck",
+		"foxundermoon.shell-format",
+		"editorconfig.editorconfig"
+	]
+}
