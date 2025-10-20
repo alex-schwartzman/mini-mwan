@@ -1,0 +1,61 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build mini-mwan package",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"package/mini-mwan/compile",
+				"V=s"
+			],
+			"options": {
+				"cwd": "/home/build/openwrt"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		},
+		{
+			"label": "Clean mini-mwan package",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"package/mini-mwan/clean",
+				"V=s"
+			],
+			"options": {
+				"cwd": "/home/build/openwrt"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Copy built packages to bin/",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"mkdir -p /home/build/bin && find /home/build/openwrt/bin/packages -name 'mini-mwan*.ipk' -exec cp -v {} /home/build/bin/ \\;"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "Build and copy packages",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Build mini-mwan package",
+				"Copy built packages to bin/"
+			],
+			"problemMatcher": []
+		}
+	]
+}

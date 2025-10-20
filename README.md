@@ -7,6 +7,15 @@ A skeleton OpenWRT application with LuCI web interface for Multi-WAN management.
 ```
 mini-mwan/
 ├── Makefile                          # Main package Makefile
+├── Dockerfile                        # OpenWRT SDK Docker image
+├── docker-compose.yml                # Docker Compose configuration
+├── build.sh                          # Automated build script
+├── .devcontainer/
+│   └── devcontainer.json             # VS Code devcontainer config
+├── .vscode/
+│   ├── tasks.json                    # VS Code build tasks
+│   └── extensions.json               # Recommended extensions
+├── .editorconfig                     # Editor configuration
 ├── files/
 │   ├── mini-mwan.sh                  # Main application script
 │   ├── mini-mwan.config              # UCI configuration template
@@ -104,6 +113,58 @@ Common architectures:
 - `bcm27xx-bcm2711-24.10.0` - Raspberry Pi 4
 
 Find your architecture at: https://downloads.openwrt.org/releases/24.10.0/targets/
+
+## Development with VS Code
+
+This project includes a VS Code devcontainer configuration for seamless development.
+
+### Setup
+
+1. Install the "Dev Containers" extension in VS Code:
+   - Extension ID: `ms-vscode-remote.remote-containers`
+
+2. Open this project in VS Code
+
+3. When prompted, click "Reopen in Container" (or press `F1` and search for "Dev Containers: Reopen in Container")
+
+VS Code will:
+- Build the Docker container using the same `Dockerfile`
+- Install recommended extensions (Lua, ShellCheck, etc.)
+- Set up the OpenWRT SDK environment
+- Mount your workspace for live editing
+
+### Building from VS Code
+
+Once inside the container, you can build using:
+
+**Option 1: VS Code Tasks (Recommended)**
+- Press `Cmd+Shift+B` (macOS) or `Ctrl+Shift+B` (Linux/Windows)
+- Select "Build and copy packages"
+
+**Option 2: Integrated Terminal**
+```bash
+# Open a terminal in VS Code (Ctrl+`)
+cd /home/build/openwrt
+make package/mini-mwan/compile V=s
+
+# Copy to output directory
+mkdir -p /home/build/bin
+find bin/packages -name 'mini-mwan*.ipk' -exec cp {} /home/build/bin/ \;
+```
+
+Built packages will appear in your local `./bin` directory.
+
+### Why This Approach?
+
+**Single Source of Truth**: Both the standalone build script and VS Code devcontainer use the **same Dockerfile**. This means:
+- No configuration drift between environments
+- Same build environment whether you use `./build.sh` or VS Code
+- Changes to the Dockerfile automatically apply to both
+
+**Workflow Flexibility**:
+- Use `./build.sh` for quick CI/CD builds
+- Use VS Code devcontainer for development with full IDE features
+- Both produce identical results
 
 ## Installing on OpenWRT Device
 
