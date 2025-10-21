@@ -10,9 +10,13 @@ services:
       - ./files:/builder/package/mini-mwan/files:ro
       - ./luasrc:/builder/package/mini-mwan/luasrc:ro
       - ./Makefile:/builder/package/mini-mwan/Makefile:ro
+      # Mount custom feeds configuration
+      - ./feeds.conf:/builder/feeds.conf:ro
       # Mount output directory for built packages
       - ./bin:/builder/bin
-      # Use named volume for feeds (faster than macOS filesystem)
+      # Mount local OpenWRT repositories from host (create ~/openwrt-repos first)
+      - ~/openwrt-repos:/openwrt-repos:ro
+      # Use named volumes for build artifacts (faster than macOS filesystem)
       - openwrt-feeds:/builder/feeds
       - openwrt-dl:/builder/dl
     working_dir: /builder

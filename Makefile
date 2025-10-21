@@ -13,7 +13,7 @@ define Package/mini-mwan
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Mini Multi-WAN management
-  DEPENDS:=+ip +iptables
+  DEPENDS:=+ip +iptables +luci-base +luci-compat
   PKGARCH:=all
 endef
 
@@ -37,6 +37,12 @@ define Package/mini-mwan/install
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mini-mwan.init $(1)/etc/init.d/mini-mwan
+
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
+	$(INSTALL_DATA) ./luasrc/controller/mini-mwan.lua $(1)/usr/lib/lua/luci/controller/
+
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi
+	$(INSTALL_DATA) ./luasrc/model/cbi/mini-mwan.lua $(1)/usr/lib/lua/luci/model/cbi/
 endef
 
 $(eval $(call BuildPackage,mini-mwan))
