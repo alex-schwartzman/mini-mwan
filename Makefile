@@ -13,7 +13,7 @@ define Package/mini-mwan
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Mini Multi-WAN management
-  DEPENDS:=+lua +luci-base
+  DEPENDS:=+lua +libuci-lua +luci-lib-nixio +luci-base
   PKGARCH:=all
 endef
 
