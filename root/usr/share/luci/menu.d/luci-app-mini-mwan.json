@@ -3,11 +3,26 @@
 		"title": "Mini-MWAN",
 		"order": 60,
 		"action": {
-			"type": "view",
-			"path": "mini-mwan/overview"
+			"type": "firstchild"
 		},
 		"depends": {
 			"acl": [ "luci-app-mini-mwan" ]
+		}
+	},
+	"admin/network/mini-mwan/status": {
+		"title": "Status",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "mini-mwan/status"
+		}
+	},
+	"admin/network/mini-mwan/overview": {
+		"title": "Configuration",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "mini-mwan/overview"
 		}
 	}
 }
