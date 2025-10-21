@@ -1,5 +1,5 @@
-# Use official OpenWRT SDK image for ramips/mt7621
-FROM openwrt/sdk:ramips-mt7621-24.10.0
+# Use official OpenWRT SDK image for x86-64 (faster native builds on Intel Mac)
+FROM openwrt/sdk:x86-64-24.10.0
 
 # Switch to root to set up directories
 USER root

@@ -4,7 +4,7 @@
 
 set -e
 
-echo "Building mini-mwan package for ramips/mt7621..."
+echo "Building mini-mwan package using x86-64 SDK (native build on Intel Mac)..."
 
 # Build or start the Docker container
 docker-compose up -d
