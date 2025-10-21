@@ -20,8 +20,8 @@ clean-soft:
 		rm -rf build_dir/target-*/mini-mwan* && \
 		rm -rf bin/packages/*/base/mini-mwan*"
 
-# Rebuild: soft clean + build
-rebuild: clean-soft build
+# Rebuild: alias for rebuild-hard since .config is not persisted in Docker
+rebuild: rebuild-hard
 
 # Hard clean: remove everything including .config (requires defconfig after)
 clean-hard:

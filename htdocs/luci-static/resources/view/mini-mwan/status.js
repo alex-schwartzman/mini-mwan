@@ -93,6 +93,7 @@ return view.extend({
 		var badges = {
 			'up': '<span style="color: #4CAF50; font-weight: bold;">● UP</span>',
 			'down': '<span style="color: #f44336; font-weight: bold;">● DOWN</span>',
+			'interface_down': '<span style="color: #FF9800;">⚠ Interface Down</span>',
 			'disabled': '<span style="color: #9E9E9E;">○ Disabled</span>',
 			'no_gateway': '<span style="color: #FF9800;">⚠ No Gateway</span>',
 			'unknown': '<span style="color: #9E9E9E;">? Unknown</span>'
