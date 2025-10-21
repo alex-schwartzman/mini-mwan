@@ -6,9 +6,10 @@ services:
     image: mini-mwan-builder
     container_name: mini-mwan-builder
     volumes:
-      # Mount only package source files (following OpenWRT SDK pattern)
+      # Mount package source files
       - ./files:/builder/package/mini-mwan/files:ro
-      - ./luasrc:/builder/package/mini-mwan/luasrc:ro
+      - ./htdocs:/builder/package/mini-mwan/htdocs:ro
+      - ./root:/builder/package/mini-mwan/root:ro
       - ./Makefile:/builder/package/mini-mwan/Makefile:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro

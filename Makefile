@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mini-mwan
-PKG_VERSION:=1.0.0
+PKG_VERSION:=2.0.0
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Your Name <your.email@example.com>
@@ -13,12 +13,13 @@ define Package/mini-mwan
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Mini Multi-WAN management
-  DEPENDS:=+ip +iptables +luci-base
+  DEPENDS:=+lua +luci-base
   PKGARCH:=all
 endef
 
 define Package/mini-mwan/description
-  Mini Multi-WAN management application for OpenWRT
+  Lightweight multi-WAN management with failover and load balancing.
+  Features a modern JavaScript-based LuCI interface and Lua daemon.
 endef
 
 define Build/Compile
@@ -29,8 +30,8 @@ define Package/mini-mwan/conffiles
 endef
 
 define Package/mini-mwan/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/mini-mwan.sh $(1)/usr/sbin/mini-mwan
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ./files/mini-mwan.lua $(1)/usr/bin/mini-mwan
 
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/mini-mwan.config $(1)/etc/config/mini-mwan
@@ -38,11 +39,14 @@ define Package/mini-mwan/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mini-mwan.init $(1)/etc/init.d/mini-mwan
 
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_DATA) ./luasrc/controller/mini-mwan.lua $(1)/usr/lib/lua/luci/controller/
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/mini-mwan
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mini-mwan/overview.js $(1)/www/luci-static/resources/view/mini-mwan/
 
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi
-	$(INSTALL_DATA) ./luasrc/model/cbi/mini-mwan.lua $(1)/usr/lib/lua/luci/model/cbi/
+	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
+	$(INSTALL_DATA) ./root/usr/share/luci/menu.d/luci-app-mini-mwan.json $(1)/usr/share/luci/menu.d/
+
+	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
+	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/luci-app-mini-mwan.json $(1)/usr/share/rpcd/acl.d/
 endef
 
 $(eval $(call BuildPackage,mini-mwan))
