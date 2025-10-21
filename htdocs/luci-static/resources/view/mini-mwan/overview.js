@@ -70,7 +70,8 @@ return view.extend({
 			return true;
 		};
 
-		o = s.option(form.Flag, 'enabled', _('Enabled'));
+		o = s.option(form.Flag, 'enabled', _('Enabled'),
+			_('Enable or disable this WAN interface for monitoring'));
 		o.default = '1';
 		o.editable = true;
 		o.rmempty = false;
@@ -81,21 +82,42 @@ return view.extend({
 		o.placeholder = 'wg0';
 
 		o = s.option(form.Value, 'metric', _('Metric'),
-			_('Route metric (lower = higher priority)'));
+			_('Route metric (lower = higher priority). Used in failover mode only.'));
 		o.datatype = 'range(1,255)';
 		o.default = '10';
 		o.rmempty = false;
+		o.modalonly = false;
+		// Gray out metric in multi-uplink mode
+		o.render = L.bind(function(option, section_id, in_table) {
+			var mode = uci.get('mini-mwan', 'settings', 'mode');
+			var node = form.Value.prototype.render.apply(option, [section_id, in_table]);
+			if (mode === 'multiuplink' && node && node.style) {
+				node.style.opacity = '0.5';
+			}
+			return node;
+		}, this, o);
 
 		o = s.option(form.Value, 'weight', _('Weight'),
-			_('Traffic distribution weight (multi-uplink mode)'));
+			_('Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only.'));
 		o.datatype = 'range(1,10)';
 		o.default = '3';
 		o.rmempty = false;
+		o.modalonly = false;
+		// Gray out weight in failover mode
+		o.render = L.bind(function(option, section_id, in_table) {
+			var mode = uci.get('mini-mwan', 'settings', 'mode');
+			var node = form.Value.prototype.render.apply(option, [section_id, in_table]);
+			if (mode === 'failover' && node && node.style) {
+				node.style.opacity = '0.5';
+			}
+			return node;
+		}, this, o);
 
 		o = s.option(form.Value, 'ping_target', _('Ping Target'),
 			_('IP address to ping for connectivity check'));
 		o.datatype = 'ipaddr';
 		o.rmempty = false;
+		o.modalonly = true;
 		o.placeholder = '1.1.1.1';
 		o.validate = function(section_id, value) {
 			if (!value) return true;
@@ -117,6 +139,7 @@ return view.extend({
 		o.default = '3';
 		o.placeholder = '3';
 		o.optional = true;
+		o.modalonly = true;
 
 		o = s.option(form.Value, 'ping_timeout', _('Timeout'),
 			_('Ping timeout (seconds)'));
@@ -124,6 +147,7 @@ return view.extend({
 		o.default = '2';
 		o.placeholder = '2';
 		o.optional = true;
+		o.modalonly = true;
 
 		return m.render();
 	}
