@@ -57,7 +57,7 @@ local function check_ping(target, count, timeout, device, gateway)
 	end
 
 	-- Parse ping statistics
-	local received = output:match("(%d+) received")
+	local received = output:match("(%d+) packets received")
 	if received and tonumber(received) > 0 then
 		-- Parse average latency
 		local avg_latency = output:match("min/avg/max[^=]+=.-/(.-)/")
@@ -65,6 +65,24 @@ local function check_ping(target, count, timeout, device, gateway)
 	end
 
 	return false, 0
+end
+
+-- Check if interface exists and is UP
+local function check_interface_up(iface)
+	local cmd = string.format("ip addr show dev %s 2>/dev/null", iface)
+	local output = exec(cmd)
+
+	if not output or output:match("does not exist") then
+		return false, "not_exist"
+	end
+
+	-- Check if interface has UP flag
+	-- Example: "3: wan: <BROADCAST,MULTICAST,UP,LOWER_UP>"
+	if output:match("<[^>]*UP[^>]*>") then
+		return true, "up"
+	end
+
+	return false, "down"
 end
 
 -- Get gateway for interface
@@ -79,22 +97,38 @@ end
 
 -- Add/update default route
 local function set_route(gateway, metric, iface)
-	-- Remove existing default route for this interface
-	exec(string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface))
+	-- Remove existing default route for this interface first
+	if gateway and gateway ~= "" then
+		exec(string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface))
+	else
+		exec(string.format("ip route del default dev %s 2>/dev/null", iface))
+	end
 
 	-- Add new default route with metric
-	local cmd = string.format("ip route add default via %s dev %s metric %d", gateway, iface, metric)
-	local result = exec(cmd)
+	local cmd
+	if gateway and gateway ~= "" then
+		-- Regular interface with gateway (e.g., ethernet)
+		cmd = string.format("ip route add default via %s dev %s metric %d", gateway, iface, metric)
+	else
+		-- Point-to-point interface without gateway (e.g., VPN tunnel)
+		cmd = string.format("ip route add default dev %s metric %d", iface, metric)
+	end
 
-	log(string.format("Set route: gw=%s iface=%s metric=%d", gateway, iface, metric))
+	local result = exec(cmd)
+	log(string.format("Set route: gw=%s iface=%s metric=%d", gateway or "none", iface, metric))
 	return true
 end
 
 -- Remove default route
 local function remove_route(gateway, iface)
-	local cmd = string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface)
+	local cmd
+	if gateway and gateway ~= "" then
+		cmd = string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface)
+	else
+		cmd = string.format("ip route del default dev %s 2>/dev/null", iface)
+	end
 	exec(cmd)
-	log(string.format("Removed route: gw=%s iface=%s", gateway, iface))
+	log(string.format("Removed route: gw=%s iface=%s", gateway or "none", iface))
 end
 
 -- Load configuration
@@ -167,15 +201,26 @@ local function update_interface_status(iface)
 		return
 	end
 
-	if not iface.gateway then
-		iface.status = "no_gateway"
-		iface.status_since = iface.status_since or os.time()
+	-- Check if interface exists and is UP
+	local if_up, if_state = check_interface_up(iface.device)
+	if not if_up then
+		local new_status = if_state == "not_exist" and "interface_down" or "interface_down"
 		iface.last_check = os.time()
-		log(string.format("%s (%s): No gateway found", iface.name, iface.device))
+
+		-- Track status changes
+		if iface.status ~= new_status then
+			iface.status_since = os.time()
+			log(string.format("%s (%s): Status changed from %s to %s (interface %s)",
+				iface.name, iface.device, iface.status or "unknown", new_status, if_state))
+		end
+
+		iface.status = new_status
+		iface.latency = 0
 		return
 	end
 
-	-- Ping through the specific interface
+	-- Interface is UP, now ping through it to check connectivity
+	-- Note: gateway can be nil for point-to-point interfaces (e.g., VPN tunnels)
 	local alive, latency = check_ping(iface.ping_target, iface.ping_count, iface.ping_timeout, iface.device, iface.gateway)
 	local new_status = alive and "up" or "down"
 	iface.last_check = os.time()
