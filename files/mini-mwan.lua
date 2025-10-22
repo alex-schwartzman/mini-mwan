@@ -42,12 +42,14 @@ local function exec(cmd)
 	return output
 end
 
--- Ping check function
-local function check_ping(target, count, timeout)
+-- Ping check function through specific interface
+local function check_ping(target, count, timeout, device, gateway)
 	count = count or 3
 	timeout = timeout or 2
 
-	local cmd = string.format("ping -c %d -W %d %s 2>&1", count, timeout, target)
+	-- Ping through specific interface using source routing
+	-- Use -I to specify interface
+	local cmd = string.format("ping -I %s -c %d -W %d %s 2>&1", device, count, timeout, target)
 	local output = exec(cmd)
 
 	if not output then
@@ -118,8 +120,10 @@ local function load_config()
 			ping_count = tonumber(section.ping_count) or 3,
 			ping_timeout = tonumber(section.ping_timeout) or 2,
 			status = "unknown",
+			status_since = nil,
 			latency = 0,
-			gateway = nil
+			gateway = nil,
+			last_check = nil
 		}
 
 		if iface.device and iface.device ~= "" then
@@ -134,105 +138,126 @@ end
 
 -- Write status file
 local function write_status(config)
-	local status = {
-		timestamp = os.time(),
-		mode = config.mode,
-		interfaces = {}
-	}
-
-	for _, iface in ipairs(config.interfaces) do
-		table.insert(status.interfaces, {
-			name = iface.name,
-			device = iface.device,
-			status = iface.status,
-			latency = iface.latency,
-			gateway = iface.gateway
-		})
-	end
-
 	local f = io.open(STATUS_FILE, "w")
 	if f then
 		f:write(string.format("mode=%s\n", config.mode))
-		f:write(string.format("timestamp=%d\n", status.timestamp))
-		for _, iface in ipairs(status.interfaces) do
-			f:write(string.format("%s_status=%s\n", iface.name, iface.status))
-			f:write(string.format("%s_latency=%.2f\n", iface.name, iface.latency))
-			f:write(string.format("%s_gateway=%s\n", iface.name, iface.gateway or ""))
+		f:write(string.format("timestamp=%d\n", os.time()))
+		f:write(string.format("check_interval=%d\n", config.check_interval))
+
+		for _, iface in ipairs(config.interfaces) do
+			f:write(string.format("\n[%s]\n", iface.name))
+			f:write(string.format("device=%s\n", iface.device or ""))
+			f:write(string.format("status=%s\n", iface.status))
+			f:write(string.format("status_since=%s\n", iface.status_since or ""))
+			f:write(string.format("last_check=%s\n", iface.last_check or ""))
+			f:write(string.format("latency=%.2f\n", iface.latency))
+			f:write(string.format("gateway=%s\n", iface.gateway or ""))
+			f:write(string.format("ping_target=%s\n", iface.ping_target or ""))
 		end
 		f:close()
 	end
 end
 
--- Failover mode logic
-local function handle_failover(config)
-	local primary = config.interfaces[1]
-	local secondary = config.interfaces[2]
-
-	-- Check both interfaces
-	for _, iface in ipairs(config.interfaces) do
-		if iface.enabled and iface.device and iface.ping_target and iface.gateway then
-			local alive, latency = check_ping(iface.ping_target, iface.ping_count, iface.ping_timeout)
-			iface.status = alive and "up" or "down"
-			iface.latency = latency
-
-			log(string.format("%s (%s): %s (latency: %.2fms)",
-				iface.name, iface.device, iface.status, latency))
-		else
-			iface.status = "disabled"
-		end
+-- Update interface status with timestamp tracking
+local function update_interface_status(iface)
+	if not (iface.enabled and iface.device and iface.ping_target) then
+		iface.status = "disabled"
+		iface.status_since = iface.status_since or os.time()
+		iface.last_check = os.time()
+		return
 	end
 
-	-- Manage routes based on status
-	if primary.status == "up" then
-		-- Primary is up, use it
-		set_route(primary.gateway, primary.metric, primary.device)
-		if secondary.status == "up" then
-			-- Keep secondary as backup with higher metric
-			set_route(secondary.gateway, secondary.metric, secondary.device)
+	if not iface.gateway then
+		iface.status = "no_gateway"
+		iface.status_since = iface.status_since or os.time()
+		iface.last_check = os.time()
+		log(string.format("%s (%s): No gateway found", iface.name, iface.device))
+		return
+	end
+
+	-- Ping through the specific interface
+	local alive, latency = check_ping(iface.ping_target, iface.ping_count, iface.ping_timeout, iface.device, iface.gateway)
+	local new_status = alive and "up" or "down"
+	iface.last_check = os.time()
+
+	-- Track status changes
+	if iface.status ~= new_status then
+		iface.status_since = os.time()
+		log(string.format("%s (%s): Status changed from %s to %s",
+			iface.name, iface.device, iface.status or "unknown", new_status))
+	end
+
+	iface.status = new_status
+	iface.latency = latency
+
+	log(string.format("%s (%s): %s (latency: %.2fms, ping via %s to %s)",
+		iface.name, iface.device, iface.status, latency, iface.device, iface.ping_target))
+end
+
+-- Failover mode logic
+local function handle_failover(config)
+	-- Check all interfaces
+	for _, iface in ipairs(config.interfaces) do
+		update_interface_status(iface)
+	end
+
+	-- Sort by metric (lower = higher priority)
+	local sorted_ifaces = {}
+	for _, iface in ipairs(config.interfaces) do
+		if iface.status == "up" then
+			table.insert(sorted_ifaces, iface)
 		end
-	elseif secondary.status == "up" then
-		-- Primary is down, failover to secondary
-		log("Primary WAN down, failing over to secondary")
-		set_route(secondary.gateway, primary.metric, secondary.device)
-	else
-		-- Both down
-		log("WARNING: Both WAN connections are down!")
+	end
+	table.sort(sorted_ifaces, function(a, b) return a.metric < b.metric end)
+
+	if #sorted_ifaces == 0 then
+		log("WARNING: No WAN connections are available!")
+		return
+	end
+
+	-- Use the highest priority (lowest metric) interface as primary
+	local primary = sorted_ifaces[1]
+	set_route(primary.gateway, primary.metric, primary.device)
+	log(string.format("Using %s (%s) as primary with metric %d", primary.name, primary.device, primary.metric))
+
+	-- Set backup routes with their original metrics
+	for i = 2, #sorted_ifaces do
+		local backup = sorted_ifaces[i]
+		set_route(backup.gateway, backup.metric, backup.device)
+		log(string.format("Setting %s (%s) as backup with metric %d", backup.name, backup.device, backup.metric))
 	end
 end
 
 -- Multi-uplink mode logic
 local function handle_multiuplink(config)
-	local active_ifaces = {}
-
 	-- Check all interfaces
 	for _, iface in ipairs(config.interfaces) do
-		if iface.enabled and iface.device and iface.ping_target and iface.gateway then
-			local alive, latency = check_ping(iface.ping_target, iface.ping_count, iface.ping_timeout)
-			iface.status = alive and "up" or "down"
-			iface.latency = latency
+		update_interface_status(iface)
+	end
 
-			log(string.format("%s (%s): %s (latency: %.2fms)",
-				iface.name, iface.device, iface.status, latency))
-
-			if iface.status == "up" then
-				table.insert(active_ifaces, iface)
-			end
-		else
-			iface.status = "disabled"
+	-- Collect active interfaces
+	local active_ifaces = {}
+	for _, iface in ipairs(config.interfaces) do
+		if iface.status == "up" then
+			table.insert(active_ifaces, iface)
 		end
 	end
 
-	-- Setup load balancing routes
-	if #active_ifaces > 0 then
-		for _, iface in ipairs(active_ifaces) do
-			set_route(iface.gateway, iface.metric, iface.device)
-		end
-
-		-- TODO: Implement proper multipath routing with weights
-		-- This would require: ip route add default scope global nexthop via GW1 dev DEV1 weight W1 nexthop via GW2 dev DEV2 weight W2
-	else
+	if #active_ifaces == 0 then
 		log("WARNING: No active WAN connections!")
+		return
 	end
+
+	-- Setup routes with metrics for load balancing
+	-- Linux kernel will use them based on metrics
+	for _, iface in ipairs(active_ifaces) do
+		set_route(iface.gateway, iface.metric, iface.device)
+		log(string.format("Multi-uplink: %s (%s) metric %d weight %d",
+			iface.name, iface.device, iface.metric, iface.weight))
+	end
+
+	-- TODO: Implement proper multipath routing with weights using:
+	-- ip route add default scope global nexthop via GW1 dev DEV1 weight W1 nexthop via GW2 dev DEV2 weight W2
 end
 
 -- Main daemon loop

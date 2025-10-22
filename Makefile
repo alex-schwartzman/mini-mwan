@@ -41,6 +41,7 @@ define Package/mini-mwan/install
 
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/mini-mwan
 	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mini-mwan/overview.js $(1)/www/luci-static/resources/view/mini-mwan/
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mini-mwan/status.js $(1)/www/luci-static/resources/view/mini-mwan/
 
 	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
 	$(INSTALL_DATA) ./root/usr/share/luci/menu.d/luci-app-mini-mwan.json $(1)/usr/share/luci/menu.d/
