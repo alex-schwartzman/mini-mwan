@@ -267,46 +267,32 @@ local function main()
 	while true do
 		local config = load_config()
 
-		if not config.enabled then
+		if config.enabled then
+			-- Validate configuration
+			local wan1_configured = config.interfaces[1] and config.interfaces[1].device and config.interfaces[1].device ~= ""
+			local wan2_configured = config.interfaces[2] and config.interfaces[2].device and config.interfaces[2].device ~= ""
+
+			if wan1_configured and wan2_configured then
+				-- Run appropriate mode
+				if config.mode == "failover" then
+					handle_failover(config)
+				elseif config.mode == "multiuplink" then
+					handle_multiuplink(config)
+				end
+
+				-- Write status
+				write_status(config)
+			else
+				log("ERROR: Both WAN interfaces must be configured")
+			end
+		else
 			log("Service disabled, waiting...")
-			nixio.nanosleep(config.check_interval)
-			goto continue
 		end
 
-		-- Validate configuration
-		local wan1_configured = config.interfaces[1].device and config.interfaces[1].device ~= ""
-		local wan2_configured = config.interfaces[2].device and config.interfaces[2].device ~= ""
-
-		if not (wan1_configured and wan2_configured) then
-			log("ERROR: Both WAN interfaces must be configured")
-			nixio.nanosleep(config.check_interval)
-			goto continue
-		end
-
-		-- Run appropriate mode
-		if config.mode == "failover" then
-			handle_failover(config)
-		elseif config.mode == "multiuplink" then
-			handle_multiuplink(config)
-		end
-
-		-- Write status
-		write_status(config)
-
-		::continue::
 		nixio.nanosleep(config.check_interval)
 	end
 end
 
--- Signal handlers
-local function cleanup()
-	log("Mini-MWAN daemon stopping")
-	os.exit(0)
-end
-
--- Set up signal handlers
-nixio.signal(15, cleanup) -- SIGTERM
-nixio.signal(2, cleanup)  -- SIGINT
-
--- Run
+-- Run daemon
+-- Note: Signal handling is managed by procd, no custom handlers needed
 main()

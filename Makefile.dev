@@ -5,7 +5,14 @@
 
 # Build the package
 build:
-	docker-compose run --rm openwrt-sdk make package/mini-mwan/compile
+	docker-compose run --rm openwrt-sdk bash -c "\
+		make package/mini-mwan/compile && \
+		echo '' && \
+		echo '=== Package Info ===' && \
+		ls -lh bin/packages/x86_64/base/mini-mwan*.ipk && \
+		echo '' && \
+		echo '=== Package Metadata ===' && \
+		ar p bin/packages/x86_64/base/mini-mwan*.ipk control.tar.gz | tar -xzO ./control"
 
 # Soft clean: remove only mini-mwan build artifacts, keep .config
 clean-soft:
@@ -28,7 +35,13 @@ rebuild-hard:
 	docker-compose run --rm openwrt-sdk bash -c "\
 		make defconfig && \
 		rm -rf build_dir/target-*/mini-mwan* bin/packages/*/base/mini-mwan* && \
-		make package/mini-mwan/compile"
+		make package/mini-mwan/compile && \
+		echo '' && \
+		echo '=== Package Built ===' && \
+		ls -lh bin/packages/x86_64/base/mini-mwan*.ipk && \
+		echo '' && \
+		echo '=== Package Metadata ===' && \
+		tar -xzOf bin/packages/x86_64/base/mini-mwan*.ipk ./control.tar.gz | tar -xzOf - ./control"
 
 # Open a shell in the build container
 shell:
