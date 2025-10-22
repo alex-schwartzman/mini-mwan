@@ -1,0 +1,61 @@
+# Development Makefile for mini-mwan
+# Provides convenient targets for building in Docker
+
+.PHONY: build rebuild clean-soft clean-hard shell help
+
+# Build the package
+build:
+	docker-compose run --rm openwrt-sdk make package/mini-mwan/compile
+
+# Soft clean: remove only mini-mwan build artifacts, keep .config
+clean-soft:
+	docker-compose run --rm openwrt-sdk bash -c "\
+		rm -rf build_dir/target-*/mini-mwan* && \
+		rm -rf bin/packages/*/base/mini-mwan*"
+
+# Rebuild: soft clean + build
+rebuild: clean-soft build
+
+# Hard clean: remove everything including .config (requires defconfig after)
+clean-hard:
+	docker-compose run --rm openwrt-sdk bash -c "\
+		rm -rf build_dir/target-*/mini-mwan* && \
+		rm -rf bin/packages/*/base/mini-mwan* && \
+		rm -f .config"
+
+# Full rebuild from scratch
+rebuild-hard:
+	docker-compose run --rm openwrt-sdk bash -c "\
+		make defconfig && \
+		rm -rf build_dir/target-*/mini-mwan* bin/packages/*/base/mini-mwan* && \
+		make package/mini-mwan/compile"
+
+# Open a shell in the build container
+shell:
+	docker-compose run --rm openwrt-sdk bash
+
+# Update feeds from local repos (offline)
+feeds-update:
+	docker-compose run --rm openwrt-sdk scripts/feeds update -i -a
+
+# Install all feeds
+feeds-install:
+	docker-compose run --rm openwrt-sdk scripts/feeds install -a
+
+# Show help
+help:
+	@echo "Mini-MWAN Development Makefile"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  build          - Build the package"
+	@echo "  rebuild        - Clean package artifacts and rebuild (preserves .config)"
+	@echo "  clean-soft     - Remove only mini-mwan build artifacts"
+	@echo "  clean-hard     - Remove build artifacts and .config"
+	@echo "  rebuild-hard   - Full rebuild from defconfig"
+	@echo "  shell          - Open shell in build container"
+	@echo "  feeds-update   - Update feeds index (offline mode)"
+	@echo "  feeds-install  - Install all feeds"
+	@echo "  help           - Show this help message"
+	@echo ""
+	@echo "Quick workflow:"
+	@echo "  make -f Makefile.dev rebuild   # Fast rebuild after code changes"

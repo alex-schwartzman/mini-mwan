@@ -1,0 +1,13 @@
+{
+	"admin/network/mini-mwan": {
+		"title": "Mini-MWAN",
+		"order": 60,
+		"action": {
+			"type": "view",
+			"path": "mini-mwan/overview"
+		},
+		"depends": {
+			"acl": [ "luci-app-mini-mwan" ]
+		}
+	}
+}
