@@ -1,6 +1,6 @@
 # Mini-MWAN - Lightweight Multi-WAN for OpenWrt
 
-A lightweight multi-WAN management daemon for OpenWrt with failover and load balancing capabilities. Designed as a simple alternative to mwan3 for OpenWrt 24.10+.
+A lightweight multi-WAN management daemon for OpenWrt with failover and load balancing capabilities. Designed as a simple alternative to mwan3 for OpenWrt 24.+.
 
 ## What is Mini-MWAN?
 
@@ -8,18 +8,28 @@ Mini-MWAN monitors multiple WAN interfaces and manages routing based on connecti
 
 - **Failover mode**: Primary/backup WAN with automatic failback
 - **Multi-uplink mode**: Load balancing across multiple WAN connections
-- **Interface monitoring**: Ping-based connectivity checks through specific interfaces
-- **Traffic statistics**: Real-time RX/TX byte counters with automatic formatting
+- **Interface monitoring**: Ping-based connectivity checks
+- **Traffic statistics**: Per-wan RX/TX byte counters
 - **Web interface**: LuCI integration for easy configuration and monitoring
 - **Automatic recovery**: Interfaces automatically return to service when connectivity is restored
 
 ## Why Mini-MWAN?
 
-With mwan3 unavailable in OpenWrt 24.10, Mini-MWAN provides a simpler, more maintainable solution for basic multi-WAN needs. It's written in pure Lua with minimal dependencies, making it easy to understand, modify, and troubleshoot.
+With mwan3 unavailable in OpenWrt 24+, Mini-MWAN provides a simpler, more maintainable solution for basic multi-WAN needs. It's written in pure Lua with minimal dependencies, making it easy to understand, modify, and troubleshoot.
+
+### Key Advantages
+
+**No Firewall Dependencies**: Unlike mwan3, Mini-MWAN uses standard Linux kernel routing features (routing metrics and weights) instead of iptables or nftables rules. This means:
+- **Simple troubleshooting**: Check routing with `ip route show table main` - that's it
+- **No firewall proficiency required**: Works with any firewall backend (fw3, fw4, or none)
+- **Compatible with all OpenWrt versions**: No dependency on specific firewall implementations
+- **Less complexity**: Fewer moving parts means fewer things that can break
 
 ## Requirements
 
-- **OpenWrt**: 24.10 or later
+- **OpenWrt**: 24.x or later recommended
+  - The daemon may work on 22.03 and 23.05, but the LuCI interface requires verification
+  - Dependencies need to be checked for earlier versions
 - **Architecture**: Platform-independent (Lua-based)
 - **Dependencies**:
   - `lua`
@@ -179,26 +189,29 @@ logread | grep mini-mwan
 |---------|-----------|-------|
 | **Complexity** | ~500 lines of Lua | ~10,000+ lines |
 | **Dependencies** | 4 packages | Many (including iptables, ipset, etc.) |
+| **Firewall Backend** | None (uses kernel routing) | iptables/fw3 required |
 | **Configuration** | Simple UCI config | Complex rules and policies |
+| **Troubleshooting** | `ip route show` | iptables/ipset rules |
 | **Failover** | ✅ Yes | ✅ Yes |
 | **Load Balancing** | ✅ Basic (weight-based) | ✅ Advanced (ratio, balance) |
 | **Traffic Statistics** | ✅ Yes (RX/TX) | ❌ No |
 | **Custom Rules** | ❌ No | ✅ Yes (iptables-based) |
 | **Sticky Sessions** | ❌ No | ✅ Yes |
 | **Per-protocol Routing** | ❌ No | ✅ Yes |
-| **OpenWrt 24.10** | ✅ Supported | ❌ Not available |
+| **OpenWrt 24+** | ✅ Supported | ❌ Not available |
 
 **Use Mini-MWAN if you need:**
 - Simple failover between 2-3 WAN connections
 - Basic load balancing
 - Easy setup and maintenance
-- OpenWrt 24.10 compatibility
+- OpenWrt 24+ support
+- No firewall rule complexity
 
 **Use mwan3 if you need:**
-- Complex routing policies
-- Per-application or per-protocol routing
+- Complex routing policies (per-application, per-protocol)
 - Sticky sessions for specific services
-- OpenWrt 23.05 or earlier
+- Advanced traffic rules and policies
+- OpenWrt 23.05 or earlier (where mwan3 is available)
 
 ## Building the Package
 
@@ -243,6 +256,21 @@ make -f Makefile.dev help           # Show all targets
 
 ## Troubleshooting
 
+Mini-MWAN uses standard kernel routing features, so troubleshooting **does not require nftables or iptables proficiency**. The daemon simply manages default gateway routes based on interface connectivity.
+
+### Verify routing configuration
+```bash
+# View current routing table (main table)
+ip route show table main
+
+# You should see default routes with different metrics:
+# default via 192.168.1.1 dev wan metric 100
+# default via 192.168.2.1 dev wan2 metric 200
+#
+# Lower metric = higher priority
+# Traffic uses the route with the lowest metric
+```
+
 ### Service won't start
 ```bash
 # Check logs
@@ -260,6 +288,18 @@ opkg list-installed | grep -E 'lua|uci|nixio|cjson'
 - Check that ping target is reachable
 - Ensure interface is enabled in both OpenWrt and Mini-MWAN config
 - Check `/var/run/mini-mwan.status` for error messages
+
+### Routing not working as expected
+```bash
+# Check which route is being used
+ip route get 8.8.8.8
+
+# Verify interface gateways
+ip route show | grep default
+
+# Check interface status
+cat /var/run/mini-mwan.status
+```
 
 ### No status displayed in LuCI
 - Verify `luci-app-mini-mwan` is installed
