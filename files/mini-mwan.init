@@ -28,6 +28,8 @@ start_service() {
 }
 
 stop_service() {
+	# Clean up status file when stopping
+	rm -f /var/run/mini-mwan.status
 	logger -t mini-mwan "Service stopped"
 }
 

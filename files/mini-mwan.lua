@@ -8,11 +8,15 @@ Manages multi-WAN failover and load balancing
 local uci = require("uci")
 local nixio = require("nixio")
 local fs = require("nixio.fs")
+local json = require("cjson")
 
 -- Configuration
 local cursor = uci.cursor()
 local LOG_FILE = "/var/log/mini-mwan.log"
 local STATUS_FILE = "/var/run/mini-mwan.status"
+
+-- Persistent interface state (survives config reloads)
+local interface_state = {}
 
 -- Logging function
 local function log(msg)
@@ -85,18 +89,38 @@ local function check_interface_up(iface)
 	return false, "down"
 end
 
--- Get gateway for interface
+-- Get gateway for interface using ifstatus (netifd)
 local function get_gateway(iface)
-	local cmd = string.format("ip route show dev %s | grep default | awk '{print $3}'", iface)
+	local cmd = string.format("ifstatus %s 2>/dev/null", iface)
 	local output = exec(cmd)
-	if output then
-		return output:match("(%S+)")
+
+	if not output or output == "" then
+		return nil
 	end
+
+	-- Parse JSON using cjson
+	local success, data = pcall(json.decode, output)
+	if not success or not data then
+		log(string.format("Failed to parse ifstatus JSON for %s", iface))
+		return nil
+	end
+
+	-- Look for default route (target 0.0.0.0, mask 0)
+	if data.route then
+		for _, route in ipairs(data.route) do
+			if route.target == "0.0.0.0" and route.mask == 0 and route.nexthop then
+				return route.nexthop
+			end
+		end
+	end
+
+	-- No gateway found - might be a point-to-point interface (VPN tunnel)
 	return nil
 end
 
--- Add/update default route
-local function set_route(gateway, metric, iface)
+-- Add/update default route with fallback
+-- Always keeps a high-metric (999) route for ping checks even when interface is "down"
+local function set_route(gateway, metric, iface, keep_fallback)
 	-- Remove existing default route for this interface first
 	if gateway and gateway ~= "" then
 		exec(string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface))
@@ -116,7 +140,47 @@ local function set_route(gateway, metric, iface)
 
 	local result = exec(cmd)
 	log(string.format("Set route: gw=%s iface=%s metric=%d", gateway or "none", iface, metric))
+
+	-- Always add high-metric fallback route for ping checks
+	if keep_fallback then
+		local fallback_cmd
+		if gateway and gateway ~= "" then
+			fallback_cmd = string.format("ip route add default via %s dev %s metric 999 2>/dev/null", gateway, iface)
+		else
+			fallback_cmd = string.format("ip route add default dev %s metric 999 2>/dev/null", iface)
+		end
+		exec(fallback_cmd)
+	end
+
 	return true
+end
+
+-- Ensure fallback route exists for ping checks
+local function ensure_fallback_route(gateway, iface)
+	-- Check if route already exists
+	local check_cmd
+	if gateway and gateway ~= "" then
+		check_cmd = string.format("ip route show | grep -q 'default via %s dev %s metric 999'", gateway, iface)
+	else
+		check_cmd = string.format("ip route show | grep -q 'default dev %s.*metric 999'", iface)
+	end
+
+	local result = os.execute(check_cmd)
+	if result == 0 then
+		-- Route already exists
+		return
+	end
+
+	-- Add fallback route
+	local cmd
+	if gateway and gateway ~= "" then
+		cmd = string.format("ip route add default via %s dev %s metric 999", gateway, iface)
+	else
+		cmd = string.format("ip route add default dev %s metric 999", iface)
+	end
+
+	exec(cmd)
+	log(string.format("Added fallback route: gw=%s iface=%s metric=999", gateway or "none", iface))
 end
 
 -- Remove default route
@@ -144,8 +208,13 @@ local function load_config()
 
 	-- Load all interface configurations dynamically
 	cursor:foreach("mini-mwan", "interface", function(section)
+		local name = section['.name']
+
+		-- Restore persistent state if it exists
+		local saved_state = interface_state[name] or {}
+
 		local iface = {
-			name = section['.name'],
+			name = name,
 			enabled = section.enabled == "1",
 			device = section.device,
 			metric = tonumber(section.metric) or 10,
@@ -153,11 +222,11 @@ local function load_config()
 			ping_target = section.ping_target,
 			ping_count = tonumber(section.ping_count) or 3,
 			ping_timeout = tonumber(section.ping_timeout) or 2,
-			status = "unknown",
-			status_since = nil,
-			latency = 0,
+			status = saved_state.status or "unknown",
+			status_since = saved_state.status_since,
+			latency = saved_state.latency or 0,
 			gateway = nil,
-			last_check = nil
+			last_check = saved_state.last_check
 		}
 
 		if iface.device and iface.device ~= "" then
@@ -195,9 +264,21 @@ end
 -- Update interface status with timestamp tracking
 local function update_interface_status(iface)
 	if not (iface.enabled and iface.device and iface.ping_target) then
-		iface.status = "disabled"
-		iface.status_since = iface.status_since or os.time()
+		local new_status = "disabled"
 		iface.last_check = os.time()
+
+		if iface.status ~= new_status then
+			iface.status_since = os.time()
+		end
+		iface.status = new_status
+
+		-- Save state
+		interface_state[iface.name] = {
+			status = iface.status,
+			status_since = iface.status_since,
+			latency = 0,
+			last_check = iface.last_check
+		}
 		return
 	end
 
@@ -216,6 +297,14 @@ local function update_interface_status(iface)
 
 		iface.status = new_status
 		iface.latency = 0
+
+		-- Save state
+		interface_state[iface.name] = {
+			status = iface.status,
+			status_since = iface.status_since,
+			latency = iface.latency,
+			last_check = iface.last_check
+		}
 		return
 	end
 
@@ -235,6 +324,14 @@ local function update_interface_status(iface)
 	iface.status = new_status
 	iface.latency = latency
 
+	-- Save state for next config reload
+	interface_state[iface.name] = {
+		status = iface.status,
+		status_since = iface.status_since,
+		latency = iface.latency,
+		last_check = iface.last_check
+	}
+
 	log(string.format("%s (%s): %s (latency: %.2fms, ping via %s to %s)",
 		iface.name, iface.device, iface.status, latency, iface.device, iface.ping_target))
 end
@@ -246,14 +343,35 @@ local function handle_failover(config)
 		update_interface_status(iface)
 	end
 
-	-- Sort by metric (lower = higher priority)
+	-- Separate interfaces into up and down
 	local sorted_ifaces = {}
+	local down_ifaces = {}
 	for _, iface in ipairs(config.interfaces) do
 		if iface.status == "up" then
 			table.insert(sorted_ifaces, iface)
+		elseif iface.enabled and iface.device and iface.status ~= "interface_down" then
+			table.insert(down_ifaces, iface)
 		end
 	end
 	table.sort(sorted_ifaces, function(a, b) return a.metric < b.metric end)
+
+	-- For down interfaces: set very high metric (900) so they don't interfere but pings still work
+	for _, iface in ipairs(down_ifaces) do
+		-- Remove any existing routes for this interface
+		if iface.gateway and iface.gateway ~= "" then
+			exec(string.format("ip route del default via %s dev %s 2>/dev/null", iface.gateway, iface.device))
+		else
+			exec(string.format("ip route del default dev %s 2>/dev/null", iface.device))
+		end
+
+		-- Add high-metric route for ping checks (900 = still allows pings but won't be used for traffic)
+		if iface.gateway and iface.gateway ~= "" then
+			exec(string.format("ip route add default via %s dev %s metric 900 2>/dev/null", iface.gateway, iface.device))
+		else
+			exec(string.format("ip route add default dev %s metric 900 2>/dev/null", iface.device))
+		end
+		log(string.format("Set high-metric route for down interface %s (%s) metric=900", iface.name, iface.device))
+	end
 
 	if #sorted_ifaces == 0 then
 		log("WARNING: No WAN connections are available!")
@@ -273,19 +391,40 @@ local function handle_failover(config)
 	end
 end
 
--- Multi-uplink mode logic
+-- Multi-uplink mode logic with multipath routing
 local function handle_multiuplink(config)
 	-- Check all interfaces
 	for _, iface in ipairs(config.interfaces) do
 		update_interface_status(iface)
 	end
 
-	-- Collect active interfaces
+	-- Separate active and down interfaces
 	local active_ifaces = {}
+	local down_ifaces = {}
 	for _, iface in ipairs(config.interfaces) do
 		if iface.status == "up" then
 			table.insert(active_ifaces, iface)
+		elseif iface.enabled and iface.device and iface.status ~= "interface_down" then
+			table.insert(down_ifaces, iface)
 		end
+	end
+
+	-- For down interfaces: set very high metric (900) so pings still work
+	for _, iface in ipairs(down_ifaces) do
+		-- Remove any existing routes for this interface
+		if iface.gateway and iface.gateway ~= "" then
+			exec(string.format("ip route del default via %s dev %s 2>/dev/null", iface.gateway, iface.device))
+		else
+			exec(string.format("ip route del default dev %s 2>/dev/null", iface.device))
+		end
+
+		-- Add high-metric route for ping checks
+		if iface.gateway and iface.gateway ~= "" then
+			exec(string.format("ip route add default via %s dev %s metric 900 2>/dev/null", iface.gateway, iface.device))
+		else
+			exec(string.format("ip route add default dev %s metric 900 2>/dev/null", iface.device))
+		end
+		log(string.format("Set high-metric route for down interface %s (%s) metric=900", iface.name, iface.device))
 	end
 
 	if #active_ifaces == 0 then
@@ -293,16 +432,26 @@ local function handle_multiuplink(config)
 		return
 	end
 
-	-- Setup routes with metrics for load balancing
-	-- Linux kernel will use them based on metrics
+	-- Remove all existing default routes (except metric 900)
+	exec("ip route show | grep '^default' | grep -v 'metric 900' | while read route; do ip route del $route 2>/dev/null; done")
+
+	-- Build multipath route command
+	-- ip route replace default nexthop via GW1 dev DEV1 weight W1 nexthop dev DEV2 weight W2
+	local route_parts = {}
 	for _, iface in ipairs(active_ifaces) do
-		set_route(iface.gateway, iface.metric, iface.device)
-		log(string.format("Multi-uplink: %s (%s) metric %d weight %d",
-			iface.name, iface.device, iface.metric, iface.weight))
+		local nexthop
+		if iface.gateway and iface.gateway ~= "" then
+			nexthop = string.format("nexthop via %s dev %s weight %d", iface.gateway, iface.device, iface.weight)
+		else
+			nexthop = string.format("nexthop dev %s weight %d", iface.device, iface.weight)
+		end
+		table.insert(route_parts, nexthop)
+		log(string.format("Multi-uplink: %s (%s) weight %d", iface.name, iface.device, iface.weight))
 	end
 
-	-- TODO: Implement proper multipath routing with weights using:
-	-- ip route add default scope global nexthop via GW1 dev DEV1 weight W1 nexthop via GW2 dev DEV2 weight W2
+	local multipath_cmd = "ip route replace default " .. table.concat(route_parts, " ")
+	exec(multipath_cmd)
+	log(string.format("Multipath route set: %s", multipath_cmd))
 end
 
 -- Main daemon loop
