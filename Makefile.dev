@@ -19,7 +19,10 @@ clean-soft:
 		rm -rf build_dir/target-*/mini-mwan* build_dir/target-*/luci-app-mini-mwan* && \
 		rm -rf bin/packages/*/base/mini-mwan* bin/packages/*/base/luci-app-mini-mwan*"
 
-# Rebuild: alias for rebuild-hard since .config is not persisted in Docker
+# Rebuild: alias for rebuild-hard
+# NOTE: .config is not mounted as a file because Docker creates directories for non-existent paths,
+# causing build failures when OpenWrt expects a file. Therefore, configuration will always remain
+# ephemeral, at least until the moment when I figure out how to work it around.
 rebuild: rebuild-hard
 
 # Hard clean: remove everything including .config (requires defconfig after)

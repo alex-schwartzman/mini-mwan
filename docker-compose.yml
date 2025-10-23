@@ -15,8 +15,9 @@ services:
       - ./luci-app-mini-mwan/Makefile:/builder/package/luci-app-mini-mwan/Makefile:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
-      # Mount .config to persist SDK configuration
-      - ./.config:/builder/.config
+      # NOTE: .config is not mounted as a file because Docker creates directories for non-existent paths,
+      # causing build failures when OpenWrt expects a file. Therefore, configuration will always remain
+      # ephemeral, at least until the moment when I figure out how to work it around.
       # Mount output directory for built packages
       - ./bin:/builder/bin
       # Mount local OpenWRT repositories from host (create ~/openwrt-repos first)
