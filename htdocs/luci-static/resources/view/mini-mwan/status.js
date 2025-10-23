@@ -161,7 +161,7 @@ return view.extend({
 				E('td', { 'class': 'td' }, E('strong', {}, iface.name)),
 				E('td', { 'class': 'td' }, iface.device || '-'),
 				E('td', { 'class': 'td' }, E('span', {}, this.getStatusBadge(iface.status))),
-				E('td', { 'class': 'td' }, this.formatDuration(iface.status_since)),
+				E('td', { 'class': 'td' }, this.formatTimestamp(iface.status_since)),
 				E('td', { 'class': 'td' }, iface.latency ? parseFloat(iface.latency).toFixed(2) + ' ms' : '-'),
 				E('td', { 'class': 'td' }, iface.ping_target || '-'),
 				E('td', { 'class': 'td' }, E('code', {}, iface.gateway || '-')),
