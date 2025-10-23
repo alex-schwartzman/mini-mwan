@@ -12,14 +12,15 @@ include $(INCLUDE_DIR)/package.mk
 define Package/mini-mwan
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Mini Multi-WAN management
-  DEPENDS:=+lua +libuci-lua +luci-lib-nixio +lua-cjson +luci-base
+  TITLE:=Mini Multi-WAN daemon
+  DEPENDS:=+lua +libuci-lua +luci-lib-nixio +lua-cjson
   PKGARCH:=all
 endef
 
 define Package/mini-mwan/description
-  Lightweight multi-WAN management with failover and load balancing.
-  Features a modern JavaScript-based LuCI interface and Lua daemon.
+  Lightweight multi-WAN management daemon with failover and load balancing.
+  Monitors WAN interface connectivity and manages routing based on interface status.
+  Can be configured via UCI or LuCI (install luci-app-mini-mwan for web interface).
 endef
 
 define Build/Compile
@@ -38,16 +39,6 @@ define Package/mini-mwan/install
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mini-mwan.init $(1)/etc/init.d/mini-mwan
-
-	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/mini-mwan
-	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mini-mwan/overview.js $(1)/www/luci-static/resources/view/mini-mwan/
-	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/mini-mwan/status.js $(1)/www/luci-static/resources/view/mini-mwan/
-
-	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
-	$(INSTALL_DATA) ./root/usr/share/luci/menu.d/luci-app-mini-mwan.json $(1)/usr/share/luci/menu.d/
-
-	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
-	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/luci-app-mini-mwan.json $(1)/usr/share/rpcd/acl.d/
 endef
 
 $(eval $(call BuildPackage,mini-mwan))
