@@ -1,139 +1,43 @@
-# Mini-MWAN OpenWRT Application
+# Mini-MWAN - Lightweight Multi-WAN for OpenWrt
 
-A Lua+shell OpenWRT application with LuCI web interface for Multi-WAN management.
+A lightweight multi-WAN management daemon for OpenWrt with failover and load balancing capabilities. Designed as a simple alternative to mwan3 for OpenWrt 24.10+.
 
-## Configuration Parameters
+## What is Mini-MWAN?
 
-The application includes two configuration parameters accessible via LuCI:
+Mini-MWAN monitors multiple WAN interfaces and manages routing based on connectivity status. It supports:
 
-1. **Enable/Disable** (`enabled`)
-   - Type: Boolean (0/1)
-   - Default: 0 (disabled)
-   - Description: Enable or disable the mini-mwan service
+- **Failover mode**: Primary/backup WAN with automatic failback
+- **Multi-uplink mode**: Load balancing across multiple WAN connections
+- **Interface monitoring**: Ping-based connectivity checks through specific interfaces
+- **Traffic statistics**: Real-time RX/TX byte counters with automatic formatting
+- **Web interface**: LuCI integration for easy configuration and monitoring
+- **Automatic recovery**: Interfaces automatically return to service when connectivity is restored
 
-2. **Check Interval** (`check_interval`)
-   - Type: Integer (range: 5-3600)
-   - Default: 30 seconds
-   - Description: Interval in seconds to check WAN connections
+## Why Mini-MWAN?
 
-## Building the Package
+With mwan3 unavailable in OpenWrt 24.10, Mini-MWAN provides a simpler, more maintainable solution for basic multi-WAN needs. It's written in pure Lua with minimal dependencies, making it easy to understand, modify, and troubleshoot.
 
-### Prerequisites
+## Requirements
 
-- Docker Desktop installed on macOS
-- Your OpenWRT device info (for this example: ASUS RT-AX53U with ramips/mt7621 architecture)
+- **OpenWrt**: 24.10 or later
+- **Architecture**: Platform-independent (Lua-based)
+- **Dependencies**:
+  - `lua`
+  - `libuci-lua`
+  - `luci-lib-nixio`
+  - `lua-cjson`
+  - `luci-base` (for web interface)
 
-### Quick Build with Docker
+## Installation
 
-The easiest way to build the package is using the provided Docker setup:
+### Pre-built Packages
 
-```bash
-# Simply run the build script
-./build.sh
-```
+Download the latest `.ipk` files from [GitHub Releases](https://github.com/alex-schwartzman/mini-mwan/releases).
 
-This will:
-1. Build/start a Docker container with the OpenWRT SDK for ramips/mt7621
-2. Compile the mini-mwan package
-3. Output the .ipk files to the `./bin` directory
-
-The built packages will be:
-- `mini-mwan_*.ipk` - Main package
-- `luci-app-mini-mwan_*.ipk` - LuCI web interface (if included)
-
-### Manual Docker Build
-
-If you prefer to build manually:
-
-```bash
-# Build the Docker image
-docker-compose build
-
-# Start the container
-docker-compose up -d
-
-# Enter the container
-docker-compose exec openwrt-sdk bash
-
-# Inside the container:
-./scripts/feeds update -a
-./scripts/feeds install -a
-make package/mini-mwan/compile V=s
-
-# Copy packages to output
-mkdir -p /home/build/bin
-find bin/packages -name 'mini-mwan*.ipk' -exec cp {} /home/build/bin/ \;
-
-# Exit container
-exit
-
-# Stop container
-docker-compose down
-```
-
-### Building for Different Architecture
-
-You don't need it. This application is crossplatform, because it is just a text file interpreted by lua and libuci-lua. 
-
-## Development with VS Code
-
-This project includes a VS Code devcontainer configuration for seamless development.
-
-### Setup
-
-1. Install the "Dev Containers" extension in VS Code:
-   - Extension ID: `ms-vscode-remote.remote-containers`
-
-2. Open this project in VS Code
-
-3. When prompted, click "Reopen in Container" (or press `F1` and search for "Dev Containers: Reopen in Container")
-
-VS Code will:
-- Build the Docker container using the same `Dockerfile`
-- Install recommended extensions (Lua, ShellCheck, etc.)
-- Set up the OpenWRT SDK environment
-- Mount your workspace for live editing
-
-### Building from VS Code
-
-Once inside the container, you can build using:
-
-**Option 1: VS Code Tasks (Recommended)**
-- Press `Cmd+Shift+B` (macOS) or `Ctrl+Shift+B` (Linux/Windows)
-- Select "Build and copy packages"
-
-**Option 2: Integrated Terminal**
-```bash
-# Open a terminal in VS Code (Ctrl+`)
-cd /home/build/openwrt
-make package/mini-mwan/compile V=s
-
-# Copy to output directory
-mkdir -p /home/build/bin
-find bin/packages -name 'mini-mwan*.ipk' -exec cp {} /home/build/bin/ \;
-```
-
-Built packages will appear in your local `./bin` directory.
-
-### Why This Approach?
-
-**Single Source of Truth**: Both the standalone build script and VS Code devcontainer use the **same Dockerfile**. This means:
-- No configuration drift between environments
-- Same build environment whether you use `./build.sh` or VS Code
-- Changes to the Dockerfile automatically apply to both
-
-**Workflow Flexibility**:
-- Use `./build.sh` for quick CI/CD builds
-- Use VS Code devcontainer for development with full IDE features
-- Both produce identical results
-
-## Installing on OpenWRT Device
-
-### Option 1: Via SCP and SSH
-
+**Via SSH:**
 ```bash
 # Copy packages to your router
-scp bin/*.ipk root@192.168.1.1:/tmp/
+scp mini-mwan_*.ipk luci-app-mini-mwan_*.ipk root@192.168.1.1:/tmp/
 
 # SSH into your router
 ssh root@192.168.1.1
@@ -143,39 +47,82 @@ opkg install /tmp/mini-mwan_*.ipk
 opkg install /tmp/luci-app-mini-mwan_*.ipk
 ```
 
-### Option 2: Via LuCI Web Interface
+**Via LuCI Web Interface:**
+1. Navigate to: System → Software
+2. Click "Upload Package..."
+3. Upload and install `mini-mwan_*.ipk`
+4. Repeat for `luci-app-mini-mwan_*.ipk`
 
-1. Open your router's web interface (e.g., http://192.168.1.1)
-2. Navigate to: System → Software
-3. Click "Upload Package..."
-4. Upload `mini-mwan_*.ipk` and click "Install"
-5. Repeat for `luci-app-mini-mwan_*.ipk`
+### Building from Source
 
-## Usage
+See [Building the Package](#building-the-package) section below.
+
+## Configuration
 
 ### Via LuCI Web Interface
 
-1. Navigate to: Network → Mini-MWAN
-2. Configure the settings:
-   - Enable the service
-   - Set the check interval (in seconds)
-3. Click "Save & Apply"
+1. Navigate to: **Network → Mini-MWAN**
+2. Configure your WAN interfaces:
+   - Enable/disable each interface
+   - Set ping target (e.g., 1.1.1.1, 8.8.8.8)
+   - Set metric (lower = higher priority in failover mode)
+   - Set weight (for load balancing in multi-uplink mode)
+3. Configure global settings:
+   - **Mode**: `failover` or `multi-uplink`
+   - **Check interval**: How often to ping (in seconds)
+4. Click **Save & Apply**
 
 ### Via UCI Command Line
 
+#### Basic Configuration Example
+
 ```bash
-# Enable the service
+# Global settings
+uci set mini-mwan.global=global
 uci set mini-mwan.global.enabled='1'
+uci set mini-mwan.global.mode='failover'
+uci set mini-mwan.global.check_interval='30'
 
-# Set check interval to 60 seconds
-uci set mini-mwan.global.check_interval='60'
+# Configure WAN1 (primary)
+uci set mini-mwan.wan1=interface
+uci set mini-mwan.wan1.enabled='1'
+uci set mini-mwan.wan1.name='wan'
+uci set mini-mwan.wan1.ping_target='1.1.1.1'
+uci set mini-mwan.wan1.ping_count='3'
+uci set mini-mwan.wan1.ping_timeout='2'
+uci set mini-mwan.wan1.metric='100'
+uci set mini-mwan.wan1.weight='1'
 
-# Commit changes
+# Configure WAN2 (backup)
+uci set mini-mwan.wan2=interface
+uci set mini-mwan.wan2.enabled='1'
+uci set mini-mwan.wan2.name='wan2'
+uci set mini-mwan.wan2.ping_target='8.8.8.8'
+uci set mini-mwan.wan2.ping_count='3'
+uci set mini-mwan.wan2.ping_timeout='2'
+uci set mini-mwan.wan2.metric='200'
+uci set mini-mwan.wan2.weight='1'
+
+# Commit and restart
 uci commit mini-mwan
-
-# Restart service
 /etc/init.d/mini-mwan restart
 ```
+
+#### Configuration Parameters
+
+**Global Settings:**
+- `enabled`: Enable/disable the service (0/1)
+- `mode`: Operation mode (`failover` or `multi-uplink`)
+- `check_interval`: Ping check interval in seconds (5-3600)
+
+**Interface Settings:**
+- `enabled`: Enable/disable this interface (0/1)
+- `name`: OpenWrt interface name (e.g., `wan`, `wan2`)
+- `ping_target`: IP address to ping for connectivity check
+- `ping_count`: Number of ping attempts (default: 3)
+- `ping_timeout`: Ping timeout in seconds (default: 2)
+- `metric`: Routing metric - lower value = higher priority (default: 100)
+- `weight`: Load balancing weight in multi-uplink mode (default: 1)
 
 ### Service Control
 
@@ -189,6 +136,9 @@ uci commit mini-mwan
 # Restart service
 /etc/init.d/mini-mwan restart
 
+# Check status
+/etc/init.d/mini-mwan status
+
 # Enable on boot
 /etc/init.d/mini-mwan enable
 
@@ -196,10 +146,142 @@ uci commit mini-mwan
 /etc/init.d/mini-mwan disable
 ```
 
+## Monitoring
+
+### Via LuCI Web Interface
+
+Navigate to **Network → Mini-MWAN → Status** to see:
+- Current operation mode
+- Interface status (UP/DOWN/Disabled)
+- Ping latency
+- Traffic statistics (RX/TX bytes)
+- Gateway information
+- Last check timestamp
+
+Status updates automatically every 5 seconds.
+
+### Via Command Line
+
+```bash
+# View status file
+cat /var/run/mini-mwan.status
+
+# View logs
+cat /var/log/mini-mwan.log
+
+# Or via logread
+logread | grep mini-mwan
+```
+
+## Comparison with mwan3
+
+| Feature | Mini-MWAN | mwan3 |
+|---------|-----------|-------|
+| **Complexity** | ~500 lines of Lua | ~10,000+ lines |
+| **Dependencies** | 4 packages | Many (including iptables, ipset, etc.) |
+| **Configuration** | Simple UCI config | Complex rules and policies |
+| **Failover** | ✅ Yes | ✅ Yes |
+| **Load Balancing** | ✅ Basic (weight-based) | ✅ Advanced (ratio, balance) |
+| **Traffic Statistics** | ✅ Yes (RX/TX) | ❌ No |
+| **Custom Rules** | ❌ No | ✅ Yes (iptables-based) |
+| **Sticky Sessions** | ❌ No | ✅ Yes |
+| **Per-protocol Routing** | ❌ No | ✅ Yes |
+| **OpenWrt 24.10** | ✅ Supported | ❌ Not available |
+
+**Use Mini-MWAN if you need:**
+- Simple failover between 2-3 WAN connections
+- Basic load balancing
+- Easy setup and maintenance
+- OpenWrt 24.10 compatibility
+
+**Use mwan3 if you need:**
+- Complex routing policies
+- Per-application or per-protocol routing
+- Sticky sessions for specific services
+- OpenWrt 23.05 or earlier
+
+## Building the Package
+
+### Prerequisites
+
+- Docker Desktop (macOS, Windows, or Linux)
+- Git
+
+### Quick Build
+
+```bash
+# Clone the repository
+git clone https://github.com/alex-schwartzman/mini-mwan.git
+cd mini-mwan
+
+# Build using Docker
+make -f Makefile.dev rebuild-hard
+```
+
+Built packages will be in `./bin/packages/x86_64/base/`:
+- `mini-mwan_1.0.0-r1_all.ipk`
+- `luci-app-mini-mwan_1.0.0-r1_all.ipk`
+
+### Development Environment
+
+This project includes a Docker-based development environment and VS Code devcontainer support.
+
+**Available make targets:**
+```bash
+make -f Makefile.dev build          # Build both packages
+make -f Makefile.dev rebuild-hard   # Full rebuild from scratch
+make -f Makefile.dev clean-soft     # Clean build artifacts
+make -f Makefile.dev shell          # Open shell in container
+make -f Makefile.dev help           # Show all targets
+```
+
+**VS Code users:**
+1. Install "Dev Containers" extension
+2. Open project in VS Code
+3. Click "Reopen in Container"
+4. Use integrated terminal for building
+
+## Troubleshooting
+
+### Service won't start
+```bash
+# Check logs
+logread | grep mini-mwan
+
+# Check UCI configuration
+uci show mini-mwan
+
+# Verify dependencies
+opkg list-installed | grep -E 'lua|uci|nixio|cjson'
+```
+
+### Interface not monitored
+- Verify interface name matches OpenWrt interface (not device)
+- Check that ping target is reachable
+- Ensure interface is enabled in both OpenWrt and Mini-MWAN config
+- Check `/var/run/mini-mwan.status` for error messages
+
+### No status displayed in LuCI
+- Verify `luci-app-mini-mwan` is installed
+- Restart uhttpd: `/etc/init.d/uhttpd restart`
+- Clear browser cache
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
 ## License
 
-GPL-2.0
+GPL-2.0 - See [LICENSE](LICENSE) file for details.
 
 ## Author
 
 Alex Schwartzman <openwrt@schwartzman.uk>
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
