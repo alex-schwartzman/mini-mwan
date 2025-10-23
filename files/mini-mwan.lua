@@ -89,6 +89,41 @@ local function check_interface_up(iface)
 	return false, "down"
 end
 
+-- Get network statistics for interface (TX/RX bytes)
+local function get_interface_stats(device)
+	if not device or device == "" then
+		return "0", "0"
+	end
+
+	local rx_path = string.format("/sys/class/net/%s/statistics/rx_bytes", device)
+	local tx_path = string.format("/sys/class/net/%s/statistics/tx_bytes", device)
+
+	local rx_bytes = "0"
+	local tx_bytes = "0"
+
+	-- Read RX bytes
+	local rx_file = io.open(rx_path, "r")
+	if rx_file then
+		local content = rx_file:read("*l")  -- Read one line, automatically strips newline
+		rx_file:close()
+		if content and content ~= "" then
+			rx_bytes = content
+		end
+	end
+
+	-- Read TX bytes
+	local tx_file = io.open(tx_path, "r")
+	if tx_file then
+		local content = tx_file:read("*l")  -- Read one line, automatically strips newline
+		tx_file:close()
+		if content and content ~= "" then
+			tx_bytes = content
+		end
+	end
+
+	return rx_bytes, tx_bytes
+end
+
 -- Get gateway for interface using ifstatus (netifd)
 local function get_gateway(iface)
 	local cmd = string.format("ifstatus %s 2>/dev/null", iface)
@@ -248,6 +283,9 @@ local function write_status(config)
 		f:write(string.format("check_interval=%d\n", config.check_interval))
 
 		for _, iface in ipairs(config.interfaces) do
+			-- Get current network statistics
+			local rx_bytes, tx_bytes = get_interface_stats(iface.device)
+
 			f:write(string.format("\n[%s]\n", iface.name))
 			f:write(string.format("device=%s\n", iface.device or ""))
 			f:write(string.format("status=%s\n", iface.status))
@@ -256,6 +294,8 @@ local function write_status(config)
 			f:write(string.format("latency=%.2f\n", iface.latency))
 			f:write(string.format("gateway=%s\n", iface.gateway or ""))
 			f:write(string.format("ping_target=%s\n", iface.ping_target or ""))
+			f:write(string.format("rx_bytes=%s\n", rx_bytes))
+			f:write(string.format("tx_bytes=%s\n", tx_bytes))
 		end
 		f:close()
 	end
