@@ -2,34 +2,6 @@
 
 A Lua+shell OpenWRT application with LuCI web interface for Multi-WAN management.
 
-## Project Structure
-
-```
-mini-mwan/
-├── Makefile                          # Main package Makefile
-├── Dockerfile                        # OpenWRT SDK Docker image
-├── docker-compose.yml                # Docker Compose configuration
-├── build.sh                          # Automated build script
-├── .devcontainer/
-│   └── devcontainer.json             # VS Code devcontainer config
-├── .vscode/
-│   ├── tasks.json                    # VS Code build tasks
-│   └── extensions.json               # Recommended extensions
-├── .editorconfig                     # Editor configuration
-├── files/
-│   ├── mini-mwan.sh                  # Main application script
-│   ├── mini-mwan.config              # UCI configuration template
-│   └── mini-mwan.init                # Init script
-├── luasrc/
-│   ├── controller/
-│   │   └── mini-mwan.lua             # LuCI controller
-│   └── model/
-│       └── cbi/
-│           └── mini-mwan.lua         # LuCI CBI model
-└── luci-app-mini-mwan/
-    └── Makefile                      # LuCI application Makefile
-```
-
 ## Configuration Parameters
 
 The application includes two configuration parameters accessible via LuCI:
@@ -66,7 +38,7 @@ This will:
 3. Output the .ipk files to the `./bin` directory
 
 The built packages will be:
-- `mini-mwan_1.0.0-1_all.ipk` - Main package
+- `mini-mwan_*.ipk` - Main package
 - `luci-app-mini-mwan_*.ipk` - LuCI web interface (if included)
 
 ### Manual Docker Build
@@ -101,18 +73,7 @@ docker-compose down
 
 ### Building for Different Architecture
 
-If your device has a different architecture, edit the `Dockerfile` and change:
-```dockerfile
-FROM openwrt/sdk:ramips-mt7621-24.10.0
-```
-
-Common architectures:
-- `x86-64-24.10.0` - x86 64-bit devices
-- `ramips-mt7621-24.10.0` - MediaTek MT7621 (ASUS RT-AX53U, etc.)
-- `ath79-generic-24.10.0` - Atheros AR71xx/AR9xxx
-- `bcm27xx-bcm2711-24.10.0` - Raspberry Pi 4
-
-Find your architecture at: https://downloads.openwrt.org/releases/24.10.0/targets/
+You don't need it. This application is crossplatform, because it is just a text file interpreted by lua and libuci-lua. 
 
 ## Development with VS Code
 
@@ -234,18 +195,6 @@ uci commit mini-mwan
 # Disable on boot
 /etc/init.d/mini-mwan disable
 ```
-
-## Development
-
-### Adding More Configuration Parameters
-
-1. Edit `files/mini-mwan.config` to add new UCI options
-2. Update `luasrc/model/cbi/mini-mwan.lua` to add LuCI form fields
-3. Modify `files/mini-mwan.sh` to use the new parameters
-
-### Customizing Application Logic
-
-Edit `files/mini-mwan.sh` to implement your custom Multi-WAN logic in the `start_service()` and `stop_service()` functions.
 
 ## License
 
