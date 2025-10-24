@@ -39,7 +39,9 @@ return view.extend({
 					last_check: '',
 					latency: 0,
 					gateway: '',
-					ping_target: ''
+					ping_target: '',
+					rx_bytes: 0,
+					tx_bytes: 0
 				};
 				status.interfaces.push(current_iface);
 				continue;
@@ -81,6 +83,18 @@ return view.extend({
 		if (diff < 3600) return Math.floor(diff / 60) + ' minutes';
 		if (diff < 86400) return Math.floor(diff / 3600) + ' hours';
 		return Math.floor(diff / 86400) + ' days';
+	},
+
+	formatBytes: function(bytes) {
+		if (!bytes || bytes === 0) return '0 B';
+
+		var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+		var k = 1024;
+		var i = Math.floor(Math.log(bytes) / Math.log(k));
+
+		if (i >= units.length) i = units.length - 1;
+
+		return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + units[i];
 	},
 
 	formatTimestamp: function(timestamp) {
@@ -148,6 +162,7 @@ return view.extend({
 				E('th', { 'class': 'th' }, _('Status')),
 				E('th', { 'class': 'th' }, _('Since')),
 				E('th', { 'class': 'th' }, _('Latency')),
+				E('th', { 'class': 'th' }, _('Traffic (RX/TX)')),
 				E('th', { 'class': 'th' }, _('Ping Target')),
 				E('th', { 'class': 'th' }, _('Gateway')),
 				E('th', { 'class': 'th' }, _('Last Check'))
@@ -157,12 +172,17 @@ return view.extend({
 		for (var i = 0; i < status.interfaces.length; i++) {
 			var iface = status.interfaces[i];
 
+			var rx = this.formatBytes(parseInt(iface.rx_bytes) || 0);
+			var tx = this.formatBytes(parseInt(iface.tx_bytes) || 0);
+			var traffic = rx + ' / ' + tx;
+
 			table.appendChild(E('tr', { 'class': 'tr' }, [
 				E('td', { 'class': 'td' }, E('strong', {}, iface.name)),
 				E('td', { 'class': 'td' }, iface.device || '-'),
 				E('td', { 'class': 'td' }, E('span', {}, this.getStatusBadge(iface.status))),
 				E('td', { 'class': 'td' }, this.formatTimestamp(iface.status_since)),
 				E('td', { 'class': 'td' }, iface.latency ? parseFloat(iface.latency).toFixed(2) + ' ms' : '-'),
+				E('td', { 'class': 'td' }, traffic),
 				E('td', { 'class': 'td' }, iface.ping_target || '-'),
 				E('td', { 'class': 'td' }, E('code', {}, iface.gateway || '-')),
 				E('td', { 'class': 'td' }, this.formatDuration(iface.last_check))

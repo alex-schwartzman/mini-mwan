@@ -4,14 +4,6 @@
 	// Use the existing Dockerfile (one level up from .devcontainer/)
 	"dockerFile": "../Dockerfile",
 
-	// Build arguments for VS Code server pre-caching
-	"build": {
-		"args": {
-			"INSTALL_VSCODE_SERVER": "true",
-			"VSCODE_COMMIT": "7d842fb85a0275a4a8e4d7e040d2625abbf7f084"
-		}
-	},
-
 	// Workspace mount and settings (following OpenWRT SDK pattern)
 	"workspaceMount": "source=${localWorkspaceFolder},target=/builder/package/mini-mwan,type=bind",
 	"workspaceFolder": "/builder/package/mini-mwan",
