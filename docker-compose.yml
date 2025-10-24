@@ -6,13 +6,17 @@ services:
     image: mini-mwan-builder
     container_name: mini-mwan-builder
     volumes:
-      # Mount package source files
+      # Mount mini-mwan package (daemon)
       - ./files:/builder/package/mini-mwan/files:ro
-      - ./htdocs:/builder/package/mini-mwan/htdocs:ro
-      - ./root:/builder/package/mini-mwan/root:ro
       - ./Makefile:/builder/package/mini-mwan/Makefile:ro
+      # Mount luci-app-mini-mwan package (LuCI interface)
+      - ./luci-app-mini-mwan/htdocs:/builder/package/luci-app-mini-mwan/htdocs:ro
+      - ./luci-app-mini-mwan/root:/builder/package/luci-app-mini-mwan/root:ro
+      - ./luci-app-mini-mwan/Makefile:/builder/package/luci-app-mini-mwan/Makefile:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
+      # Mount .config to persist SDK configuration
+      - ./.config:/builder/.config
       # Mount output directory for built packages
       - ./bin:/builder/bin
       # Mount local OpenWRT repositories from host (create ~/openwrt-repos first)

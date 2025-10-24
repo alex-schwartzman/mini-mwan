@@ -3,22 +3,21 @@
 
 .PHONY: build rebuild clean-soft clean-hard shell help
 
-# Build the package
+# Build both packages
 build:
 	docker-compose run --rm openwrt-sdk bash -c "\
+		[ ! -f .config ] && make defconfig || true && \
 		make package/mini-mwan/compile && \
+		make package/luci-app-mini-mwan/compile && \
 		echo '' && \
-		echo '=== Package Info ===' && \
-		ls -lh bin/packages/x86_64/base/mini-mwan*.ipk && \
-		echo '' && \
-		echo '=== Package Metadata ===' && \
-		ar p bin/packages/x86_64/base/mini-mwan*.ipk control.tar.gz | tar -xzO ./control"
+		echo '=== Packages Built ===' && \
+		ls -lh bin/packages/x86_64/base/mini-mwan*.ipk bin/packages/x86_64/base/luci-app-mini-mwan*.ipk 2>/dev/null || true"
 
 # Soft clean: remove only mini-mwan build artifacts, keep .config
 clean-soft:
 	docker-compose run --rm openwrt-sdk bash -c "\
-		rm -rf build_dir/target-*/mini-mwan* && \
-		rm -rf bin/packages/*/base/mini-mwan*"
+		rm -rf build_dir/target-*/mini-mwan* build_dir/target-*/luci-app-mini-mwan* && \
+		rm -rf bin/packages/*/base/mini-mwan* bin/packages/*/base/luci-app-mini-mwan*"
 
 # Rebuild: alias for rebuild-hard since .config is not persisted in Docker
 rebuild: rebuild-hard
@@ -30,18 +29,16 @@ clean-hard:
 		rm -rf bin/packages/*/base/mini-mwan* && \
 		rm -f .config"
 
-# Full rebuild from scratch
+# Full rebuild from scratch (both packages)
 rebuild-hard:
 	docker-compose run --rm openwrt-sdk bash -c "\
 		make defconfig && \
-		rm -rf build_dir/target-*/mini-mwan* bin/packages/*/base/mini-mwan* && \
+		rm -rf build_dir/target-*/mini-mwan* build_dir/target-*/luci-app-mini-mwan* bin/packages/*/base/mini-mwan* bin/packages/*/base/luci-app-mini-mwan* && \
 		make package/mini-mwan/compile && \
+		make package/luci-app-mini-mwan/compile && \
 		echo '' && \
-		echo '=== Package Built ===' && \
-		ls -lh bin/packages/x86_64/base/mini-mwan*.ipk && \
-		echo '' && \
-		echo '=== Package Metadata ===' && \
-		tar -xzOf bin/packages/x86_64/base/mini-mwan*.ipk ./control.tar.gz | tar -xzOf - ./control"
+		echo '=== Packages Built ===' && \
+		ls -lh bin/packages/x86_64/base/mini-mwan*.ipk bin/packages/x86_64/base/luci-app-mini-mwan*.ipk 2>/dev/null || echo 'Check build logs for errors'"
 
 # Open a shell in the build container
 shell:
@@ -60,15 +57,15 @@ help:
 	@echo "Mini-MWAN Development Makefile"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  build          - Build the package"
-	@echo "  rebuild        - Clean package artifacts and rebuild (preserves .config)"
-	@echo "  clean-soft     - Remove only mini-mwan build artifacts"
+	@echo "  build          - Build both packages (mini-mwan + luci-app-mini-mwan)"
+	@echo "  rebuild        - Alias for rebuild-hard"
+	@echo "  clean-soft     - Remove only build artifacts (keeps .config)"
 	@echo "  clean-hard     - Remove build artifacts and .config"
-	@echo "  rebuild-hard   - Full rebuild from defconfig"
+	@echo "  rebuild-hard   - Full rebuild from defconfig (both packages)"
 	@echo "  shell          - Open shell in build container"
 	@echo "  feeds-update   - Update feeds index (offline mode)"
 	@echo "  feeds-install  - Install all feeds"
 	@echo "  help           - Show this help message"
 	@echo ""
 	@echo "Quick workflow:"
-	@echo "  make -f Makefile.dev rebuild   # Fast rebuild after code changes"
+	@echo "  make -f Makefile.dev build   # Build both packages after code changes"

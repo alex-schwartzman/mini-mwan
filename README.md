@@ -1,6 +1,6 @@
 # Mini-MWAN OpenWRT Application
 
-A skeleton OpenWRT application with LuCI web interface for Multi-WAN management.
+A Lua+shell OpenWRT application with LuCI web interface for Multi-WAN management.
 
 ## Project Structure
 
