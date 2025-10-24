@@ -4,14 +4,25 @@
 	// Use the existing Dockerfile (one level up from .devcontainer/)
 	"dockerFile": "../Dockerfile",
 
-	// Workspace mount and settings (following OpenWRT SDK pattern)
-	"workspaceMount": "source=${localWorkspaceFolder},target=/builder/package/mini-mwan,type=bind",
-	"workspaceFolder": "/builder/package/mini-mwan",
+	// Workspace mount - mount repository root for access to both packages
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+	"workspaceFolder": "/workspace",
 
-	// Additional mounts
+	// Additional mounts for packages and build artifacts
 	"mounts": [
+		// Mount mini-mwan package (daemon) - read-write for development
+		"source=${localWorkspaceFolder}/mini-mwan/files,target=/builder/package/mini-mwan/files,type=bind",
+		"source=${localWorkspaceFolder}/mini-mwan/Makefile.devcontainer,target=/builder/package/mini-mwan/Makefile,type=bind",
+
+		// Mount luci-app-mini-mwan package (LuCI interface) - read-write for development
+		"source=${localWorkspaceFolder}/luci-app-mini-mwan/htdocs,target=/builder/package/luci-app-mini-mwan/htdocs,type=bind",
+		"source=${localWorkspaceFolder}/luci-app-mini-mwan/root,target=/builder/package/luci-app-mini-mwan/root,type=bind",
+		"source=${localWorkspaceFolder}/luci-app-mini-mwan/po,target=/builder/package/luci-app-mini-mwan/po,type=bind",
+		"source=${localWorkspaceFolder}/luci-app-mini-mwan/Makefile.devcontainer,target=/builder/package/luci-app-mini-mwan/Makefile,type=bind",
+
 		// Mount output directory for built packages
 		"source=${localWorkspaceFolder}/bin,target=/builder/bin,type=bind",
+
 		// Use named volumes for feeds (much faster than macOS filesystem)
 		"source=mini-mwan-feeds,target=/builder/feeds,type=volume",
 		"source=mini-mwan-dl,target=/builder/dl,type=volume"

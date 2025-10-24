@@ -1,44 +1,54 @@
-include $(TOPDIR)/rules.mk
+# Mini-MWAN Build Orchestration
+# Uses docker-compose to build packages with official Makefile structure
 
-PKG_NAME:=mini-mwan
-PKG_VERSION:=1.0.0
-PKG_RELEASE:=1
+.PHONY: all build shell feeds-fetch feeds-register help
+.DEFAULT_GOAL := all
 
-PKG_MAINTAINER:=Alex Schwartzman <openwrt@schwartzman.uk>
-PKG_LICENSE:=GPL-2.0
+# Full build: fetch feeds, register them, then build packages
+all: feeds-fetch feeds-register build
+	@echo ""
+	@echo "=== Full build complete ==="
 
-include $(INCLUDE_DIR)/package.mk
+# Build both packages (uses official Makefile with luci.mk)
+build:
+	@echo "=== Building packages (official structure with luci.mk) ==="
+	docker-compose run --rm openwrt-sdk bash -c "\
+		make defconfig && \
+		make package/feeds/packages/mini-mwan/compile && \
+		make package/luci-app-mini-mwan/compile && \
+		echo '' && \
+		echo '=== Packages Built ===' && \
+		find bin/packages -name 'mini-mwan*.ipk' -o -name 'luci-app-mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
 
-define Package/mini-mwan
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=Mini Multi-WAN daemon
-  DEPENDS:=+lua +libuci-lua +luci-lib-nixio +lua-cjson
-  PKGARCH:=all
-endef
+# Fetch/discover available packages in feeds
+feeds-fetch:
+	@echo "=== Fetching feeds (discovering packages) ==="
+	docker-compose run --rm openwrt-sdk scripts/feeds update -i -a
 
-define Package/mini-mwan/description
-  Lightweight multi-WAN management daemon with failover and load balancing.
-  Monitors WAN interface connectivity and manages routing based on interface status.
-  Can be configured via UCI or LuCI (install luci-app-mini-mwan for web interface).
-endef
+# Register feeds into build system (symlink packages)
+feeds-register:
+	@echo "=== Registering feeds (symlinking packages) ==="
+	docker-compose run --rm openwrt-sdk scripts/feeds install -a
 
-define Build/Compile
-endef
+# Open a shell in the build container
+shell:
+	docker-compose run --rm openwrt-sdk bash
 
-define Package/mini-mwan/conffiles
-/etc/config/mini-mwan
-endef
-
-define Package/mini-mwan/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) ./files/mini-mwan.lua $(1)/usr/bin/mini-mwan
-
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/mini-mwan.config $(1)/etc/config/mini-mwan
-
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/mini-mwan.init $(1)/etc/init.d/mini-mwan
-endef
-
-$(eval $(call BuildPackage,mini-mwan))
+# Show help
+help:
+	@echo "Mini-MWAN Build System"
+	@echo ""
+	@echo "This Makefile orchestrates docker-compose builds using official package structure."
+	@echo "For fast development iteration, use VS Code devcontainer (uses Makefile.devcontainer)."
+	@echo ""
+	@echo "Available targets:"
+	@echo "  all            - Fetch feeds, register, and build (default)"
+	@echo "  build          - Build both packages only (assumes feeds ready)"
+	@echo "  feeds-fetch    - Fetch/discover packages from feeds (using 'feeds update')"
+	@echo "  feeds-register - Register feeds into build system (using 'feeds install')"
+	@echo "  shell          - Open shell in build container for debugging"
+	@echo "  help           - Show this help message"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make           # Full build from scratch"
+	@echo "  make build     # Quick rebuild (feeds already set up)"

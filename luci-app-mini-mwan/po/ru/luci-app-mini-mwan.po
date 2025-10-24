@@ -1,0 +1,158 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: luci-app-mini-mwan\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language: ru\n"
+"Language-Team: Russian\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Add WAN Interface"
+msgstr ""
+
+msgid "Check Interval"
+msgstr ""
+
+msgid "How often to check WAN connectivity (seconds)"
+msgstr ""
+
+msgid "Check with: "
+msgstr ""
+
+msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
+msgstr ""
+
+msgid "Device"
+msgstr ""
+
+msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
+msgstr ""
+
+msgid "Enable"
+msgstr ""
+
+msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
+msgstr ""
+
+msgid "Enable or disable this WAN interface for monitoring"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "Failover (Primary/Backup)"
+msgstr ""
+
+msgid "Gateway"
+msgstr ""
+
+msgid "Global Settings"
+msgstr ""
+
+msgid "Interface"
+msgstr ""
+
+msgid "Interface Status"
+msgstr ""
+
+msgid "IP address to ping for connectivity check"
+msgstr ""
+
+msgid "Last Check"
+msgstr ""
+
+msgid "Latency"
+msgstr ""
+
+msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
+msgstr ""
+
+msgid "Metric"
+msgstr ""
+
+msgid "Mini Multi-WAN"
+msgstr ""
+
+msgid "Mini-MWAN Status"
+msgstr ""
+
+msgid "Mode"
+msgstr ""
+
+msgid "Multi-Uplink (Load Balancing)"
+msgstr ""
+
+msgid "Network interface device (e.g., wg0, wg1, eth1)"
+msgstr ""
+
+msgid "No status information available. Make sure the Mini-MWAN service is running."
+msgstr ""
+
+msgid "Number of ping attempts"
+msgstr ""
+
+msgid "Operating mode: failover (primary/backup) or multi-uplink (load balancing)"
+msgstr ""
+
+msgid "Ping Count"
+msgstr ""
+
+msgid "Ping Target"
+msgstr ""
+
+msgid "Ping target \"%s\" is already used by another interface"
+msgstr ""
+
+msgid "Ping timeout (seconds)"
+msgstr ""
+
+msgid "Real-time monitoring of WAN interface status"
+msgstr ""
+
+msgid "Route metric (lower = higher priority). Used in failover mode only."
+msgstr ""
+
+msgid "seconds"
+msgstr ""
+
+msgid "Service Information"
+msgstr ""
+
+msgid "Since"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Status updates automatically every 5 seconds"
+msgstr ""
+
+msgid "Timeout"
+msgstr ""
+
+msgid "Traffic (RX/TX)"
+msgstr ""
+
+msgid "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
+msgstr ""
+
+msgid "WAN Interfaces"
+msgstr ""
+
+msgid "WAN Interface"
+msgstr ""
+
+msgid "Weight"
+msgstr ""
+
+msgid "Mode:"
+msgstr ""
+
+msgid "Check Interval:"
+msgstr ""
+
+msgid "Last Update:"
+msgstr ""
