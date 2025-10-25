@@ -242,6 +242,7 @@ mini-mwan/  (repository = feed structure)
 ### Quick Build
 
 ```bash
+# prerequisites - see SETUP_LOCAL_REPOS.md
 # Clone the repository
 git clone https://github.com/alex-schwartzman/mini-mwan.git
 cd mini-mwan

@@ -22,22 +22,17 @@ This guide explains how to set up local OpenWRT repository clones for offline de
    git clone https://git.openwrt.org/feed/telephony.git
    ```
 
-3. **Checkout the correct branches/commits (optional but recommended):**
+3. **Checkout the correct branches/commits:**
    ```bash
-   cd ~/openwrt-repos/openwrt
-   git checkout openwrt-24.10
 
-   cd ~/openwrt-repos/packages
-   git checkout 201fd099b80a2931b7326ce20b0cbb824296c99f
+   Recommended: Use v24.10.4 (latest stable release)
 
-   cd ~/openwrt-repos/luci
-   git checkout 7b0663a5557118499dc3b3d44550efc1b6fa3feb
+  cd ~/openwrt-repos/openwrt && git checkout openwrt-24.10 && git pull
+  cd ~/openwrt-repos/packages && git checkout openwrt-24.10 && git pull
+  cd ~/openwrt-repos/luci && git checkout openwrt-24.10 && git pull
+  cd ~/openwrt-repos/routing && git checkout openwrt-24.10 && git pull
+  cd ~/openwrt-repos/telephony && git checkout openwrt-24.10 && git pull
 
-   cd ~/openwrt-repos/routing
-   git checkout e87b55c6a642947ad7e24cd5054a637df63d5dbe
-
-   cd ~/openwrt-repos/telephony
-   git checkout fd605af7143165a2490681ec1752f259873b9147
    ```
 
 ## Building with Local Repositories
