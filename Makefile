@@ -13,9 +13,13 @@ all: feeds-fetch feeds-register build
 build:
 	@echo "=== Building packages (official structure with luci.mk) ==="
 	docker-compose run --rm openwrt-sdk bash -c "\
+		mkdir -p /builder/package/feeds/packages/mini-mwan && \
+		mkdir -p /builder/package/feeds/luci/luci-app-mini-mwan && \
+		tar -cf - --exclude='Makefile.devcontainer' -C /builder/package/mini-mwan . | tar -xvf - -C /builder/package/feeds/packages/mini-mwan && \
+		tar -cf - --exclude='Makefile.devcontainer' -C /builder/package/luci-app-mini-mwan . | tar -xvf - -C /builder/package/feeds/luci/luci-app-mini-mwan && \
 		make defconfig && \
-		make package/feeds/packages/mini-mwan/compile && \
-		make package/feeds/luci/luci-app-mini-mwan/compile && \
+		make -j1 V=s package/feeds/packages/mini-mwan/compile && \
+		make -j1 V=s package/feeds/luci/luci-app-mini-mwan/compile && \
 		echo '' && \
 		echo '=== Packages Built ===' && \
 		find bin/packages -name 'mini-mwan*.ipk' -o -name 'luci-app-mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
