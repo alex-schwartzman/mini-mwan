@@ -13,149 +13,32 @@ msgstr ""
 msgid "Add WAN Interface"
 msgstr "Add WAN Interface"
 
-msgid "Check Interval"
-msgstr "Check Interval"
-
-msgid "How often to check WAN connectivity (seconds)"
-msgstr "How often to check WAN connectivity (seconds)"
-
-msgid "Check with: "
-msgstr "Check with: "
-
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
 msgstr "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-
-msgid "Device"
-msgstr "Device"
 
 msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
 msgstr "Duplicate device \"%s\" found. Each interface must use a unique device."
 
-msgid "Enable"
-msgstr "Enable"
-
-msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
-msgstr "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
-
 msgid "config.interface.enabled.description"
 msgstr "Use this WAN interface for routing"
-
-msgid "Enabled"
-msgstr "Enabled"
-
-msgid "Failover (Primary/Backup)"
-msgstr "Failover (Primary/Backup)"
-
-msgid "Gateway"
-msgstr "Gateway"
 
 msgid "Global Settings"
 msgstr "Global Settings"
 
-msgid "Interface"
-msgstr "Interface"
-
-msgid "Interface Status"
-msgstr "Interface Status"
-
-msgid "IP address to ping for connectivity check"
-msgstr "IP address to ping for connectivity check"
-
-msgid "Last Check"
-msgstr "Last Check"
-
-msgid "Latency"
-msgstr "Latency"
-
 msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
 msgstr "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-
-msgid "Metric"
-msgstr "Metric"
 
 msgid "Mini Multi-WAN"
 msgstr "Mini Multi-WAN"
 
-msgid "Mini-MWAN Status"
-msgstr "Mini-MWAN Status"
-
-msgid "Mode"
-msgstr "Mode"
-
-msgid "Multi-Uplink (Load Balancing)"
-msgstr "Multi-Uplink (Load Balancing)"
-
-msgid "Network interface device (e.g., wg0, wg1, eth1)"
-msgstr "Network interface device (e.g., wg0, wg1, eth1)"
-
-msgid "No status information available. Make sure the Mini-MWAN service is running."
-msgstr "No status information available. Make sure the Mini-MWAN service is running."
-
-msgid "Number of ping attempts"
-msgstr "Number of ping attempts"
-
-msgid "Operating mode: failover (primary/backup) or multi-uplink (load balancing)"
-msgstr "Operating mode: failover (primary/backup) or multi-uplink (load balancing)"
-
-msgid "Ping Count"
-msgstr "Ping Count"
-
-msgid "Ping Target"
-msgstr "Ping Target"
-
 msgid "Ping target \"%s\" is already used by another interface"
 msgstr "Ping target \"%s\" is already used by another interface"
-
-msgid "Ping timeout (seconds)"
-msgstr "Ping timeout (seconds)"
-
-msgid "Real-time monitoring of WAN interface status"
-msgstr "Real-time monitoring of WAN interface status"
-
-msgid "Route metric (lower = higher priority). Used in failover mode only."
-msgstr "Route metric (lower = higher priority). Used in failover mode only."
-
-msgid "seconds"
-msgstr "seconds"
-
-msgid "Service Information"
-msgstr "Service Information"
-
-msgid "Since"
-msgstr "Since"
-
-msgid "Status"
-msgstr "Status"
-
-msgid "Status updates automatically every 5 seconds"
-msgstr "Status updates automatically every 5 seconds"
-
-msgid "Timeout"
-msgstr "Timeout"
-
-msgid "Traffic (RX/TX)"
-msgstr "Traffic (RX/TX)"
-
-msgid "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
-msgstr "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
 
 msgid "WAN Interfaces"
 msgstr "WAN Interfaces"
 
 msgid "WAN Interface"
 msgstr "WAN Interface"
-
-msgid "Weight"
-msgstr "Weight"
-
-msgid "Mode:"
-msgstr "Mode:"
-
-msgid "Check Interval:"
-msgstr "Check Interval:"
-
-msgid "Last Update:"
-msgstr "Last Update:"
 
 # LuCI UI Strings
 msgid "luci.none"
@@ -176,8 +59,60 @@ msgstr "GB"
 msgid "luci.terabytes"
 msgstr "TB"
 
-msgid "None"
-msgstr "None"
+msgid "luci.seconds"
+msgstr "seconds"
+
+# LuCI Status Page
+msgid "luci.status.page.title"
+msgstr "Mini-MWAN Status"
+
+msgid "luci.status.page.description"
+msgstr "Real-time monitoring of WAN interface status"
+
+msgid "luci.status.no.information"
+msgstr "No status information available. Make sure the Mini-MWAN service is running."
+
+msgid "luci.status.check.with"
+msgstr "Check with: "
+
+msgid "luci.status.service.information"
+msgstr "Service Information"
+
+msgid "luci.status.mode"
+msgstr "Mode:"
+
+msgid "luci.status.check.interval"
+msgstr "Check Interval:"
+
+msgid "luci.status.timestamp"
+msgstr "Last Update:"
+
+msgid "luci.status.interface.status.section"
+msgstr "Interface Status"
+
+msgid "luci.status.interface"
+msgstr "Interface"
+
+msgid "luci.status.status"
+msgstr "Status"
+
+msgid "luci.status.status.since"
+msgstr "Since"
+
+msgid "luci.status.latency"
+msgstr "Latency"
+
+msgid "luci.status.rx.tx.bytes"
+msgstr "Traffic (RX/TX)"
+
+msgid "luci.status.gateway"
+msgstr "Gateway"
+
+msgid "luci.status.last.check"
+msgstr "Last Check"
+
+msgid "luci.status.auto.refresh"
+msgstr "Status updates automatically every 5 seconds"
 
 # Configuration: Global Settings
 msgid "config.settings.enabled.name"

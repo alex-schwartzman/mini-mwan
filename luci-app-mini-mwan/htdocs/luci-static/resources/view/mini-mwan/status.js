@@ -119,35 +119,35 @@ return view.extend({
 		var status = this.parseStatus(data);
 
 		var html = E('div', { 'class': 'cbi-map' }, [
-			E('h2', {}, _('Mini-MWAN Status')),
+			E('h2', {}, _('luci.status.page.title')),
 			E('div', { 'class': 'cbi-section' }, [
 				E('div', { 'class': 'cbi-section-descr' },
-					_('Real-time monitoring of WAN interface status'))
+					_('luci.status.page.description'))
 			])
 		]);
 
 		if (!status || status.interfaces.length === 0) {
 			html.appendChild(E('div', { 'class': 'alert-message warning' }, [
-				E('p', {}, _('No status information available. Make sure the Mini-MWAN service is running.')),
-				E('p', {}, _('Check with: ') + E('code', {}, '/etc/init.d/mini-mwan status'))
+				E('p', {}, _('luci.status.no.information')),
+				E('p', {}, _('luci.status.check.with') + E('code', {}, '/etc/init.d/mini-mwan status'))
 			]));
 			return html;
 		}
 
 		// Global info
 		var globalInfo = E('div', { 'class': 'cbi-section' }, [
-			E('h3', {}, _('Service Information')),
+			E('h3', {}, _('luci.status.service.information')),
 			E('table', { 'class': 'table' }, [
 				E('tr', {}, [
-					E('td', { 'style': 'width: 33%' }, E('strong', {}, _('Mode:'))),
-					E('td', {}, status.mode === 'failover' ? _('Failover (Primary/Backup)') : _('Multi-Uplink (Load Balancing)'))
+					E('td', { 'style': 'width: 33%' }, E('strong', {}, _('luci.status.mode'))),
+					E('td', {}, status.mode === 'failover' ? _('config.settings.mode.failover') : _('config.settings.mode.multiuplink'))
 				]),
 				E('tr', {}, [
-					E('td', {}, E('strong', {}, _('Check Interval:'))),
-					E('td', {}, status.check_interval + ' ' + _('seconds'))
+					E('td', {}, E('strong', {}, _('luci.status.check.interval'))),
+					E('td', {}, status.check_interval + ' ' + _('luci.seconds'))
 				]),
 				E('tr', {}, [
-					E('td', {}, E('strong', {}, _('Last Update:'))),
+					E('td', {}, E('strong', {}, _('luci.status.timestamp'))),
 					E('td', {}, this.formatTimestamp(status.timestamp))
 				])
 			])
@@ -157,15 +157,15 @@ return view.extend({
 		// Interface status table
 		var table = E('table', { 'class': 'table cbi-section-table' }, [
 			E('tr', { 'class': 'tr table-titles' }, [
-				E('th', { 'class': 'th' }, _('Interface')),
-				E('th', { 'class': 'th' }, _('Device')),
-				E('th', { 'class': 'th' }, _('Status')),
-				E('th', { 'class': 'th' }, _('Since')),
-				E('th', { 'class': 'th' }, _('Latency')),
-				E('th', { 'class': 'th' }, _('Traffic (RX/TX)')),
-				E('th', { 'class': 'th' }, _('Ping Target')),
-				E('th', { 'class': 'th' }, _('Gateway')),
-				E('th', { 'class': 'th' }, _('Last Check'))
+				E('th', { 'class': 'th' }, _('luci.status.interface')),
+				E('th', { 'class': 'th' }, _('config.interface.device.name')),
+				E('th', { 'class': 'th' }, _('luci.status.status')),
+				E('th', { 'class': 'th' }, _('luci.status.status.since')),
+				E('th', { 'class': 'th' }, _('luci.status.latency')),
+				E('th', { 'class': 'th' }, _('luci.status.rx.tx.bytes')),
+				E('th', { 'class': 'th' }, _('config.interface.ping_target.name')),
+				E('th', { 'class': 'th' }, _('luci.status.gateway')),
+				E('th', { 'class': 'th' }, _('luci.status.last.check'))
 			])
 		]);
 
@@ -190,14 +190,14 @@ return view.extend({
 		}
 
 		var interfaceSection = E('div', { 'class': 'cbi-section' }, [
-			E('h3', {}, _('Interface Status')),
+			E('h3', {}, _('luci.status.interface.status.section')),
 			table
 		]);
 		html.appendChild(interfaceSection);
 
 		// Auto-refresh notice
 		html.appendChild(E('div', { 'class': 'cbi-section' }, [
-			E('em', {}, _('Status updates automatically every 5 seconds'))
+			E('em', {}, _('luci.status.auto.refresh'))
 		]));
 
 		return html;
