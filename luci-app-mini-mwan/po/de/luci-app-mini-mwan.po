@@ -16,9 +16,6 @@ msgstr "WAN-Schnittstelle hinzufügen"
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
 msgstr "WAN-Schnittstellen für Multi-WAN-Verwaltung konfigurieren. Typischerweise WireGuard-Tunnel (wg0, wg1, usw.)."
 
-msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
-msgstr "Doppeltes Gerät \"%s\" gefunden. Jede Schnittstelle muss ein eindeutiges Gerät verwenden."
-
 msgid "config.interface.enabled.description"
 msgstr "Diese WAN-Schnittstelle für Routing verwenden"
 
@@ -31,14 +28,18 @@ msgstr "Leichtgewichtige Multi-WAN-Verwaltung für WireGuard-VPN-Tunnel mit Fail
 msgid "Mini Multi-WAN"
 msgstr "Mini Multi-WAN"
 
-msgid "Ping target \"%s\" is already used by another interface"
-msgstr "Ping-Ziel \"%s\" wird bereits von einer anderen Schnittstelle verwendet"
-
 msgid "WAN Interfaces"
 msgstr "WAN-Schnittstellen"
 
 msgid "WAN Interface"
 msgstr "WAN-Schnittstelle"
+
+# LuCI Error Messages
+msgid "luci.errors.duplicate.device"
+msgstr "Doppeltes Gerät "%s" gefunden. Jede Schnittstelle muss ein eindeutiges Gerät verwenden."
+
+msgid "luci.errors.duplicate.ping.target"
+msgstr "Ping-Ziel "%s" wird bereits von einer anderen Schnittstelle verwendet"
 
 # LuCI UI Strings
 msgid "luci.none"

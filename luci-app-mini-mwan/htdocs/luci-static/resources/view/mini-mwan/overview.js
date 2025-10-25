@@ -63,7 +63,7 @@ return view.extend({
 			var seen = {};
 			for (var i = 0; i < device.length; i++) {
 				if (device[i] && seen[device[i]]) {
-					return _('Duplicate device "%s" found. Each interface must use a unique device.').format(device[i]);
+					return _('luci.errors.duplicate.device').format(device[i]);
 				}
 				if (device[i]) seen[device[i]] = true;
 			}
@@ -107,7 +107,7 @@ return view.extend({
 			for (var i = 0; i < sections.length; i++) {
 				if (sections[i]['.name'] !== section_id &&
 				    sections[i].ping_target === value) {
-					return _('Ping target "%s" is already used by another interface').format(value);
+					return _('luci.errors.duplicate.ping.target').format(value);
 				}
 			}
 			return true;

@@ -16,9 +16,6 @@ msgstr "Ajouter une interface WAN"
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
 msgstr "Configurer les interfaces WAN pour la gestion multi-WAN. Typiquement des tunnels WireGuard (wg0, wg1, etc)."
 
-msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
-msgstr "Périphérique dupliqué \"%s\" trouvé. Chaque interface doit utiliser un périphérique unique."
-
 msgid "config.interface.enabled.description"
 msgstr "Utiliser cette interface WAN pour le routage"
 
@@ -31,14 +28,18 @@ msgstr "Gestion légère multi-WAN pour les tunnels VPN WireGuard avec support d
 msgid "Mini Multi-WAN"
 msgstr "Mini Multi-WAN"
 
-msgid "Ping target \"%s\" is already used by another interface"
-msgstr "La cible de ping \"%s\" est déjà utilisée par une autre interface"
-
 msgid "WAN Interfaces"
 msgstr "Interfaces WAN"
 
 msgid "WAN Interface"
 msgstr "Interface WAN"
+
+# LuCI Error Messages
+msgid "luci.errors.duplicate.device"
+msgstr "Périphérique dupliqué "%s" trouvé. Chaque interface doit utiliser un périphérique unique."
+
+msgid "luci.errors.duplicate.ping.target"
+msgstr "La cible de ping "%s" est déjà utilisée par une autre interface"
 
 # LuCI UI Strings
 msgid "luci.none"

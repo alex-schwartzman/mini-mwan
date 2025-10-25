@@ -16,9 +16,6 @@ msgstr "Přidat WAN rozhraní"
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
 msgstr "Nastavení WAN rozhraní pro správu více WAN. Obvykle tunely WireGuard (wg0, wg1, atd.)."
 
-msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
-msgstr "Bylo nalezeno duplicitní zařízení \"%s\". Každé rozhraní musí používat jedinečné zařízení."
-
 msgid "config.interface.enabled.description"
 msgstr "Použít toto WAN rozhraní pro směrování"
 
@@ -31,14 +28,18 @@ msgstr "Lehká správa více WAN pro tunely WireGuard VPN s podporou záložníh
 msgid "Mini Multi-WAN"
 msgstr "Mini Multi-WAN"
 
-msgid "Ping target \"%s\" is already used by another interface"
-msgstr "Cíl ping \"%s\" je již používán jiným rozhraním"
-
 msgid "WAN Interfaces"
 msgstr "WAN rozhraní"
 
 msgid "WAN Interface"
 msgstr "WAN rozhraní"
+
+# LuCI Error Messages
+msgid "luci.errors.duplicate.device"
+msgstr "Bylo nalezeno duplicitní zařízení \"%s\". Každé rozhraní musí používat jedinečné zařízení."
+
+msgid "luci.errors.duplicate.ping.target"
+msgstr "Cíl ping \"%s\" je již používán jiným rozhraním"
 
 # LuCI UI Strings
 msgid "luci.none"

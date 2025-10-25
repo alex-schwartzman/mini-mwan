@@ -21,12 +21,6 @@ msgstr ""
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
 msgstr ""
 
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:161
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:79
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:66
-msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
-msgstr ""
-
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:23
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:24
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:73
@@ -55,21 +49,6 @@ msgstr ""
 msgid "Mini Multi-WAN"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:122
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:28
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:143
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:31
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:80
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:131
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:116
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:29
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:116
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:96
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:166
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:110
-msgid "Ping target \"%s\" is already used by another interface"
-msgstr ""
-
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:124
 #: htdocs/luci-static/resources/view/mini-mwan/status.js:125
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:85
@@ -87,6 +66,13 @@ msgstr ""
 
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:51
 msgid "WAN Interface"
+msgstr ""
+
+# LuCI Error Messages
+msgid "luci.errors.duplicate.device"
+msgstr ""
+
+msgid "luci.errors.duplicate.ping.target"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:90
