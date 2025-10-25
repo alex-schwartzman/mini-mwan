@@ -86,9 +86,9 @@ return view.extend({
 	},
 
 	formatBytes: function(bytes) {
-		if (!bytes || bytes === 0) return _('None');
+		if (!bytes || bytes === 0) return _('luci.none');
 
-		var units = [_('B'), _('KB'), _('MB'), _('GB'), _('TB')];
+		var units = [_('luci.bytes'), _('luci.kilobytes'), _('luci.megabytes'), _('luci.gigabytes'), _('luci.terabytes')];
 		var k = 1024;
 		var i = Math.floor(Math.log(bytes) / Math.log(k));
 

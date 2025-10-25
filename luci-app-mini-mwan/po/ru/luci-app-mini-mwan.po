@@ -157,6 +157,25 @@ msgstr "Интервал проверки:"
 msgid "Last Update:"
 msgstr "Последнее обновление:"
 
+# LuCI UI Strings
+msgid "luci.none"
+msgstr "Пусто"
+
+msgid "luci.bytes"
+msgstr "Б"
+
+msgid "luci.kilobytes"
+msgstr "КБ"
+
+msgid "luci.megabytes"
+msgstr "МБ"
+
+msgid "luci.gigabytes"
+msgstr "ГБ"
+
+msgid "luci.terabytes"
+msgstr "ТБ"
+
 msgid "None"
 msgstr "Нет"
 
@@ -224,18 +243,3 @@ msgstr "Таймаут"
 
 msgid "config.interface.ping_timeout.description"
 msgstr "Таймаут ping (в секундах)"
-
-msgid "B"
-msgstr "Б"
-
-msgid "KB"
-msgstr "КБ"
-
-msgid "MB"
-msgstr "МБ"
-
-msgid "GB"
-msgstr "ГБ"
-
-msgid "TB"
-msgstr "ТБ"

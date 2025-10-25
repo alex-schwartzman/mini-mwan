@@ -157,6 +157,25 @@ msgstr "Interval ověřování:"
 msgid "Last Update:"
 msgstr "Poslední aktualizace:"
 
+# LuCI UI Strings
+msgid "luci.none"
+msgstr "Žádné"
+
+msgid "luci.bytes"
+msgstr "B"
+
+msgid "luci.kilobytes"
+msgstr "KB"
+
+msgid "luci.megabytes"
+msgstr "MB"
+
+msgid "luci.gigabytes"
+msgstr "GB"
+
+msgid "luci.terabytes"
+msgstr "TB"
+
 msgid "None"
 msgstr "Žádné"
 
@@ -224,18 +243,3 @@ msgstr "Časový limit"
 
 msgid "config.interface.ping_timeout.description"
 msgstr "Časový limit ping (sekundy)"
-
-msgid "B"
-msgstr "B"
-
-msgid "KB"
-msgstr "KB"
-
-msgid "MB"
-msgstr "MB"
-
-msgid "GB"
-msgstr "GB"
-
-msgid "TB"
-msgstr "TB"

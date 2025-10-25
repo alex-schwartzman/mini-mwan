@@ -157,6 +157,25 @@ msgstr "Intervalo de verificación:"
 msgid "Last Update:"
 msgstr "Última actualización:"
 
+# LuCI UI Strings
+msgid "luci.none"
+msgstr "Ninguno"
+
+msgid "luci.bytes"
+msgstr "B"
+
+msgid "luci.kilobytes"
+msgstr "KB"
+
+msgid "luci.megabytes"
+msgstr "MB"
+
+msgid "luci.gigabytes"
+msgstr "GB"
+
+msgid "luci.terabytes"
+msgstr "TB"
+
 msgid "None"
 msgstr "Ninguno"
 
@@ -224,18 +243,3 @@ msgstr "Tiempo de espera"
 
 msgid "config.interface.ping_timeout.description"
 msgstr "Tiempo de espera de ping (segundos)"
-
-msgid "B"
-msgstr "B"
-
-msgid "KB"
-msgstr "KB"
-
-msgid "MB"
-msgstr "MB"
-
-msgid "GB"
-msgstr "GB"
-
-msgid "TB"
-msgstr "TB"
