@@ -17,3 +17,4 @@ PKG_LICENSE:=GPL-2.0
 include ../../luci.mk
 
 # vi: set noexpandtab tabstop=4 shiftwidth=4 :
+# call BuildPackage - OpenWrt buildroot signature
