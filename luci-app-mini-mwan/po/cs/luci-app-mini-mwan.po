@@ -11,148 +11,166 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
 msgid "Add WAN Interface"
-msgstr ""
+msgstr "Přidat WAN rozhraní"
 
 msgid "Check Interval"
-msgstr ""
+msgstr "Interval kontroly"
 
 msgid "How often to check WAN connectivity (seconds)"
-msgstr ""
+msgstr "Jak často kontrolovat připojení WAN (sekundy)"
 
 msgid "Check with: "
-msgstr ""
+msgstr "Zkontrolujte pomocí: "
 
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr ""
+msgstr "Konfigurace WAN rozhraní pro správu více WAN. Obvykle tunely WireGuard (wg0, wg1, atd.)."
 
 msgid "Device"
-msgstr ""
+msgstr "Zařízení"
 
 msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
-msgstr ""
+msgstr "Bylo nalezeno duplicitní zařízení \"%s\". Každé rozhraní musí používat jedinečné zařízení."
 
 msgid "Enable"
-msgstr ""
+msgstr "Povolit"
 
 msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
-msgstr ""
+msgstr "Povolit službu Mini Multi-WAN. Musí být nakonfigurována alespoň dvě WAN rozhraní."
 
 msgid "Enable or disable this WAN interface for monitoring"
-msgstr ""
+msgstr "Povolit nebo zakázat toto WAN rozhraní pro monitorování"
 
 msgid "Enabled"
-msgstr ""
+msgstr "Povoleno"
 
 msgid "Failover (Primary/Backup)"
-msgstr ""
+msgstr "Záložní režim (Primární/Záložní)"
 
 msgid "Gateway"
-msgstr ""
+msgstr "Brána"
 
 msgid "Global Settings"
-msgstr ""
+msgstr "Globální nastavení"
 
 msgid "Interface"
-msgstr ""
+msgstr "Rozhraní"
 
 msgid "Interface Status"
-msgstr ""
+msgstr "Stav rozhraní"
 
 msgid "IP address to ping for connectivity check"
-msgstr ""
+msgstr "IP adresa pro kontrolu připojení pomocí ping"
 
 msgid "Last Check"
-msgstr ""
+msgstr "Poslední kontrola"
 
 msgid "Latency"
-msgstr ""
+msgstr "Latence"
 
 msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr ""
+msgstr "Lehká správa více WAN pro tunely WireGuard VPN s podporou záložního režimu a vyvážení zátěže."
 
 msgid "Metric"
-msgstr ""
+msgstr "Metrika"
 
 msgid "Mini Multi-WAN"
-msgstr ""
+msgstr "Mini Multi-WAN"
 
 msgid "Mini-MWAN Status"
-msgstr ""
+msgstr "Stav Mini-MWAN"
 
 msgid "Mode"
-msgstr ""
+msgstr "Režim"
 
 msgid "Multi-Uplink (Load Balancing)"
-msgstr ""
+msgstr "Více připojení (Vyvážení zátěže)"
 
 msgid "Network interface device (e.g., wg0, wg1, eth1)"
-msgstr ""
+msgstr "Síťové zařízení rozhraní (např. wg0, wg1, eth1)"
 
 msgid "No status information available. Make sure the Mini-MWAN service is running."
-msgstr ""
+msgstr "Nejsou k dispozici žádné stavové informace. Ujistěte se, že služba Mini-MWAN běží."
 
 msgid "Number of ping attempts"
-msgstr ""
+msgstr "Počet pokusů ping"
 
 msgid "Operating mode: failover (primary/backup) or multi-uplink (load balancing)"
-msgstr ""
+msgstr "Provozní režim: záložní (primární/záložní) nebo více připojení (vyvážení zátěže)"
 
 msgid "Ping Count"
-msgstr ""
+msgstr "Počet pingů"
 
 msgid "Ping Target"
-msgstr ""
+msgstr "Cíl ping"
 
 msgid "Ping target \"%s\" is already used by another interface"
-msgstr ""
+msgstr "Cíl ping \"%s\" je již používán jiným rozhraním"
 
 msgid "Ping timeout (seconds)"
-msgstr ""
+msgstr "Časový limit ping (sekundy)"
 
 msgid "Real-time monitoring of WAN interface status"
-msgstr ""
+msgstr "Monitorování stavu WAN rozhraní v reálném čase"
 
 msgid "Route metric (lower = higher priority). Used in failover mode only."
-msgstr ""
+msgstr "Metrika trasy (nižší = vyšší priorita). Používá se pouze v záložním režimu."
 
 msgid "seconds"
-msgstr ""
+msgstr "sekundy"
 
 msgid "Service Information"
-msgstr ""
+msgstr "Informace o službě"
 
 msgid "Since"
-msgstr ""
+msgstr "Od"
 
 msgid "Status"
-msgstr ""
+msgstr "Stav"
 
 msgid "Status updates automatically every 5 seconds"
-msgstr ""
+msgstr "Stav se automaticky aktualizuje každých 5 sekund"
 
 msgid "Timeout"
-msgstr ""
+msgstr "Časový limit"
 
 msgid "Traffic (RX/TX)"
-msgstr ""
+msgstr "Provoz (RX/TX)"
 
 msgid "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
-msgstr ""
+msgstr "Váha distribuce provozu pro režim více připojení. Používá se pouze v režimu více připojení."
 
 msgid "WAN Interfaces"
-msgstr ""
+msgstr "WAN rozhraní"
 
 msgid "WAN Interface"
-msgstr ""
+msgstr "WAN rozhraní"
 
 msgid "Weight"
-msgstr ""
+msgstr "Váha"
 
 msgid "Mode:"
-msgstr ""
+msgstr "Režim:"
 
 msgid "Check Interval:"
-msgstr ""
+msgstr "Interval kontroly:"
 
 msgid "Last Update:"
-msgstr ""
+msgstr "Poslední aktualizace:"
+
+msgid "None"
+msgstr "Žádné"
+
+msgid "B"
+msgstr "B"
+
+msgid "KB"
+msgstr "KB"
+
+msgid "MB"
+msgstr "MB"
+
+msgid "GB"
+msgstr "GB"
+
+msgid "TB"
+msgstr "TB"

@@ -11,148 +11,166 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 msgid "Add WAN Interface"
-msgstr ""
+msgstr "Ajouter une interface WAN"
 
 msgid "Check Interval"
-msgstr ""
+msgstr "Intervalle de vérification"
 
 msgid "How often to check WAN connectivity (seconds)"
-msgstr ""
+msgstr "Fréquence de vérification de la connectivité WAN (secondes)"
 
 msgid "Check with: "
-msgstr ""
+msgstr "Vérifier avec : "
 
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr ""
+msgstr "Configurer les interfaces WAN pour la gestion multi-WAN. Typiquement des tunnels WireGuard (wg0, wg1, etc)."
 
 msgid "Device"
-msgstr ""
+msgstr "Périphérique"
 
 msgid "Duplicate device \"%s\" found. Each interface must use a unique device."
-msgstr ""
+msgstr "Périphérique dupliqué \"%s\" trouvé. Chaque interface doit utiliser un périphérique unique."
 
 msgid "Enable"
-msgstr ""
+msgstr "Activer"
 
 msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
-msgstr ""
+msgstr "Activer le service Mini Multi-WAN. Au moins deux interfaces WAN doivent être configurées."
 
 msgid "Enable or disable this WAN interface for monitoring"
-msgstr ""
+msgstr "Activer ou désactiver cette interface WAN pour la surveillance"
 
 msgid "Enabled"
-msgstr ""
+msgstr "Activé"
 
 msgid "Failover (Primary/Backup)"
-msgstr ""
+msgstr "Basculement (Principal/Secours)"
 
 msgid "Gateway"
-msgstr ""
+msgstr "Passerelle"
 
 msgid "Global Settings"
-msgstr ""
+msgstr "Paramètres globaux"
 
 msgid "Interface"
-msgstr ""
+msgstr "Interface"
 
 msgid "Interface Status"
-msgstr ""
+msgstr "État de l'interface"
 
 msgid "IP address to ping for connectivity check"
-msgstr ""
+msgstr "Adresse IP à pinguer pour vérifier la connectivité"
 
 msgid "Last Check"
-msgstr ""
+msgstr "Dernière vérification"
 
 msgid "Latency"
-msgstr ""
+msgstr "Latence"
 
 msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr ""
+msgstr "Gestion légère multi-WAN pour les tunnels VPN WireGuard avec support de basculement et d'équilibrage de charge."
 
 msgid "Metric"
-msgstr ""
+msgstr "Métrique"
 
 msgid "Mini Multi-WAN"
-msgstr ""
+msgstr "Mini Multi-WAN"
 
 msgid "Mini-MWAN Status"
-msgstr ""
+msgstr "État de Mini-MWAN"
 
 msgid "Mode"
-msgstr ""
+msgstr "Mode"
 
 msgid "Multi-Uplink (Load Balancing)"
-msgstr ""
+msgstr "Multi-Liaison (Équilibrage de charge)"
 
 msgid "Network interface device (e.g., wg0, wg1, eth1)"
-msgstr ""
+msgstr "Périphérique d'interface réseau (ex. wg0, wg1, eth1)"
 
 msgid "No status information available. Make sure the Mini-MWAN service is running."
-msgstr ""
+msgstr "Aucune information d'état disponible. Assurez-vous que le service Mini-MWAN est en cours d'exécution."
 
 msgid "Number of ping attempts"
-msgstr ""
+msgstr "Nombre de tentatives de ping"
 
 msgid "Operating mode: failover (primary/backup) or multi-uplink (load balancing)"
-msgstr ""
+msgstr "Mode de fonctionnement : basculement (principal/secours) ou multi-liaison (équilibrage de charge)"
 
 msgid "Ping Count"
-msgstr ""
+msgstr "Nombre de pings"
 
 msgid "Ping Target"
-msgstr ""
+msgstr "Cible de ping"
 
 msgid "Ping target \"%s\" is already used by another interface"
-msgstr ""
+msgstr "La cible de ping \"%s\" est déjà utilisée par une autre interface"
 
 msgid "Ping timeout (seconds)"
-msgstr ""
+msgstr "Délai d'attente du ping (secondes)"
 
 msgid "Real-time monitoring of WAN interface status"
-msgstr ""
+msgstr "Surveillance en temps réel de l'état des interfaces WAN"
 
 msgid "Route metric (lower = higher priority). Used in failover mode only."
-msgstr ""
+msgstr "Métrique de route (plus bas = priorité plus élevée). Utilisée uniquement en mode basculement."
 
 msgid "seconds"
-msgstr ""
+msgstr "secondes"
 
 msgid "Service Information"
-msgstr ""
+msgstr "Informations sur le service"
 
 msgid "Since"
-msgstr ""
+msgstr "Depuis"
 
 msgid "Status"
-msgstr ""
+msgstr "État"
 
 msgid "Status updates automatically every 5 seconds"
-msgstr ""
+msgstr "L'état se met à jour automatiquement toutes les 5 secondes"
 
 msgid "Timeout"
-msgstr ""
+msgstr "Délai d'attente"
 
 msgid "Traffic (RX/TX)"
-msgstr ""
+msgstr "Trafic (RX/TX)"
 
 msgid "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
-msgstr ""
+msgstr "Poids de distribution du trafic pour le mode multi-liaison. Utilisé uniquement en mode multi-liaison."
 
 msgid "WAN Interfaces"
-msgstr ""
+msgstr "Interfaces WAN"
 
 msgid "WAN Interface"
-msgstr ""
+msgstr "Interface WAN"
 
 msgid "Weight"
-msgstr ""
+msgstr "Poids"
 
 msgid "Mode:"
-msgstr ""
+msgstr "Mode :"
 
 msgid "Check Interval:"
-msgstr ""
+msgstr "Intervalle de vérification :"
 
 msgid "Last Update:"
-msgstr ""
+msgstr "Dernière mise à jour :"
+
+msgid "None"
+msgstr "Aucun"
+
+msgid "B"
+msgstr "o"
+
+msgid "KB"
+msgstr "Ko"
+
+msgid "MB"
+msgstr "Mo"
+
+msgid "GB"
+msgstr "Go"
+
+msgid "TB"
+msgstr "To"

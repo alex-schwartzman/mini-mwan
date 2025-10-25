@@ -14,6 +14,8 @@ load_config() {
 }
 
 start_service() {
+    rm -f /var/run/mini-mwan.status
+
     load_config
 
     if [ "$ENABLED" = "1" ]; then

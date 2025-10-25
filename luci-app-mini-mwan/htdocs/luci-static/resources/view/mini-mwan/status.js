@@ -86,9 +86,9 @@ return view.extend({
 	},
 
 	formatBytes: function(bytes) {
-		if (!bytes || bytes === 0) return '0 B';
+		if (!bytes || bytes === 0) return _('None');
 
-		var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+		var units = [_('B'), _('KB'), _('MB'), _('GB'), _('TB')];
 		var k = 1024;
 		var i = Math.floor(Math.log(bytes) / Math.log(k));
 

@@ -15,7 +15,7 @@ build:
 	docker-compose run --rm openwrt-sdk bash -c "\
 		make defconfig && \
 		make package/feeds/packages/mini-mwan/compile && \
-		make package/luci-app-mini-mwan/compile && \
+		make package/feeds/luci/luci-app-mini-mwan/compile && \
 		echo '' && \
 		echo '=== Packages Built ===' && \
 		find bin/packages -name 'mini-mwan*.ipk' -o -name 'luci-app-mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
