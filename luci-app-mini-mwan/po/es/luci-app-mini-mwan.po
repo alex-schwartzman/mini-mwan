@@ -160,6 +160,71 @@ msgstr "Última actualización:"
 msgid "None"
 msgstr "Ninguno"
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr "Activar"
+
+msgid "config.settings.enabled.description"
+msgstr "Activar servicio Mini Multi-WAN. Se deben configurar al menos dos interfaces WAN."
+
+msgid "config.settings.mode.name"
+msgstr "Modo"
+
+msgid "config.settings.mode.description"
+msgstr "Modo de operación: conmutación por error (principal/respaldo) o múltiples enlaces (balanceo de carga)"
+
+msgid "config.settings.mode.failover"
+msgstr "Conmutación por error (Principal/Respaldo)"
+
+msgid "config.settings.mode.multiuplink"
+msgstr "Múltiples enlaces (Balanceo de carga)"
+
+msgid "config.settings.check_interval.name"
+msgstr "Intervalo de verificación"
+
+msgid "config.settings.check_interval.description"
+msgstr "Frecuencia de verificación de conectividad WAN (segundos)"
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr "Activado"
+
+msgid "config.interface.device.name"
+msgstr "Dispositivo"
+
+msgid "config.interface.device.description"
+msgstr "Dispositivo de interfaz de red (ej. wg0, wg1, eth1)"
+
+msgid "config.interface.metric.name"
+msgstr "Métrica"
+
+msgid "config.interface.metric.description"
+msgstr "Métrica de ruta (menor = mayor prioridad). Usado solo en modo de conmutación por error."
+
+msgid "config.interface.weight.name"
+msgstr "Peso"
+
+msgid "config.interface.weight.description"
+msgstr "Peso de distribución de tráfico para modo de múltiples enlaces. Usado solo en modo de múltiples enlaces."
+
+msgid "config.interface.ping_target.name"
+msgstr "Objetivo de ping"
+
+msgid "config.interface.ping_target.description"
+msgstr "Dirección IP para verificar conectividad mediante ping"
+
+msgid "config.interface.ping_count.name"
+msgstr "Cantidad de pings"
+
+msgid "config.interface.ping_count.description"
+msgstr "Número de intentos de ping"
+
+msgid "config.interface.ping_timeout.name"
+msgstr "Tiempo de espera"
+
+msgid "config.interface.ping_timeout.description"
+msgstr "Tiempo de espera de ping (segundos)"
+
 msgid "B"
 msgstr "B"
 

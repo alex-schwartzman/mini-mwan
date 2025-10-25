@@ -160,6 +160,71 @@ msgstr "Last Update:"
 msgid "None"
 msgstr "None"
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr "Enable"
+
+msgid "config.settings.enabled.description"
+msgstr "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
+
+msgid "config.settings.mode.name"
+msgstr "Mode"
+
+msgid "config.settings.mode.description"
+msgstr "Operating mode: failover (primary/backup) or multi-uplink (load balancing)"
+
+msgid "config.settings.mode.failover"
+msgstr "Failover (Primary/Backup)"
+
+msgid "config.settings.mode.multiuplink"
+msgstr "Multi-Uplink (Load Balancing)"
+
+msgid "config.settings.check_interval.name"
+msgstr "Check Interval"
+
+msgid "config.settings.check_interval.description"
+msgstr "How often to check WAN connectivity (seconds)"
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr "Enabled"
+
+msgid "config.interface.device.name"
+msgstr "Device"
+
+msgid "config.interface.device.description"
+msgstr "Network interface device (e.g., wg0, wg1, eth1)"
+
+msgid "config.interface.metric.name"
+msgstr "Metric"
+
+msgid "config.interface.metric.description"
+msgstr "Route metric (lower = higher priority). Used in failover mode only."
+
+msgid "config.interface.weight.name"
+msgstr "Weight"
+
+msgid "config.interface.weight.description"
+msgstr "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
+
+msgid "config.interface.ping_target.name"
+msgstr "Ping Target"
+
+msgid "config.interface.ping_target.description"
+msgstr "IP address to ping for connectivity check"
+
+msgid "config.interface.ping_count.name"
+msgstr "Ping Count"
+
+msgid "config.interface.ping_count.description"
+msgstr "Number of ping attempts"
+
+msgid "config.interface.ping_timeout.name"
+msgstr "Timeout"
+
+msgid "config.interface.ping_timeout.description"
+msgstr "Ping timeout (seconds)"
+
 msgid "B"
 msgstr "B"
 

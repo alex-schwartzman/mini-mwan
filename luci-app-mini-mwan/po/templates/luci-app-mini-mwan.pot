@@ -214,6 +214,71 @@ msgstr ""
 msgid "None"
 msgstr ""
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr ""
+
+msgid "config.settings.enabled.description"
+msgstr ""
+
+msgid "config.settings.mode.name"
+msgstr ""
+
+msgid "config.settings.mode.description"
+msgstr ""
+
+msgid "config.settings.mode.failover"
+msgstr ""
+
+msgid "config.settings.mode.multiuplink"
+msgstr ""
+
+msgid "config.settings.check_interval.name"
+msgstr ""
+
+msgid "config.settings.check_interval.description"
+msgstr ""
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr ""
+
+msgid "config.interface.device.name"
+msgstr ""
+
+msgid "config.interface.device.description"
+msgstr ""
+
+msgid "config.interface.metric.name"
+msgstr ""
+
+msgid "config.interface.metric.description"
+msgstr ""
+
+msgid "config.interface.weight.name"
+msgstr ""
+
+msgid "config.interface.weight.description"
+msgstr ""
+
+msgid "config.interface.ping_target.name"
+msgstr ""
+
+msgid "config.interface.ping_target.description"
+msgstr ""
+
+msgid "config.interface.ping_count.name"
+msgstr ""
+
+msgid "config.interface.ping_count.description"
+msgstr ""
+
+msgid "config.interface.ping_timeout.name"
+msgstr ""
+
+msgid "config.interface.ping_timeout.description"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/mini-mwan/status.js:91
 msgid "B"
 msgstr ""

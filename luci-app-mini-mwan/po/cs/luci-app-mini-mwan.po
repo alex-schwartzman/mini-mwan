@@ -160,6 +160,71 @@ msgstr "Poslední aktualizace:"
 msgid "None"
 msgstr "Žádné"
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr "Povolit"
+
+msgid "config.settings.enabled.description"
+msgstr "Povolit službu Mini Multi-WAN. Musí být nakonfigurována alespoň dvě WAN rozhraní."
+
+msgid "config.settings.mode.name"
+msgstr "Režim"
+
+msgid "config.settings.mode.description"
+msgstr "Provozní režim: záložní (primární/záložní) nebo více připojení (vyvážení zátěže)"
+
+msgid "config.settings.mode.failover"
+msgstr "Záložní režim (Primární/Záložní)"
+
+msgid "config.settings.mode.multiuplink"
+msgstr "Více připojení (Vyvážení zátěže)"
+
+msgid "config.settings.check_interval.name"
+msgstr "Interval ověřování"
+
+msgid "config.settings.check_interval.description"
+msgstr "Jak často ověřovat připojení WAN (sekundy)"
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr "Povoleno"
+
+msgid "config.interface.device.name"
+msgstr "Zařízení"
+
+msgid "config.interface.device.description"
+msgstr "Síťové zařízení rozhraní (např. wg0, wg1, eth1)"
+
+msgid "config.interface.metric.name"
+msgstr "Metrika"
+
+msgid "config.interface.metric.description"
+msgstr "Metrika trasy (nižší = vyšší priorita). Používá se pouze v záložním režimu."
+
+msgid "config.interface.weight.name"
+msgstr "Váha"
+
+msgid "config.interface.weight.description"
+msgstr "Váha distribuce přenosu pro režim více připojení. Používá se pouze v režimu více připojení."
+
+msgid "config.interface.ping_target.name"
+msgstr "Cíl ping"
+
+msgid "config.interface.ping_target.description"
+msgstr "IP adresa pro ověření připojení pomocí ping"
+
+msgid "config.interface.ping_count.name"
+msgstr "Počet pingů"
+
+msgid "config.interface.ping_count.description"
+msgstr "Počet pokusů ping"
+
+msgid "config.interface.ping_timeout.name"
+msgstr "Časový limit"
+
+msgid "config.interface.ping_timeout.description"
+msgstr "Časový limit ping (sekundy)"
+
 msgid "B"
 msgstr "B"
 

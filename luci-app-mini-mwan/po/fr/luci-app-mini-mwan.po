@@ -160,6 +160,71 @@ msgstr "Dernière mise à jour :"
 msgid "None"
 msgstr "Aucun"
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr "Activer"
+
+msgid "config.settings.enabled.description"
+msgstr "Activer le service Mini Multi-WAN. Au moins deux interfaces WAN doivent être configurées."
+
+msgid "config.settings.mode.name"
+msgstr "Mode"
+
+msgid "config.settings.mode.description"
+msgstr "Mode de fonctionnement : basculement (principal/secours) ou multi-liaison (équilibrage de charge)"
+
+msgid "config.settings.mode.failover"
+msgstr "Basculement (Principal/Secours)"
+
+msgid "config.settings.mode.multiuplink"
+msgstr "Multi-Liaison (Équilibrage de charge)"
+
+msgid "config.settings.check_interval.name"
+msgstr "Intervalle de vérification"
+
+msgid "config.settings.check_interval.description"
+msgstr "Fréquence de vérification de la connectivité WAN (secondes)"
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr "Activé"
+
+msgid "config.interface.device.name"
+msgstr "Périphérique"
+
+msgid "config.interface.device.description"
+msgstr "Périphérique d'interface réseau (ex. wg0, wg1, eth1)"
+
+msgid "config.interface.metric.name"
+msgstr "Métrique"
+
+msgid "config.interface.metric.description"
+msgstr "Métrique de route (plus bas = priorité plus élevée). Utilisée uniquement en mode basculement."
+
+msgid "config.interface.weight.name"
+msgstr "Poids"
+
+msgid "config.interface.weight.description"
+msgstr "Poids de distribution du trafic pour le mode multi-liaison. Utilisé uniquement en mode multi-liaison."
+
+msgid "config.interface.ping_target.name"
+msgstr "Cible de ping"
+
+msgid "config.interface.ping_target.description"
+msgstr "Adresse IP à pinguer pour vérifier la connectivité"
+
+msgid "config.interface.ping_count.name"
+msgstr "Nombre de pings"
+
+msgid "config.interface.ping_count.description"
+msgstr "Nombre de tentatives de ping"
+
+msgid "config.interface.ping_timeout.name"
+msgstr "Délai d'attente"
+
+msgid "config.interface.ping_timeout.description"
+msgstr "Délai d'attente du ping (secondes)"
+
 msgid "B"
 msgstr "o"
 

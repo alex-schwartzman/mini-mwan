@@ -20,20 +20,20 @@ return view.extend({
 		s.anonymous = true;
 		s.addremove = false;
 
-		o = s.option(form.Flag, 'enabled', _('Enable'),
-			_('Enable Mini Multi-WAN service. At least two WAN interfaces must be configured.'));
+		o = s.option(form.Flag, 'enabled', _('config.settings.enabled.name'),
+			_('config.settings.enabled.description'));
 		o.rmempty = false;
 		o.default = '0';
 
-		o = s.option(form.ListValue, 'mode', _('Mode'),
-			_('Operating mode: failover (primary/backup) or multi-uplink (load balancing)'));
-		o.value('failover', _('Failover (Primary/Backup)'));
-		o.value('multiuplink', _('Multi-Uplink (Load Balancing)'));
+		o = s.option(form.ListValue, 'mode', _('config.settings.mode.name'),
+			_('config.settings.mode.description'));
+		o.value('failover', _('config.settings.mode.failover'));
+		o.value('multiuplink', _('config.settings.mode.multiuplink'));
 		o.default = 'failover';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'check_interval', _('Check Interval'),
-			_('How often to check WAN connectivity (seconds)'));
+		o = s.option(form.Value, 'check_interval', _('config.settings.check_interval.name'),
+			_('config.settings.check_interval.description'));
 		o.datatype = 'range(10,3600)';
 		o.default = '30';
 		o.placeholder = '30';
@@ -70,31 +70,31 @@ return view.extend({
 			return true;
 		};
 
-		o = s.option(form.Flag, 'enabled', _('Enabled'),
+		o = s.option(form.Flag, 'enabled', _('config.interface.enabled.name'),
 			_('config.interface.enabled.description'));
 		o.default = '1';
 		o.editable = true;
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'device', _('Device'),
-			_('Network interface device (e.g., wg0, wg1, eth1)'));
+		o = s.option(form.Value, 'device', _('config.interface.device.name'),
+			_('config.interface.device.description'));
 		o.rmempty = false;
 		o.placeholder = 'wg0';
 
-		o = s.option(form.Value, 'metric', _('Metric'),
-			_('Route metric (lower = higher priority). Used in failover mode only.'));
+		o = s.option(form.Value, 'metric', _('config.interface.metric.name'),
+			_('config.interface.metric.description'));
 		o.datatype = 'range(1,255)';
 		o.default = '10';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'weight', _('Weight'),
-			_('Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only.'));
+		o = s.option(form.Value, 'weight', _('config.interface.weight.name'),
+			_('config.interface.weight.description'));
 		o.datatype = 'range(1,10)';
 		o.default = '3';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'ping_target', _('Ping Target'),
-			_('IP address to ping for connectivity check'));
+		o = s.option(form.Value, 'ping_target', _('config.interface.ping_target.name'),
+			_('config.interface.ping_target.description'));
 		o.datatype = 'ipaddr';
 		o.rmempty = false;
 		o.modalonly = true;
@@ -113,16 +113,16 @@ return view.extend({
 			return true;
 		};
 
-		o = s.option(form.Value, 'ping_count', _('Ping Count'),
-			_('Number of ping attempts'));
+		o = s.option(form.Value, 'ping_count', _('config.interface.ping_count.name'),
+			_('config.interface.ping_count.description'));
 		o.datatype = 'range(1,10)';
 		o.default = '3';
 		o.placeholder = '3';
 		o.optional = true;
 		o.modalonly = true;
 
-		o = s.option(form.Value, 'ping_timeout', _('Timeout'),
-			_('Ping timeout (seconds)'));
+		o = s.option(form.Value, 'ping_timeout', _('config.interface.ping_timeout.name'),
+			_('config.interface.ping_timeout.description'));
 		o.datatype = 'range(1,10)';
 		o.default = '2';
 		o.placeholder = '2';

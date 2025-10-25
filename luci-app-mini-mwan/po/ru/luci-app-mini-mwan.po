@@ -160,6 +160,71 @@ msgstr "Последнее обновление:"
 msgid "None"
 msgstr "Нет"
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr "Включить"
+
+msgid "config.settings.enabled.description"
+msgstr "Включить службу Mini Multi-WAN. Должны быть настроены как минимум два WAN интерфейса."
+
+msgid "config.settings.mode.name"
+msgstr "Режим"
+
+msgid "config.settings.mode.description"
+msgstr "Режим работы: отказоустойчивость (основной/резервный) или несколько каналов (балансировка нагрузки)"
+
+msgid "config.settings.mode.failover"
+msgstr "Отказоустойчивость (Основной/Резервный)"
+
+msgid "config.settings.mode.multiuplink"
+msgstr "Несколько каналов (Балансировка нагрузки)"
+
+msgid "config.settings.check_interval.name"
+msgstr "Интервал проверки"
+
+msgid "config.settings.check_interval.description"
+msgstr "Как часто проверять соединение WAN (в секундах)"
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr "Включен"
+
+msgid "config.interface.device.name"
+msgstr "Устройство"
+
+msgid "config.interface.device.description"
+msgstr "Сетевое устройство интерфейса (например, wg0, wg1, eth1)"
+
+msgid "config.interface.metric.name"
+msgstr "Метрика"
+
+msgid "config.interface.metric.description"
+msgstr "Метрика маршрута (меньше = выше приоритет). Используется только в режиме отказоустойчивости."
+
+msgid "config.interface.weight.name"
+msgstr "Вес"
+
+msgid "config.interface.weight.description"
+msgstr "Вес распределения трафика для режима нескольких каналов. Используется только в режиме нескольких каналов."
+
+msgid "config.interface.ping_target.name"
+msgstr "Цель ping"
+
+msgid "config.interface.ping_target.description"
+msgstr "IP-адрес для проверки связи с помощью ping"
+
+msgid "config.interface.ping_count.name"
+msgstr "Количество ping-запросов"
+
+msgid "config.interface.ping_count.description"
+msgstr "Количество попыток ping"
+
+msgid "config.interface.ping_timeout.name"
+msgstr "Таймаут"
+
+msgid "config.interface.ping_timeout.description"
+msgstr "Таймаут ping (в секундах)"
+
 msgid "B"
 msgstr "Б"
 

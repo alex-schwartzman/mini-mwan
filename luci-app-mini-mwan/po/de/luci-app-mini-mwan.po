@@ -160,6 +160,71 @@ msgstr "Letzte Aktualisierung:"
 msgid "None"
 msgstr "Keine"
 
+# Configuration: Global Settings
+msgid "config.settings.enabled.name"
+msgstr "Aktivieren"
+
+msgid "config.settings.enabled.description"
+msgstr "Mini Multi-WAN-Dienst aktivieren. Es müssen mindestens zwei WAN-Schnittstellen konfiguriert sein."
+
+msgid "config.settings.mode.name"
+msgstr "Modus"
+
+msgid "config.settings.mode.description"
+msgstr "Betriebsmodus: Failover (Primär/Backup) oder Multi-Uplink (Lastverteilung)"
+
+msgid "config.settings.mode.failover"
+msgstr "Failover (Primär/Backup)"
+
+msgid "config.settings.mode.multiuplink"
+msgstr "Multi-Uplink (Lastverteilung)"
+
+msgid "config.settings.check_interval.name"
+msgstr "Prüfintervall"
+
+msgid "config.settings.check_interval.description"
+msgstr "Wie oft die WAN-Verbindung überprüft werden soll (Sekunden)"
+
+# Configuration: WAN Interface
+msgid "config.interface.enabled.name"
+msgstr "Aktiviert"
+
+msgid "config.interface.device.name"
+msgstr "Gerät"
+
+msgid "config.interface.device.description"
+msgstr "Netzwerkschnittstellen-Gerät (z.B. wg0, wg1, eth1)"
+
+msgid "config.interface.metric.name"
+msgstr "Metrik"
+
+msgid "config.interface.metric.description"
+msgstr "Routen-Metrik (niedriger = höhere Priorität). Nur im Failover-Modus verwendet."
+
+msgid "config.interface.weight.name"
+msgstr "Gewicht"
+
+msgid "config.interface.weight.description"
+msgstr "Verkehrsverteilungsgewicht für Multi-Uplink-Modus. Nur im Multi-Uplink-Modus verwendet."
+
+msgid "config.interface.ping_target.name"
+msgstr "Ping-Ziel"
+
+msgid "config.interface.ping_target.description"
+msgstr "IP-Adresse zum Anpingen für Verbindungsprüfung"
+
+msgid "config.interface.ping_count.name"
+msgstr "Ping-Anzahl"
+
+msgid "config.interface.ping_count.description"
+msgstr "Anzahl der Ping-Versuche"
+
+msgid "config.interface.ping_timeout.name"
+msgstr "Timeout"
+
+msgid "config.interface.ping_timeout.description"
+msgstr "Ping-Timeout (Sekunden)"
+
 msgid "B"
 msgstr "B"
 
