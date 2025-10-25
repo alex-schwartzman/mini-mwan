@@ -213,6 +213,25 @@ logread | grep mini-mwan
 - Advanced traffic rules and policies
 - OpenWrt 23.05 or earlier (where mwan3 is available)
 
+## Repository Structure
+
+This repository follows OpenWrt feed conventions and contains two packages:
+
+```
+mini-mwan/  (repository = feed structure)
+├── mini-mwan/                    # Package: Mini-MWAN daemon
+│   ├── Makefile                  # Feed-ready Makefile
+│   ├── Makefile.devcontainer     # Development Makefile
+│   └── files/                    # Daemon source files
+├── luci-app-mini-mwan/           # Package: LuCI web interface
+│   ├── Makefile                  # Feed-ready Makefile (uses luci.mk)
+│   ├── Makefile.devcontainer     # Development Makefile
+│   ├── htdocs/                   # JavaScript views
+│   ├── root/                     # Menu and ACL config
+│   └── po/                       # Translation files (i18n)
+└── ... (build infrastructure)
+```
+
 ## Building the Package
 
 ### Prerequisites
@@ -228,7 +247,7 @@ git clone https://github.com/alex-schwartzman/mini-mwan.git
 cd mini-mwan
 
 # Build using Docker
-make -f Makefile.dev rebuild-hard
+make build
 ```
 
 Built packages will be in `./bin/packages/x86_64/base/`:
@@ -237,22 +256,79 @@ Built packages will be in `./bin/packages/x86_64/base/`:
 
 ### Development Environment
 
-This project includes a Docker-based development environment and VS Code devcontainer support.
+This project includes two build modes:
 
-**Available make targets:**
+#### 1. Official Build (docker-compose)
+Uses official `Makefile` with `luci.mk` for production-ready packages:
+
 ```bash
-make -f Makefile.dev build          # Build both packages
-make -f Makefile.dev rebuild-hard   # Full rebuild from scratch
-make -f Makefile.dev clean-soft     # Clean build artifacts
-make -f Makefile.dev shell          # Open shell in container
-make -f Makefile.dev help           # Show all targets
+make                # Full build: fetch feeds, register, and build (default)
+make build          # Build both packages only (assumes feeds ready)
+make feeds-fetch    # Fetch/discover packages from feeds (feeds update)
+make feeds-register # Register feeds into build system (feeds install)
+make shell          # Open shell in build container
+make help           # Show all targets
 ```
 
-**VS Code users:**
+This mode:
+- Uses `Makefile` (includes `../../luci.mk`)
+- Compiles `.po` → `.lmo` translation files
+- Tests the exact structure that will be published to feeds
+- Recommended for final testing and building release packages
+
+#### 2. Fast Development (VS Code devcontainer)
+Uses `Makefile.devcontainer` for rapid iteration without i18n overhead:
+
 1. Install "Dev Containers" extension
 2. Open project in VS Code
 3. Click "Reopen in Container"
-4. Use integrated terminal for building
+4. Edit source files directly (mounted read-write)
+5. Build from integrated terminal: `cd /builder && make package/mini-mwan/compile`
+
+This mode:
+- Uses `Makefile.devcontainer` (no `luci.mk` dependency)
+- Faster builds during development
+- All source files mounted read-write
+- Skips translation compilation for speed
+
+### Internationalization (i18n)
+
+The LuCI web interface is ready for internationalization via **Weblate**. Translation boilerplate files are included for:
+
+- 🇷🇺 Russian (ru)
+- 🇨🇿 Czech (cs)
+- 🇫🇷 French (fr)
+- 🇪🇸 Spanish (es)
+- 🇩🇪 German (de)
+
+All translatable strings in the source code use the `_("English text")` format, following LuCI conventions. When published to the official feed, `luci.mk` automatically compiles `.po` files to `.lmo` files during build.
+
+**Translation files location:** `luci-app-mini-mwan/po/`
+
+### Publishing to Official Feed
+
+To publish to the official OpenWrt feed:
+
+1. Copy package directories:
+   ```bash
+   # Copy daemon to packages feed
+   cp -r mini-mwan/ /path/to/packages/net/mini-mwan/
+
+   # Copy LuCI app to luci feed
+   cp -r luci-app-mini-mwan/ /path/to/luci/applications/luci-app-mini-mwan/
+   ```
+
+2. Remove development-only files:
+   ```bash
+   rm /path/to/packages/net/mini-mwan/Makefile.devcontainer
+   rm /path/to/luci/applications/luci-app-mini-mwan/Makefile.devcontainer
+   ```
+
+3. Ensure `Makefile` in each package uses proper includes:
+   - `mini-mwan/Makefile`: Standard OpenWrt package
+   - `luci-app-mini-mwan/Makefile`: Includes `../../luci.mk` for i18n support
+
+The `po/` directory contains translation templates and boilerplate files ready for Weblate integration.
 
 ## Troubleshooting
 
