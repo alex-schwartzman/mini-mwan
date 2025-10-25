@@ -10,28 +10,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Add WAN Interface"
-msgstr "WAN-Schnittstelle hinzufügen"
-
-msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr "WAN-Schnittstellen für Multi-WAN-Verwaltung konfigurieren. Typischerweise WireGuard-Tunnel (wg0, wg1, usw.)."
-
 msgid "config.interface.enabled.description"
 msgstr "Diese WAN-Schnittstelle für Routing verwenden"
 
-msgid "Global Settings"
-msgstr "Globale Einstellungen"
-
-msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr "Leichtgewichtige Multi-WAN-Verwaltung für WireGuard-VPN-Tunnel mit Failover- und Load-Balancing-Unterstützung."
-
-msgid "Mini Multi-WAN"
+# LuCI Main Page
+msgid "luci.mainpage.title"
 msgstr "Mini Multi-WAN"
 
-msgid "WAN Interfaces"
+msgid "luci.mainpage.description"
+msgstr "Leichtgewichtige Multi-WAN-Verwaltung für WireGuard-VPN-Tunnel mit Failover- und Load-Balancing-Unterstützung."
+
+# LuCI Sections
+msgid "luci.section.global.title"
+msgstr "Globale Einstellungen"
+
+msgid "luci.section.interfaces.title"
 msgstr "WAN-Schnittstellen"
 
-msgid "WAN Interface"
+msgid "luci.section.interfaces.description"
+msgstr "WAN-Schnittstellen für Multi-WAN-Verwaltung konfigurieren. Typischerweise WireGuard-Tunnel (wg0, wg1, usw.)."
+
+# LuCI Actions
+msgid "luci.action.add.interface"
+msgstr "WAN-Schnittstelle hinzufügen"
+
+# LuCI Modals
+msgid "luci.modal.interface.title"
 msgstr "WAN-Schnittstelle"
 
 # LuCI Error Messages

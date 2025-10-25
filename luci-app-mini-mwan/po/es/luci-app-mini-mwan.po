@@ -10,28 +10,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Add WAN Interface"
-msgstr "Agregar interfaz WAN"
-
-msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr "Configurar interfaces WAN para gestión multi-WAN. Típicamente túneles WireGuard (wg0, wg1, etc)."
-
 msgid "config.interface.enabled.description"
 msgstr "Usar esta interfaz WAN para enrutamiento"
 
-msgid "Global Settings"
-msgstr "Configuración global"
-
-msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr "Gestión ligera de múltiples WAN para túneles VPN WireGuard con soporte de conmutación por error y balanceo de carga."
-
-msgid "Mini Multi-WAN"
+# LuCI Main Page
+msgid "luci.mainpage.title"
 msgstr "Mini Multi-WAN"
 
-msgid "WAN Interfaces"
+msgid "luci.mainpage.description"
+msgstr "Gestión ligera de múltiples WAN para túneles VPN WireGuard con soporte de conmutación por error y balanceo de carga."
+
+# LuCI Sections
+msgid "luci.section.global.title"
+msgstr "Configuración global"
+
+msgid "luci.section.interfaces.title"
 msgstr "Interfaces WAN"
 
-msgid "WAN Interface"
+msgid "luci.section.interfaces.description"
+msgstr "Configurar interfaces WAN para gestión multi-WAN. Típicamente túneles WireGuard (wg0, wg1, etc)."
+
+# LuCI Actions
+msgid "luci.action.add.interface"
+msgstr "Agregar interfaz WAN"
+
+# LuCI Modals
+msgid "luci.modal.interface.title"
 msgstr "Interfaz WAN"
 
 # LuCI Error Messages

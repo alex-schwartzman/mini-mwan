@@ -10,62 +10,40 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:55
-msgid "Add WAN Interface"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:35
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:36
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:132
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:43
-msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr ""
-
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:23
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:24
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:73
+#: htdocs/luci-static/resources/view/mini-mwan/overview.js:74
 msgid "config.interface.enabled.description"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:73
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:143
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:30
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:167
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:19
-msgid "Global Settings"
-msgstr ""
-
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:160
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:193
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:96
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:168
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:164
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:16
-msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr ""
-
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:84
+# LuCI Main Page
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:15
-msgid "Mini Multi-WAN"
+msgid "luci.mainpage.title"
 msgstr ""
 
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:124
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:125
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:85
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:147
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:139
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:163
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:162
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:200
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:124
-#: htdocs/luci-static/resources/view/mini-mwan/status.js:165
-#: htdocs/luci-static/resources/view/mini-mwan/overview.js:91
+#: htdocs/luci-static/resources/view/mini-mwan/overview.js:16
+msgid "luci.mainpage.description"
+msgstr ""
+
+# LuCI Sections
+#: htdocs/luci-static/resources/view/mini-mwan/overview.js:19
+msgid "luci.section.global.title"
+msgstr ""
+
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:43
-msgid "WAN Interfaces"
+msgid "luci.section.interfaces.title"
 msgstr ""
 
+#: htdocs/luci-static/resources/view/mini-mwan/overview.js:44
+msgid "luci.section.interfaces.description"
+msgstr ""
+
+# LuCI Actions
+#: htdocs/luci-static/resources/view/mini-mwan/overview.js:55
+msgid "luci.action.add.interface"
+msgstr ""
+
+# LuCI Modals
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:51
-msgid "WAN Interface"
+msgid "luci.modal.interface.title"
 msgstr ""
 
 # LuCI Error Messages

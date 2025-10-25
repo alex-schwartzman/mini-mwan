@@ -10,28 +10,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-msgid "Add WAN Interface"
-msgstr "Добавить WAN интерфейс"
-
-msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr "Настройка WAN интерфейсов для управления несколькими WAN. Обычно это туннели WireGuard (wg0, wg1 и т.д.)."
-
 msgid "config.interface.enabled.description"
 msgstr "Использовать данный WAN интерфейс для маршрутизации"
 
-msgid "Global Settings"
-msgstr "Глобальные настройки"
-
-msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr "Легковесное управление несколькими WAN для туннелей WireGuard VPN с поддержкой отказоустойчивости и балансировки нагрузки."
-
-msgid "Mini Multi-WAN"
+# LuCI Main Page
+msgid "luci.mainpage.title"
 msgstr "Mini Multi-WAN"
 
-msgid "WAN Interfaces"
+msgid "luci.mainpage.description"
+msgstr "Легковесное управление несколькими WAN для туннелей WireGuard VPN с поддержкой отказоустойчивости и балансировки нагрузки."
+
+# LuCI Sections
+msgid "luci.section.global.title"
+msgstr "Глобальные настройки"
+
+msgid "luci.section.interfaces.title"
 msgstr "WAN интерфейсы"
 
-msgid "WAN Interface"
+msgid "luci.section.interfaces.description"
+msgstr "Настройка WAN интерфейсов для управления несколькими WAN. Обычно это туннели WireGuard (wg0, wg1 и т.д.)."
+
+# LuCI Actions
+msgid "luci.action.add.interface"
+msgstr "Добавить WAN интерфейс"
+
+# LuCI Modals
+msgid "luci.modal.interface.title"
 msgstr "WAN интерфейс"
 
 # LuCI Error Messages

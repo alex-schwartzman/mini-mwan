@@ -10,28 +10,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-msgid "Add WAN Interface"
-msgstr "Přidat WAN rozhraní"
-
-msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr "Nastavení WAN rozhraní pro správu více WAN. Obvykle tunely WireGuard (wg0, wg1, atd.)."
-
 msgid "config.interface.enabled.description"
 msgstr "Použít toto WAN rozhraní pro směrování"
 
-msgid "Global Settings"
-msgstr "Globální nastavení"
-
-msgid "Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support."
-msgstr "Lehká správa více WAN pro tunely WireGuard VPN s podporou záložního režimu a vyvážení zátěže."
-
-msgid "Mini Multi-WAN"
+# LuCI Main Page
+msgid "luci.mainpage.title"
 msgstr "Mini Multi-WAN"
 
-msgid "WAN Interfaces"
+msgid "luci.mainpage.description"
+msgstr "Lehká správa více WAN pro tunely WireGuard VPN s podporou záložního režimu a vyvážení zátěže."
+
+# LuCI Sections
+msgid "luci.section.global.title"
+msgstr "Globální nastavení"
+
+msgid "luci.section.interfaces.title"
 msgstr "WAN rozhraní"
 
-msgid "WAN Interface"
+msgid "luci.section.interfaces.description"
+msgstr "Nastavení WAN rozhraní pro správu více WAN. Obvykle tunely WireGuard (wg0, wg1, atd.)."
+
+# LuCI Actions
+msgid "luci.action.add.interface"
+msgstr "Přidat WAN rozhraní"
+
+# LuCI Modals
+msgid "luci.modal.interface.title"
 msgstr "WAN rozhraní"
 
 # LuCI Error Messages
@@ -145,7 +149,7 @@ msgid "config.interface.enabled.name"
 msgstr "Povoleno"
 
 msgid "config.interface.device.name"
-msgstr "Zařízení"
+msgstr "Rozhraní"
 
 msgid "config.interface.device.description"
 msgstr "Síťové zařízení rozhraní (např. wg0, wg1, eth1)"

@@ -12,11 +12,11 @@ return view.extend({
 	render: function() {
 		var m, s, o;
 
-		m = new form.Map('mini-mwan', _('Mini Multi-WAN'),
-			_('Lightweight multi-WAN management for WireGuard VPN tunnels with failover and load balancing support.'));
+		m = new form.Map('mini-mwan', _('luci.mainpage.title'),
+			_('luci.mainpage.description'));
 
 		// Global settings section
-		s = m.section(form.TypedSection, 'settings', _('Global Settings'));
+		s = m.section(form.TypedSection, 'settings', _('luci.section.global.title'));
 		s.anonymous = true;
 		s.addremove = false;
 
@@ -40,19 +40,19 @@ return view.extend({
 		o.rmempty = false;
 
 		// WAN Interfaces section
-		s = m.section(form.GridSection, 'interface', _('WAN Interfaces'),
-			_('Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc).'));
+		s = m.section(form.GridSection, 'interface', _('luci.section.interfaces.title'),
+			_('luci.section.interfaces.description'));
 		s.anonymous = false;
 		s.addremove = true;
 		s.nodescriptions = true;
 		s.sortable = true;
 
 		s.modaltitle = function(section_id) {
-			return _('WAN Interface') + ' » ' + section_id;
+			return _('luci.modal.interface.title') + ' » ' + section_id;
 		};
 
 		s.addremove = true;
-		s.addtitle = _('Add WAN Interface');
+		s.addtitle = _('luci.action.add.interface');
 
 		// Validation for duplicate devices
 		s.validate = function(section_id) {
