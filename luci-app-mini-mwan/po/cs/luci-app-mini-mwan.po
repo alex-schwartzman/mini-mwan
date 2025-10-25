@@ -14,16 +14,16 @@ msgid "Add WAN Interface"
 msgstr "Přidat WAN rozhraní"
 
 msgid "Check Interval"
-msgstr "Interval kontroly"
+msgstr "Interval ověřování"
 
 msgid "How often to check WAN connectivity (seconds)"
-msgstr "Jak často kontrolovat připojení WAN (sekundy)"
+msgstr "Jak často ověřovat připojení WAN (sekundy)"
 
 msgid "Check with: "
-msgstr "Zkontrolujte pomocí: "
+msgstr "Kontrola pomocí: "
 
 msgid "Configure WAN interfaces for multi-WAN management. Typically WireGuard tunnels (wg0, wg1, etc)."
-msgstr "Konfigurace WAN rozhraní pro správu více WAN. Obvykle tunely WireGuard (wg0, wg1, atd.)."
+msgstr "Nastavení WAN rozhraní pro správu více WAN. Obvykle tunely WireGuard (wg0, wg1, atd.)."
 
 msgid "Device"
 msgstr "Zařízení"
@@ -37,8 +37,8 @@ msgstr "Povolit"
 msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
 msgstr "Povolit službu Mini Multi-WAN. Musí být nakonfigurována alespoň dvě WAN rozhraní."
 
-msgid "Enable or disable this WAN interface for monitoring"
-msgstr "Povolit nebo zakázat toto WAN rozhraní pro monitorování"
+msgid "config.interface.enabled.description"
+msgstr "Použít toto WAN rozhraní pro směrování"
 
 msgid "Enabled"
 msgstr "Povoleno"
@@ -59,10 +59,10 @@ msgid "Interface Status"
 msgstr "Stav rozhraní"
 
 msgid "IP address to ping for connectivity check"
-msgstr "IP adresa pro kontrolu připojení pomocí ping"
+msgstr "IP adresa pro ověření připojení pomocí ping"
 
 msgid "Last Check"
-msgstr "Poslední kontrola"
+msgstr "Poslední ověření"
 
 msgid "Latency"
 msgstr "Latence"
@@ -134,10 +134,10 @@ msgid "Timeout"
 msgstr "Časový limit"
 
 msgid "Traffic (RX/TX)"
-msgstr "Provoz (RX/TX)"
+msgstr "Přenos (RX/TX)"
 
 msgid "Traffic distribution weight for multi-uplink mode. Used in multi-uplink mode only."
-msgstr "Váha distribuce provozu pro režim více připojení. Používá se pouze v režimu více připojení."
+msgstr "Váha distribuce přenosu pro režim více připojení. Používá se pouze v režimu více připojení."
 
 msgid "WAN Interfaces"
 msgstr "WAN rozhraní"
@@ -152,7 +152,7 @@ msgid "Mode:"
 msgstr "Režim:"
 
 msgid "Check Interval:"
-msgstr "Interval kontroly:"
+msgstr "Interval ověřování:"
 
 msgid "Last Update:"
 msgstr "Poslední aktualizace:"

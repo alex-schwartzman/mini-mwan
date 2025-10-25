@@ -71,7 +71,7 @@ return view.extend({
 		};
 
 		o = s.option(form.Flag, 'enabled', _('Enabled'),
-			_('Enable or disable this WAN interface for monitoring'));
+			_('config.interface.enabled.description'));
 		o.default = '1';
 		o.editable = true;
 		o.rmempty = false;

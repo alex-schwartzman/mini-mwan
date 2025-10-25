@@ -48,7 +48,7 @@ msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be config
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:73
-msgid "Enable or disable this WAN interface for monitoring"
+msgid "config.interface.enabled.description"
 msgstr ""
 
 #: htdocs/luci-static/resources/view/mini-mwan/overview.js:73

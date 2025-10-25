@@ -37,8 +37,8 @@ msgstr "Enable"
 msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
 msgstr "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
 
-msgid "Enable or disable this WAN interface for monitoring"
-msgstr "Enable or disable this WAN interface for monitoring"
+msgid "config.interface.enabled.description"
+msgstr "Use this WAN interface for routing"
 
 msgid "Enabled"
 msgstr "Enabled"

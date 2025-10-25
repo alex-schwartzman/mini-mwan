@@ -37,8 +37,8 @@ msgstr "Включить"
 msgid "Enable Mini Multi-WAN service. At least two WAN interfaces must be configured."
 msgstr "Включить службу Mini Multi-WAN. Должны быть настроены как минимум два WAN интерфейса."
 
-msgid "Enable or disable this WAN interface for monitoring"
-msgstr "Включить или отключить мониторинг данного WAN интерфейса"
+msgid "config.interface.enabled.description"
+msgstr "Использовать данный WAN интерфейс для маршрутизации"
 
 msgid "Enabled"
 msgstr "Включен"
