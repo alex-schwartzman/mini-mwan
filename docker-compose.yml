@@ -6,18 +6,12 @@ services:
     image: mini-mwan-builder
     container_name: mini-mwan-builder
     volumes:
-      # Mount mini-mwan package to feeds/packages/net/ (official packages feed location)
-      - ./mini-mwan/files:/builder/feeds/packages/net/mini-mwan/files:ro
-      - ./mini-mwan/Makefile:/builder/feeds/packages/net/mini-mwan/Makefile:ro
-      # Mount luci-app-mini-mwan to feeds/luci/applications/ (official luci feed location)
-      # - ./luci-app-mini-mwan/htdocs:/builder/feeds/luci/applications/luci-app-mini-mwan/htdocs:ro
-      # - ./luci-app-mini-mwan/root:/builder/feeds/luci/applications/luci-app-mini-mwan/root:ro
-      # - ./luci-app-mini-mwan/po:/builder/feeds/luci/applications/luci-app-mini-mwan/po:ro
-      # - ./luci-app-mini-mwan/Makefile:/builder/feeds/luci/applications/luci-app-mini-mwan/Makefile:ro
+      # Mount sources readonly
+      - ./mini-mwan:/builder/package/mini-mwan:ro
+      - ./luci-app-mini-mwan:/builder/package/luci-app-mini-mwan:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
-      # NOTE: .config is not mounted as a file because Docker creates directories for non-existent paths,
-      # causing build failures when OpenWrt expects a file. Therefore, configuration will always remain
+      # NOTE: there is no way to preserve .config between builds. Therefore, configuration will always remain
       # ephemeral, at least until the moment when I figure out how to work it around.
       # Mount output directory for built packages
       - ./bin:/builder/bin
