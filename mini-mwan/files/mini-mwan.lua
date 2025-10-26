@@ -18,6 +18,9 @@ local STATUS_FILE = "/var/run/mini-mwan.status"
 -- Persistent interface state (survives config reloads)
 local interface_state = {}
 
+-- Audit flag for command logging (loaded from config)
+local audit_enabled = false
+
 -- Logging function
 local function log(msg)
 	local timestamp = os.date("%Y-%m-%d %H:%M:%S")
@@ -46,9 +49,11 @@ local function exec(cmd)
 	return output
 end
 
--- Execute command with logging for auditability
+-- Execute command with optional logging for auditability
 local function auditable_exec(cmd)
-	log(string.format("Executing: %s", cmd))
+	if audit_enabled then
+		log(string.format("Executing: %s", cmd))
+	end
 	return exec(cmd)
 end
 
@@ -183,6 +188,9 @@ local function load_config()
 		check_interval = tonumber(cursor:get("mini-mwan", "settings", "check_interval")) or 30,
 		interfaces = {}
 	}
+
+	-- Load audit flag (0 by default for no logging)
+	audit_enabled = cursor:get("mini-mwan", "settings", "audit") == "1"
 
 	-- Load all interface configurations dynamically
 	cursor:foreach("mini-mwan", "interface", function(section)
