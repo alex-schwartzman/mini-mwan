@@ -4,25 +4,32 @@
 .PHONY: all build shell feeds-fetch feeds-register help
 .DEFAULT_GOAL := all
 
-# Full build: fetch feeds, register them, then build packages
+# Full build: refetch feeds, register them, then build packages
 all: feeds-fetch feeds-register build
 	@echo ""
 	@echo "=== Full build complete ==="
 
-# Build both packages (uses official Makefile with luci.mk)
+
+# Full build: refetch feeds, register them, then build packages
+all-from-scratch: feeds-fetch-from-scratch feeds-register build
+	@echo ""
+	@echo "=== Full build from scratch complete ==="
+
+# Build both packages.
 build:
 	@echo "=== Building packages (official structure with luci.mk) ==="
 	docker-compose run --rm openwrt-sdk bash -c "\
-		mkdir -p /builder/package/feeds/packages/mini-mwan && \
-		mkdir -p /builder/package/feeds/luci/luci-app-mini-mwan && \
-		tar -cf - --exclude='Makefile.devcontainer' -C /builder/package/mini-mwan . | tar -xvf - -C /builder/package/feeds/packages/mini-mwan && \
-		tar -cf - --exclude='Makefile.devcontainer' -C /builder/package/luci-app-mini-mwan . | tar -xvf - -C /builder/package/feeds/luci/luci-app-mini-mwan && \
 		make defconfig && \
-		make -j1 V=s package/feeds/packages/mini-mwan/compile && \
-		make -j1 V=s package/feeds/luci/luci-app-mini-mwan/compile && \
+		make -j1 V=s package/mini-mwan/compile && \
+		make -j1 V=s package/luci-app-mini-mwan/compile && \
 		echo '' && \
 		echo '=== Packages Built ===' && \
 		find bin/packages -name 'mini-mwan*.ipk' -o -name 'luci-app-mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
+
+# Fetch into empty feeds volume
+feeds-fetch:
+	@echo "=== Fetching feeds ==="
+	docker-compose run --rm openwrt-sdk scripts/feeds update -a
 
 # Fetch/discover available packages in feeds
 feeds-fetch:

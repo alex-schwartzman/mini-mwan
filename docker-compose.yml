@@ -6,9 +6,13 @@ services:
     image: mini-mwan-builder
     container_name: mini-mwan-builder
     volumes:
-      # Mount sources readonly
-      - ./mini-mwan:/builder/package/mini-mwan:ro
-      - ./luci-app-mini-mwan:/builder/package/luci-app-mini-mwan:ro
+      # Mount mini-mwan package (daemon)
+      - ./mini-mwan/files:/builder/package/mini-mwan/files:ro
+      - ./mini-mwan/Makefile.devcontainer:/builder/package/mini-mwan/Makefile:ro
+      # Mount luci-app-mini-mwan package (LuCI interface)
+      - ./luci-app-mini-mwan/htdocs:/builder/package/luci-app-mini-mwan/htdocs:ro
+      - ./luci-app-mini-mwan/root:/builder/package/luci-app-mini-mwan/root:ro
+      - ./luci-app-mini-mwan/Makefile.devcontainer:/builder/package/luci-app-mini-mwan/Makefile:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
       # NOTE: there is no way to preserve .config between builds. Therefore, configuration will always remain
