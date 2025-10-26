@@ -209,3 +209,23 @@ msgstr ""
 #: htdocs/luci-static/resources/view/mini-mwan/status.js:150
 msgid "Last Update:"
 msgstr ""
+
+#: htdocs/luci-static/resources/view/mini-mwan/status.js:89
+msgid "None"
+msgstr ""
+
+#: htdocs/luci-static/resources/view/mini-mwan/status.js:91
+msgid "B"
+msgstr ""
+
+msgid "KB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "TB"
+msgstr ""

@@ -10,10 +10,10 @@ services:
       - ./mini-mwan/files:/builder/feeds/packages/net/mini-mwan/files:ro
       - ./mini-mwan/Makefile:/builder/feeds/packages/net/mini-mwan/Makefile:ro
       # Mount luci-app-mini-mwan to feeds/luci/applications/ (official luci feed location)
-      - ./luci-app-mini-mwan/htdocs:/builder/feeds/luci/applications/luci-app-mini-mwan/htdocs:ro
-      - ./luci-app-mini-mwan/root:/builder/feeds/luci/applications/luci-app-mini-mwan/root:ro
-      - ./luci-app-mini-mwan/po:/builder/feeds/luci/applications/luci-app-mini-mwan/po:ro
-      - ./luci-app-mini-mwan/Makefile:/builder/feeds/luci/applications/luci-app-mini-mwan/Makefile:ro
+      # - ./luci-app-mini-mwan/htdocs:/builder/feeds/luci/applications/luci-app-mini-mwan/htdocs:ro
+      # - ./luci-app-mini-mwan/root:/builder/feeds/luci/applications/luci-app-mini-mwan/root:ro
+      # - ./luci-app-mini-mwan/po:/builder/feeds/luci/applications/luci-app-mini-mwan/po:ro
+      # - ./luci-app-mini-mwan/Makefile:/builder/feeds/luci/applications/luci-app-mini-mwan/Makefile:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
       # NOTE: .config is not mounted as a file because Docker creates directories for non-existent paths,
