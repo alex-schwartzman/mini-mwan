@@ -349,10 +349,14 @@ local function handle_failover(config)
 	-- For down interfaces: set very high metric (900) so they don't interfere but pings still work
 	for _, iface in ipairs(down_ifaces) do
 		-- Use 'replace' instead of 'add' to handle cases where route already exists
-		-- This avoids the need to delete first and handles both creation and update
+		-- But we still need to delete first, so that eventually all duplicates get removed
 		if iface.gateway and iface.gateway ~= "" then
-			auditable_exec(string.format("ip route replace default via %s dev %s metric 900", iface.gateway, iface.device))
+			auditable_exec(string.format("ip route delete default via %s dev %s", iface.gateway, iface
+			.device))
+			auditable_exec(string.format("ip route replace default via %s dev %s metric 900", iface.gateway, iface
+			.device))
 		else
+			auditable_exec(string.format("ip route delete default dev %s", iface.device))
 			auditable_exec(string.format("ip route replace default dev %s metric 900", iface.device))
 		end
 	end
