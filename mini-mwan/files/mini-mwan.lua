@@ -46,17 +46,25 @@ local function exec(cmd)
 	return output
 end
 
+-- Execute command with logging for auditability
+local function auditable_exec(cmd)
+	log(string.format("Executing: %s", cmd))
+	return exec(cmd)
+end
+
 -- Ping check function through specific interface
-local function check_ping(target, count, timeout, device, gateway)
+local function check_ping(target, count, timeout, device)
 	count = count or 3
 	timeout = timeout or 2
 
 	-- Ping through specific interface using source routing
-	-- Use -I to specify interface
-	local cmd = string.format("ping -I %s -c %d -W %d %s 2>&1", device, count, timeout, target)
-	local output = exec(cmd)
+    -- Use -I to specify interface
+	local deadline = (count * timeout) + 2
+	local cmd = string.format("ping -I %s -c %d -W %d -w %d %s 2>&1", device, count, timeout, deadline, target)
+	local output = auditable_exec(cmd)
 
 	if not output then
+		log(string.format("FAIL: no output from: ", cmd))
 		return false, 0
 	end
 
@@ -153,81 +161,16 @@ local function get_gateway(iface)
 	return nil
 end
 
--- Add/update default route with fallback
--- Always keeps a high-metric (999) route for ping checks even when interface is "down"
-local function set_route(gateway, metric, iface, keep_fallback)
-	-- Remove existing default route for this interface first
-	if gateway and gateway ~= "" then
-		exec(string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface))
-	else
-		exec(string.format("ip route del default dev %s 2>/dev/null", iface))
-	end
-
-	-- Add new default route with metric
-	local cmd
+-- Add/update default route for an interface
+local function set_route(gateway, metric, iface)
+	-- Use 'replace' to handle both creation and update
 	if gateway and gateway ~= "" then
 		-- Regular interface with gateway (e.g., ethernet)
-		cmd = string.format("ip route add default via %s dev %s metric %d", gateway, iface, metric)
+		auditable_exec(string.format("ip route replace default via %s dev %s metric %d", gateway, iface, metric))
 	else
 		-- Point-to-point interface without gateway (e.g., VPN tunnel)
-		cmd = string.format("ip route add default dev %s metric %d", iface, metric)
+		auditable_exec(string.format("ip route replace default dev %s metric %d", iface, metric))
 	end
-
-	local result = exec(cmd)
-	log(string.format("Set route: gw=%s iface=%s metric=%d", gateway or "none", iface, metric))
-
-	-- Always add high-metric fallback route for ping checks
-	if keep_fallback then
-		local fallback_cmd
-		if gateway and gateway ~= "" then
-			fallback_cmd = string.format("ip route add default via %s dev %s metric 999 2>/dev/null", gateway, iface)
-		else
-			fallback_cmd = string.format("ip route add default dev %s metric 999 2>/dev/null", iface)
-		end
-		exec(fallback_cmd)
-	end
-
-	return true
-end
-
--- Ensure fallback route exists for ping checks
-local function ensure_fallback_route(gateway, iface)
-	-- Check if route already exists
-	local check_cmd
-	if gateway and gateway ~= "" then
-		check_cmd = string.format("ip route show | grep -q 'default via %s dev %s metric 999'", gateway, iface)
-	else
-		check_cmd = string.format("ip route show | grep -q 'default dev %s.*metric 999'", iface)
-	end
-
-	local result = os.execute(check_cmd)
-	if result == 0 then
-		-- Route already exists
-		return
-	end
-
-	-- Add fallback route
-	local cmd
-	if gateway and gateway ~= "" then
-		cmd = string.format("ip route add default via %s dev %s metric 999", gateway, iface)
-	else
-		cmd = string.format("ip route add default dev %s metric 999", iface)
-	end
-
-	exec(cmd)
-	log(string.format("Added fallback route: gw=%s iface=%s metric=999", gateway or "none", iface))
-end
-
--- Remove default route
-local function remove_route(gateway, iface)
-	local cmd
-	if gateway and gateway ~= "" then
-		cmd = string.format("ip route del default via %s dev %s 2>/dev/null", gateway, iface)
-	else
-		cmd = string.format("ip route del default dev %s 2>/dev/null", iface)
-	end
-	exec(cmd)
-	log(string.format("Removed route: gw=%s iface=%s", gateway or "none", iface))
 end
 
 -- Load configuration
@@ -350,7 +293,7 @@ local function update_interface_status(iface)
 
 	-- Interface is UP, now ping through it to check connectivity
 	-- Note: gateway can be nil for point-to-point interfaces (e.g., VPN tunnels)
-	local alive, latency = check_ping(iface.ping_target, iface.ping_count, iface.ping_timeout, iface.device, iface.gateway)
+	local alive, latency = check_ping(iface.ping_target, iface.ping_count, iface.ping_timeout, iface.device)
 	local new_status = alive and "up" or "down"
 	iface.last_check = os.time()
 
@@ -397,20 +340,13 @@ local function handle_failover(config)
 
 	-- For down interfaces: set very high metric (900) so they don't interfere but pings still work
 	for _, iface in ipairs(down_ifaces) do
-		-- Remove any existing routes for this interface
+		-- Use 'replace' instead of 'add' to handle cases where route already exists
+		-- This avoids the need to delete first and handles both creation and update
 		if iface.gateway and iface.gateway ~= "" then
-			exec(string.format("ip route del default via %s dev %s 2>/dev/null", iface.gateway, iface.device))
+			auditable_exec(string.format("ip route replace default via %s dev %s metric 900", iface.gateway, iface.device))
 		else
-			exec(string.format("ip route del default dev %s 2>/dev/null", iface.device))
+			auditable_exec(string.format("ip route replace default dev %s metric 900", iface.device))
 		end
-
-		-- Add high-metric route for ping checks (900 = still allows pings but won't be used for traffic)
-		if iface.gateway and iface.gateway ~= "" then
-			exec(string.format("ip route add default via %s dev %s metric 900 2>/dev/null", iface.gateway, iface.device))
-		else
-			exec(string.format("ip route add default dev %s metric 900 2>/dev/null", iface.device))
-		end
-		log(string.format("Set high-metric route for down interface %s (%s) metric=900", iface.name, iface.device))
 	end
 
 	if #sorted_ifaces == 0 then
@@ -451,20 +387,13 @@ local function handle_multiuplink(config)
 
 	-- For down interfaces: set very high metric (900) so pings still work
 	for _, iface in ipairs(down_ifaces) do
-		-- Remove any existing routes for this interface
+		-- Use 'replace' instead of 'add' to handle cases where route already exists
+		-- This avoids the need to delete first and handles both creation and update
 		if iface.gateway and iface.gateway ~= "" then
-			exec(string.format("ip route del default via %s dev %s 2>/dev/null", iface.gateway, iface.device))
+			auditable_exec(string.format("ip route replace default via %s dev %s metric 900", iface.gateway, iface.device))
 		else
-			exec(string.format("ip route del default dev %s 2>/dev/null", iface.device))
+			auditable_exec(string.format("ip route replace default dev %s metric 900", iface.device))
 		end
-
-		-- Add high-metric route for ping checks
-		if iface.gateway and iface.gateway ~= "" then
-			exec(string.format("ip route add default via %s dev %s metric 900 2>/dev/null", iface.gateway, iface.device))
-		else
-			exec(string.format("ip route add default dev %s metric 900 2>/dev/null", iface.device))
-		end
-		log(string.format("Set high-metric route for down interface %s (%s) metric=900", iface.name, iface.device))
 	end
 
 	if #active_ifaces == 0 then
@@ -473,7 +402,7 @@ local function handle_multiuplink(config)
 	end
 
 	-- Remove all existing default routes (except metric 900)
-	exec("ip route show | grep '^default' | grep -v 'metric 900' | while read route; do ip route del $route 2>/dev/null; done")
+	auditable_exec("ip route show | grep '^default' | grep -v 'metric 900' | while read route; do ip route del $route 2>/dev/null; done")
 
 	-- Build multipath route command
 	-- ip route replace default nexthop via GW1 dev DEV1 weight W1 nexthop dev DEV2 weight W2
@@ -490,8 +419,7 @@ local function handle_multiuplink(config)
 	end
 
 	local multipath_cmd = "ip route replace default " .. table.concat(route_parts, " ")
-	exec(multipath_cmd)
-	log(string.format("Multipath route set: %s", multipath_cmd))
+	auditable_exec(multipath_cmd)
 end
 
 -- Main daemon loop
