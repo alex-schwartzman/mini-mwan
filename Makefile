@@ -19,15 +19,16 @@ all-from-scratch: feeds-fetch-from-scratch feeds-register build
 build:
 	@echo "=== Building packages (official structure with luci.mk) ==="
 	docker-compose run --rm openwrt-sdk bash -c "\
+		scripts/feeds update -i -a && \
+		scripts/feeds install -a && \
 		make defconfig && \
-		make -j1 V=s package/mini-mwan/compile && \
-		make -j1 V=s package/luci-app-mini-mwan/compile && \
+		make package/feeds/luci/luci-app-mini-mwan/compile V=s && \
 		echo '' && \
 		echo '=== Packages Built ===' && \
-		find bin/packages -name 'mini-mwan*.ipk' -o -name 'luci-app-mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
+		find bin/packages -name '*mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
 
 # Fetch into empty feeds volume
-feeds-fetch:
+feeds-forcefetch:
 	@echo "=== Fetching feeds ==="
 	docker-compose run --rm openwrt-sdk scripts/feeds update -a
 
@@ -55,7 +56,8 @@ help:
 	@echo "Available targets:"
 	@echo "  all            - Fetch feeds, register, and build (default)"
 	@echo "  build          - Build both packages only (assumes feeds ready)"
-	@echo "  feeds-fetch    - Fetch/discover packages from feeds (using 'feeds update')"
+	@echo "  feeds-forcefetch    - Fetch/discover packages from internet feeds (using 'feeds update')"
+	@echo "  feeds-fetch    - Fetch/discover packages from local copy of feeds (using 'feeds update')"
 	@echo "  feeds-register - Register feeds into build system (using 'feeds install')"
 	@echo "  shell          - Open shell in build container for debugging"
 	@echo "  help           - Show this help message"

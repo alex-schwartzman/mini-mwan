@@ -6,21 +6,17 @@ services:
     image: mini-mwan-builder
     container_name: mini-mwan-builder
     volumes:
-      # Mount mini-mwan package (daemon)
-      - ./mini-mwan/files:/builder/package/mini-mwan/files:ro
-      - ./mini-mwan/Makefile.devcontainer:/builder/package/mini-mwan/Makefile:ro
-      # Mount luci-app-mini-mwan package (LuCI interface)
-      - ./luci-app-mini-mwan/htdocs:/builder/package/luci-app-mini-mwan/htdocs:ro
-      - ./luci-app-mini-mwan/root:/builder/package/luci-app-mini-mwan/root:ro
-      - ./luci-app-mini-mwan/Makefile.devcontainer:/builder/package/luci-app-mini-mwan/Makefile:ro
+      # Mount local OpenWRT repositories from host (create ~/openwrt-repos first)
+      - ~/openwrt-repos:/openwrt-repos:rw
+      #and inside those repositories there will be our packages to be built
+      - ./mini-mwan:/openwrt-repos/packages/net/mini-mwan/:ro
+      - ./luci-app-mini-mwan:/openwrt-repos/luci/applications/luci-app-mini-mwan/:ro
       # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
       # NOTE: there is no way to preserve .config between builds. Therefore, configuration will always remain
       # ephemeral, at least until the moment when I figure out how to work it around.
       # Mount output directory for built packages
       - ./bin:/builder/bin
-      # Mount local OpenWRT repositories from host (create ~/openwrt-repos first)
-      - ~/openwrt-repos:/openwrt-repos:rw
       # Use named volumes for build artifacts (faster than macOS filesystem)
       - openwrt-feeds:/builder/feeds
       - openwrt-dl:/builder/dl
