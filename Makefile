@@ -5,46 +5,25 @@
 .DEFAULT_GOAL := all
 
 # Full build: refetch feeds, register them, then build packages
-all: feeds-fetch feeds-register build
+all: build
 	@echo ""
 	@echo "=== Full build complete ==="
-
-
-# Full build: refetch feeds, register them, then build packages
-all-from-scratch: feeds-fetch-from-scratch feeds-register build
-	@echo ""
-	@echo "=== Full build from scratch complete ==="
 
 # Build both packages.
 build:
 	@echo "=== Building packages (official structure with luci.mk) ==="
-	docker-compose run --rm openwrt-sdk bash -c "\
-		scripts/feeds update -i -a && \
-		scripts/feeds install -a && \
+	docker-compose run --rm openwrt-sdk-ramips bash -c "\
+		scripts/feeds update luci-app-mini-mwan && \
+		scripts/feeds install luci-app-mini-mwan && \
 		make defconfig && \
 		make package/feeds/luci/luci-app-mini-mwan/compile V=s && \
 		echo '' && \
 		echo '=== Packages Built ===' && \
 		find bin/packages -name '*mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
 
-# Fetch into empty feeds volume
-feeds-forcefetch:
-	@echo "=== Fetching feeds ==="
-	docker-compose run --rm openwrt-sdk scripts/feeds update -a
-
-# Fetch/discover available packages in feeds
-feeds-fetch:
-	@echo "=== Fetching feeds (discovering packages) ==="
-	docker-compose run --rm openwrt-sdk scripts/feeds update -i -a
-
-# Register feeds into build system (symlink packages)
-feeds-register:
-	@echo "=== Registering feeds (symlinking packages) ==="
-	docker-compose run --rm openwrt-sdk scripts/feeds install -a
-
 # Open a shell in the build container
 shell:
-	docker-compose run --rm openwrt-sdk bash
+	docker-compose run --rm openwrt-sdk-ramips bash
 
 nginx:
 	mkdir -p nginx-run/{logs,run,client_body_temp,proxy_temp,fastcgi_temp,uwsgi_temp,scgi_temp}
@@ -53,7 +32,6 @@ nginx:
 # Open a shell in the build container
 check:
 	luacheck mini-mwan/files/mini-mwan.lua
-
 
 # Show help
 help:
@@ -65,9 +43,6 @@ help:
 	@echo "Available targets:"
 	@echo "  all            - Fetch feeds, register, and build (default)"
 	@echo "  build          - Build both packages only (assumes feeds ready)"
-	@echo "  feeds-forcefetch    - Fetch/discover packages from internet feeds (using 'feeds update')"
-	@echo "  feeds-fetch    - Fetch/discover packages from local copy of feeds (using 'feeds update')"
-	@echo "  feeds-register - Register feeds into build system (using 'feeds install')"
 	@echo "  shell          - Open shell in build container for debugging"
 	@echo "  help           - Show this help message"
 	@echo ""

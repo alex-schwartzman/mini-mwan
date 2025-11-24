@@ -1,29 +1,57 @@
+# Common configuration shared across all SDK services
+x-common-config: &common-config
+  build:
+    context: .
+    dockerfile: Dockerfile
+  working_dir: /builder
+  stdin_open: true
+  tty: true
+
 services:
-  openwrt-sdk:
+  openwrt-sdk-x86:
+    <<: *common-config
     build:
       context: .
       dockerfile: Dockerfile
-    image: mini-mwan-builder
-    container_name: mini-mwan-builder
+      args:
+        ARCH: x86-64
+    image: mini-mwan-builder-x86
+    container_name: mini-mwan-builder-x86-64
     volumes:
-      # Mount local OpenWRT repositories from host (create ~/openwrt-repos first)
+      # Shared mounted directories (same source code for all architectures)
       - ~/openwrt-repos:/openwrt-repos:rw
-      #and inside those repositories there will be our packages to be built
       - ./mini-mwan:/openwrt-repos/packages/net/mini-mwan/:ro
       - ./luci-app-mini-mwan:/openwrt-repos/luci/applications/luci-app-mini-mwan/:ro
-      # Mount custom feeds configuration
       - ./feeds.conf:/builder/feeds.conf:ro
-      # NOTE: there is no way to preserve .config between builds. Therefore, configuration will always remain
-      # ephemeral, at least until the moment when I figure out how to work it around.
-      # Mount output directory for built packages
       - ./bin:/builder/bin
-      # Use named volumes for build artifacts (faster than macOS filesystem)
-      - openwrt-feeds:/builder/feeds
-      - openwrt-dl:/builder/dl
-    working_dir: /builder
-    stdin_open: true
-    tty: true
+      # Architecture-specific volumes for build artifacts
+      - openwrt-feeds-x86:/builder/feeds
+      - openwrt-dl-x86:/builder/dl
+
+  openwrt-sdk-ramips:
+    <<: *common-config
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ARCH: ramips-mt76x8
+    image: mini-mwan-builder-ramips-mt76x8
+    container_name: mini-mwan-builder-ramips-mt76x8
+    volumes:
+      # Shared mounted directories (same source code for all architectures)
+      - ~/openwrt-repos:/openwrt-repos:rw
+      - ./mini-mwan:/openwrt-repos/packages/net/mini-mwan/:ro
+      - ./luci-app-mini-mwan:/openwrt-repos/luci/applications/luci-app-mini-mwan/:ro
+      - ./feeds.conf:/builder/feeds.conf:ro
+      - ./bin:/builder/bin
+      # Architecture-specific volumes for build artifacts
+      - openwrt-feeds-ramips:/builder/feeds
+      - openwrt-dl-ramips:/builder/dl
 
 volumes:
-  openwrt-feeds:
-  openwrt-dl:
+  # x86-64 specific volumes
+  openwrt-feeds-x86:
+  openwrt-dl-x86:
+  # ramips-mt76x8 specific volumes
+  openwrt-feeds-ramips:
+  openwrt-dl-ramips:

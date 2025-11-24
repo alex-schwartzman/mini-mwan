@@ -1,5 +1,7 @@
-# Use official OpenWRT SDK image for x86-64 (faster native builds on Intel Mac)
-FROM openwrt/sdk:x86-64-24.10.0
+# Parametrized Dockerfile for OpenWRT SDK builds
+# Use build arg to specify architecture (e.g., x86-64, ramips-mt76x8)
+ARG ARCH=x86-64
+FROM openwrt/sdk:${ARCH}-24.10.0
 
 # Switch to root to set up directories
 USER root
