@@ -136,7 +136,8 @@ local function check_ping(target, count, timeout, device)
 	if received and tonumber(received) > 0 then
 		-- Parse average latency
 		local avg_latency = output:match("min/avg/max[^=]+=.-/(.-)/")
-		return true, tonumber(avg_latency) or 0
+		log(string.format("Ping successful: %s %s", target, avg_latency), "debug")  -- err
+		return true, avg_latency
 	end
 
 	return false, 0
@@ -376,7 +377,7 @@ end
 
 local function transition_iface_down(iface_state)
 	if iface_state.is_up then
-		iface_state.latency = 0
+		iface_state.latency = "?"
 		iface_state.is_up = false
 		iface_state.status_since = deps.time()
 	end
@@ -434,7 +435,7 @@ local function probe_state(config)
 			does_exist = saved_state.does_exist or false,
 			is_up = saved_state.is_up or false,
 			status_since = saved_state.status_since,
-			latency = saved_state.latency or 0,
+			latency = saved_state.latency or "?",
 			-- Discover gateway from network dump (O(1) lookup)
 			gateway = gateway_map[iface_cfg.device],
 			degraded = saved_state.degraded or 0,
@@ -654,9 +655,7 @@ local function work_cycle()
 	end
 
 	-- Reschedule timer with current check_interval
-	if work_timer then
-		work_timer:set(config.check_interval * 1000)  -- milliseconds
-	end
+	work_timer:set(config.check_interval * 1000)  -- milliseconds
 end
 
 -- ubus method handlers
