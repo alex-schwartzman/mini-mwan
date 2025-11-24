@@ -151,7 +151,10 @@ return view.extend({
 			// If no value exists (new interface), calculate based on interface count
 			if (!value || value === '') {
 				var sections = uci.sections('mini-mwan', 'interface');
-				return String(sections.length * 10);
+				var calculatedMetric = String(sections.length * 10);
+				// Set the value in UCI so it persists
+				uci.set('mini-mwan', section_id, 'metric', calculatedMetric);
+				return calculatedMetric;
 			}
 			return value;
 		};

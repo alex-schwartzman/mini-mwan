@@ -25,6 +25,10 @@ build:
 shell:
 	docker-compose run --rm openwrt-sdk-ramips bash
 
+#listen to localhost:8080 and replace static content for the app
+#to make it work, you need to replace "asusrouter" with name of
+#your router where to fetch the rest of the LuCI static content
+#and don't forget to terminate it with killall -9 nginx
 nginx:
 	mkdir -p nginx-run/{logs,run,client_body_temp,proxy_temp,fastcgi_temp,uwsgi_temp,scgi_temp}
 	nginx -c `pwd`/localhost-development-nginx.conf -p `pwd`
