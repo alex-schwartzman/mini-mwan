@@ -173,21 +173,28 @@ State persistence tests needed. Suggested file: `spec/unit/state_spec.lua`
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-5.1 | Dual Logging | High | (needs test) | ⏳ |
-| FR-5.2 | Event Logging | High | (needs test) | ⏳ |
-| FR-5.3 | Audit Logging | Medium | (needs test) | ⏳ |
-| FR-5.4 | Network Statistics | Low | (needs test) | ⏳ |
+| FR-5.1 | Event Logging | High | `spec/integration/logging_spec.lua` | ✅ |
+| FR-5.2 | Audit Logging | Medium | `spec/integration/logging_spec.lua` | ✅ |
+| FR-5.3 | Network Statistics | Low | (needs test) | ⏳ |
 
-### Coverage Gap
-Logging tests needed. Suggested file: `spec/unit/logging_spec.lua`
+### Test Coverage Details
 
-**Test Cases Needed**:
-- Log to file
-- Log to syslog
-- Log format correct
-- Status changes logged
-- Audit mode logs commands
-- Network stats collected
+#### FR-5.1: Event Logging
+**Test Cases** in `spec/integration/logging_spec.lua`:
+- ✓ Interface UP transitions logged at info level with latency
+- ✓ Interface DOWN transitions logged at info level
+- ✓ Route interventions logged at notice level
+- ✓ Route cleanup logged at notice level
+- ✓ Degradation warnings logged at warning level
+- ✓ Ping results logged at debug level
+- ✓ System probes logged at debug level
+
+#### FR-5.2: Audit Logging
+**Test Cases** in `spec/integration/logging_spec.lua`:
+- ✓ System probes (ubus, ip addr, ping) logged at debug level
+- ✓ System interventions (ip route) logged at notice level
+- ✓ Normal operations (nothing changed) - debug logging only
+- ✓ State-changing operations - notice logging for interventions
 
 ---
 
@@ -214,9 +221,9 @@ FR-6.1 and FR-6.2 require system-level testing (init scripts, procd integration)
 | FR-2: Routing | 5 | 5 | 0 | 0 | 100% |
 | FR-3: Configuration | 5 | 0 | 0 | 5 | 0% |
 | FR-4: State | 2 | 1 | 0 | 1 | 50% |
-| FR-5: Logging | 4 | 0 | 0 | 4 | 0% |
+| FR-5: Logging | 3 | 2 | 0 | 1 | 67% |
 | FR-6: Operational | 3 | 1 | 0 | 2 | 33% |
-| **TOTAL** | **25** | **13** | **0** | **12** | **52%** |
+| **TOTAL** | **24** | **15** | **0** | **9** | **63%** |
 
 ### Priority Coverage
 

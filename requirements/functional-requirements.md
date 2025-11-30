@@ -243,46 +243,52 @@
 
 ## FR-5: Logging and Audit
 
-### FR-5.1 Dual Logging
+### FR-5.1 Event Logging
 **ID**: FR-5.1
 **Priority**: High
-**Description**: The system SHALL log to both file and syslog.
+**Description**: The system SHALL log significant events at appropriate priority levels.
 
-**Acceptance Criteria**:
-- Application log MUST be at `/var/log/mini-mwan.log`
-- Same messages MUST be sent to syslog with tag "mini-mwan"
-- Log messages MUST include ISO 8601 timestamps
-- Log format: `[YYYY-MM-DD HH:MM:SS] message`
+**Logged Events by Priority**:
 
-### FR-5.2 Event Logging
-**ID**: FR-5.2
-**Priority**: High
-**Description**: The system SHALL log significant events.
+**info** - Operational state changes:
+- Interface UP transitions (with latency)
+- Interface DOWN transitions
 
-**Logged Events**:
-- Daemon startup
-- Status changes (with old and new status)
-- Interface degradation detection
-- Primary interface selection (failover mode)
-- Multipath route creation (multiuplink mode)
+**notice** - System interventions:
+- Route additions/replacements
+- Route deletions
+- Routing table modifications
+
+**warning** - Degradation conditions:
+- Interface missing gateway (DHCP incomplete)
+- IPv6 detected on interface (not supported)
+
+**err** - Critical failures:
+- Ping command execution failure (tool missing)
+- Malformed ping output (unparseable)
+- JSON parsing errors (ubus)
 - Configuration errors
-- No WAN connections available
+- ubus connection failures
 
-### FR-5.3 Audit Logging
-**ID**: FR-5.3
+**debug** - Diagnostic information:
+- System probes (ubus, ip commands, ping)
+- Ping results (success with latency, or 0 packets received)
+
+### FR-5.2 Audit Logging
+**ID**: FR-5.2
 **Priority**: Medium
-**Description**: The system SHALL optionally log all executed commands at configurable verbosity levels.
+**Description**: The system SHALL log executed commands at appropriate verbosity levels.
 
 **Acceptance Criteria**:
-- Audit logging MUST be disabled by default (`audit="none"`)
-- When set to "info" level, important shell commands MUST be logged before execution
-- When set to "debug" level, all shell commands MUST be logged before execution
-- Audit logs SHALL use format: "Executing: <command>"
+- System probes (read-only commands: ubus call, ip addr show, ping) MUST be logged at **debug** level with format "Probe: <command>"
+- System interventions (state-changing commands: ip route replace/delete) MUST be logged at **notice** level with format "Intervention: <command>"
+- Interface state transitions MUST be logged at **info** level
+- Error conditions MUST be logged at **err** level
+- Degradation conditions MUST be logged at **warning** level
 - Audit logs MUST NOT log sensitive information
-- Log level names ("none", "info", "debug") SHALL be used instead of numeric values
 
-### FR-5.4 Network Statistics
-**ID**: FR-5.4
+### FR-5.3 Network Statistics
+**ID**: FR-5.3
 **Priority**: Low
 **Description**: The system SHALL collect network traffic statistics.
 

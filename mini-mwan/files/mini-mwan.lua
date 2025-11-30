@@ -123,13 +123,19 @@ local function check_ping(target, count, timeout, device)
 
 	-- Parse ping statistics
 	local received = output:match("(%d+) packets received")
-	if received and tonumber(received) > 0 then
+	if not received then
+		log(string.format("Ping failed: could not parse output: %s", cmd), "err")
+		return false, 0
+	end
+
+	if tonumber(received) > 0 then
 		-- Parse average latency
 		local avg_latency = output:match("min/avg/max[^=]+=.-/(.-)/")
-		log(string.format("Ping successful: %s %s", target, avg_latency), "debug")  -- err
+		log(string.format("Ping successful: %s %s", target, avg_latency), "debug")
 		return true, avg_latency
 	end
 
+	log(string.format("Ping failed: 0 packets received to %s via %s", target, device), "debug")
 	return false, 0
 end
 
@@ -139,7 +145,13 @@ local function check_interface_is_up(iface)
 	local cmd = string.format("ip addr show dev %s 2>/dev/null", iface)
 	local output = system_probe(cmd)
 
-	if not output or output:match("does not exist") then
+	if not output then
+		log(string.format("Failed to start ip addr show for iface: %s", iface), "err")
+		return false, false  -- some serious problem - binary not found or so
+	end
+
+	if output:match("does not exist") then
+		log(string.format("Device does not exist: %s", iface), "notice")
 		return false, false  -- Device doesn't exist
 	end
 
@@ -365,8 +377,9 @@ local function save_interface_state(device, iface_state)
 	return iface_state
 end
 
-local function transition_iface_down(iface_state)
+local function transition_iface_down(device, iface_state)
 	if iface_state.is_up then
+		log(string.format("%s: Interface DOWN (connectivity lost)", device or "unknown"), "info")
 		iface_state.latency = "?"
 		iface_state.is_up = false
 		iface_state.status_since = deps.time()
@@ -374,8 +387,9 @@ local function transition_iface_down(iface_state)
 	return iface_state
 end
 
-local function transition_iface_up(iface_state)
+local function transition_iface_up(device, iface_state)
 	if not iface_state.is_up then
+		log(string.format("%s: Interface UP (latency: %s ms)", device or "unknown", iface_state.latency or "?"), "info")
 		iface_state.is_up = true
 		iface_state.status_since = deps.time()
 	end
@@ -392,7 +406,7 @@ local function update_interface_status(iface_cfg, iface_state)
 	iface_state.does_exist = does_exist;
 
 	if not is_up then
-		return save_interface_state(iface_cfg.device, transition_iface_down(iface_state))
+		return save_interface_state(iface_cfg.device, transition_iface_down(iface_cfg.device, iface_state))
 	end
 
 	-- Interface exists and is UP, now ping through it to check connectivity
@@ -400,9 +414,9 @@ local function update_interface_status(iface_cfg, iface_state)
 	local alive, latency = check_ping(iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, iface_cfg.device)
     if alive then
 		iface_state.latency = latency
-		return save_interface_state(iface_cfg.device, transition_iface_up(iface_state))
+		return save_interface_state(iface_cfg.device, transition_iface_up(iface_cfg.device, iface_state))
 	else
-		return save_interface_state(iface_cfg.device, transition_iface_down(iface_state))
+		return save_interface_state(iface_cfg.device, transition_iface_down(iface_cfg.device, iface_state))
 	end
 end
 
