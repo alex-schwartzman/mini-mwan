@@ -73,16 +73,18 @@ end
 -- Mock successful ping response
 function M.mock_ping_success(latency)
 	latency = latency or 12.5
+	local min_latency = latency - 1
+	local max_latency = latency + 1
 	return string.format([[
 PING 1.1.1.1 (1.1.1.1): 56 data bytes
-64 bytes from 1.1.1.1: seq=0 ttl=56 time=41.550 ms
-64 bytes from 1.1.1.1: seq=1 ttl=56 time=40.945 ms
-64 bytes from 1.1.1.1: seq=2 ttl=56 time=41.602 ms
+64 bytes from 1.1.1.1: seq=0 ttl=57 time=%.3f ms
+64 bytes from 1.1.1.1: seq=1 ttl=57 time=%.3f ms
+64 bytes from 1.1.1.1: seq=2 ttl=57 time=%.3f ms
 
 --- 1.1.1.1 ping statistics ---
 3 packets transmitted, 3 packets received, 0%% packet loss
-round-trip min/avg/max = %.1f/%.1f/%.1f/0.5 ms
-]], latency, latency, latency, latency-1, latency, latency+1)
+round-trip min/avg/max = %.3f/%.3f/%.3f ms
+]], min_latency, latency, max_latency, min_latency, latency, max_latency)
 end
 
 -- Mock failed ping response
@@ -263,16 +265,18 @@ end
 function M.mock_log()
 	--[[
 	Build log mock that:
-	1. Saves logs to file for visibility (test mode)
-	2. Remembers all logged strings until reset()
-	3. Can be used to test that debug logs don't appear when error level is set
+	1. Saves ALL logs regardless of level
+	2. Records each log with its priority level
+	3. Tests can verify correct priority levels were used
 
 	Usage:
 		local log_mock = M.mock_log()
 		deps.log = log_mock.log
 		-- ... run tests ...
-		local messages = log_mock.get_messages()
+		local all_messages = log_mock.get_messages()
 		local debug_msgs = log_mock.get_messages_by_priority("debug")
+		-- Verify no debug messages when log level is "err"
+		assert.equals(0, #debug_msgs)
 	]]
 	local LOG_FILE = "/var/log/mini-mwan.log"
 	local log_file_content = ""
@@ -281,7 +285,7 @@ function M.mock_log()
 		log = function(msg, priority)
 			priority = priority or "info"
 
-			-- Track message with priority
+			-- Track ALL messages with their priority
 			local entry = {
 				message = msg,
 				priority = priority,
@@ -398,7 +402,7 @@ function M.build_deps(overrides)
 		open_file = overrides.open_file or M.mock_file_io().open,
 		uci_cursor = overrides.uci_cursor or function()
 			return M.mock_uci_cursor({
-				settings = { enabled = "1", mode = "failover", check_interval = "30" },
+				settings = { enabled = "1", mode = "failover", check_interval = "30", audit = "err" },
 				interfaces = {}
 			})
 		end,
@@ -474,6 +478,47 @@ function M.assert_route_deleted(gateway, device)
 
 	if not found then
 		error(string.format("Expected route delete not found: %s", pattern))
+	end
+end
+
+function M.assert_multipath_route(expected_nexthops)
+	--[[
+	Assert that a multipath route was created with expected nexthops
+
+	Usage:
+		M.assert_multipath_route({
+			{ gateway = "192.168.1.1", device = "eth0", weight = 3 },
+			{ device = "wg0", weight = 5 }  -- P2P without gateway
+		})
+	]]
+	-- Find the multipath route command
+	local multipath_cmd = nil
+	for _, cmd in ipairs(M.executed_commands) do
+		if cmd:match("^ip route replace default nexthop") then
+			multipath_cmd = cmd
+			break
+		end
+	end
+
+	if not multipath_cmd then
+		error("No multipath route command found in executed commands")
+	end
+
+	-- Verify each expected nexthop is in the command
+	for _, nexthop in ipairs(expected_nexthops) do
+		local pattern
+		if nexthop.gateway then
+			pattern = string.format("nexthop via %s dev %s weight %d",
+			                       nexthop.gateway, nexthop.device, nexthop.weight)
+		else
+			pattern = string.format("nexthop dev %s weight %d",
+			                       nexthop.device, nexthop.weight)
+		end
+
+		if not multipath_cmd:match(pattern:gsub("%-", "%%-")) then
+			error(string.format("Expected nexthop not found in multipath route:\nExpected: %s\nActual command: %s",
+			                   pattern, multipath_cmd))
+		end
 	end
 end
 

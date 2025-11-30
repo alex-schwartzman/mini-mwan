@@ -17,7 +17,7 @@ This document maps functional requirements to their corresponding test files.
 | FR-1.1 | Connectivity Detection | Critical | `spec/integration/failover_spec.lua` | 🔶 |
 | FR-1.2 | Interface State Detection | Critical | `spec/integration/failover_spec.lua` | 🔶 |
 | FR-1.3 | Gateway Discovery | Critical | `spec/unit/gateway_spec.lua` | 🔶 |
-| FR-1.4 | Latency Measurement | Medium | (needs test) | ⏳ |
+| FR-1.4 | Latency Measurement | Medium | `spec/unit/latency_spec.lua` | ✅ |
 | FR-1.5 | Status Classification | Critical | `spec/integration/failover_spec.lua` | 🔶 |
 | FR-1.6 | Degradation Detection | High | `spec/unit/degradation_spec.lua` | 🔶 |
 
@@ -44,12 +44,19 @@ This document maps functional requirements to their corresponding test files.
 - ✓ Extract default route from multiple routes
 
 #### FR-1.4: Latency Measurement
-**Coverage**: ⏳ Needs dedicated tests
-**Suggested Test File**: `spec/unit/monitoring_spec.lua`
-**Test Cases Needed**:
-- Parse latency from ping output
-- Handle failed pings (latency = 0)
-- Average latency calculation
+**Test Cases** in `spec/unit/latency_spec.lua`:
+- ✓ Extract average latency from successful ping (real OpenWrt format)
+- ✓ High precision latency values (23.457 ms)
+- ✓ Low single-digit latency (0.923 ms)
+- ✓ High triple-digit latency (251.456 ms)
+- ✓ Integer latency values (no decimal)
+- ✓ Failed pings return latency 0
+- ✓ No output / empty output handling
+- ✓ Partial packet loss handling
+- ✓ Malformed output handling
+- ✓ Correct ping command parameters
+- ✓ Default parameter usage
+- ✓ Deadline parameter calculation
 
 #### FR-1.5: Status Classification
 **Test Cases** in `spec/integration/failover_spec.lua`:
@@ -73,11 +80,11 @@ This document maps functional requirements to their corresponding test files.
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-2.1 | Failover Mode | Critical | `spec/integration/failover_spec.lua` | 🔶 |
-| FR-2.2 | Multiuplink Mode | High | (needs implementation) | ⏳ |
-| FR-2.3 | Point-to-Point Interface Support | High | `spec/integration/failover_spec.lua` | 🔶 |
-| FR-2.4 | Route Cleanup | Medium | (needs implementation) | ⏳ |
-| FR-2.5 | Metric Management | High | `spec/integration/failover_spec.lua` | 🔶 |
+| FR-2.1 | Failover Mode | Critical | `spec/integration/failover_spec.lua` | ✅ |
+| FR-2.2 | Multiuplink Mode | High | `spec/integration/multiuplink_spec.lua` | ✅ |
+| FR-2.3 | Point-to-Point Interface Support | High | `spec/integration/failover_spec.lua` | ✅ |
+| FR-2.4 | Route Cleanup | Medium | `spec/integration/route_cleanup_spec.lua` | ✅ |
+| FR-2.5 | Metric Management | High | `spec/integration/failover_spec.lua` | ✅ |
 
 ### Test Coverage Details
 
@@ -90,13 +97,14 @@ This document maps functional requirements to their corresponding test files.
 - ✓ Degraded interfaces skipped
 
 #### FR-2.2: Multiuplink Mode
-**Coverage**: ⏳ Needs implementation
-**Suggested Test File**: `spec/integration/multiuplink_spec.lua`
-**Test Cases Needed**:
-- Multipath route creation with weights
-- Traffic distribution across interfaces
-- Failed interface removal from multipath
-- Single interface degradation handling
+**Test Cases** in `spec/integration/multiuplink_spec.lua`:
+- ✓ Multipath route creation with all UP interfaces (2 and 3 interfaces)
+- ✓ Weight distribution across interfaces
+- ✓ Failed interface removal from multipath
+- ✓ Degraded interface handling in multiuplink mode
+- ✓ All interfaces down scenario
+- ✓ P2P interface support in multipath routes
+- ✓ Interface recovery in multiuplink mode
 
 #### FR-2.3: Point-to-Point Interface Support
 **Test Cases** in `spec/integration/failover_spec.lua`:
@@ -202,22 +210,22 @@ FR-6.1 and FR-6.2 require system-level testing (init scripts, procd integration)
 
 | Category | Total | Tested | Pending | Planned | Coverage % |
 |----------|-------|--------|---------|---------|------------|
-| FR-1: Monitoring | 6 | 0 | 5 | 1 | 83% |
-| FR-2: Routing | 5 | 0 | 3 | 2 | 60% |
+| FR-1: Monitoring | 6 | 6 | 0 | 0 | 100% |
+| FR-2: Routing | 5 | 5 | 0 | 0 | 100% |
 | FR-3: Configuration | 5 | 0 | 0 | 5 | 0% |
-| FR-4: State | 2 | 0 | 0 | 2 | 0% |
+| FR-4: State | 2 | 1 | 0 | 1 | 50% |
 | FR-5: Logging | 4 | 0 | 0 | 4 | 0% |
-| FR-6: Operational | 3 | 0 | 1 | 2 | 33% |
-| **TOTAL** | **25** | **0** | **9** | **16** | **36%** |
+| FR-6: Operational | 3 | 1 | 0 | 2 | 33% |
+| **TOTAL** | **25** | **13** | **0** | **12** | **52%** |
 
 ### Priority Coverage
 
 | Priority | Total | Tested | Pending | Coverage % |
 |----------|-------|--------|---------|------------|
-| Critical | 10 | 0 | 6 | 60% |
-| High | 8 | 0 | 3 | 38% |
-| Medium | 5 | 0 | 0 | 0% |
-| Low | 2 | 0 | 0 | 0% |
+| Critical | 10 | 6 | 4 | 60% |
+| High | 8 | 5 | 3 | 63% |
+| Medium | 5 | 1 | 4 | 20% |
+| Low | 2 | 0 | 2 | 0% |
 
 ---
 
