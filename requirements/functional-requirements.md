@@ -183,7 +183,6 @@
 | `ping_target` | string | - | Yes | IP address for connectivity checks |
 | `ping_count` | integer | 3 | No | Number of ping packets |
 | `ping_timeout` | integer | 2 | No | Ping timeout in seconds |
-| `point_to_point` | boolean | 0 | No | Interface is P2P (VPN/tunnel) |
 
 ### FR-3.4 Dynamic Interface Support
 **ID**: FR-3.4

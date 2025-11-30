@@ -23,7 +23,6 @@ config interface '<name>'
 	option ping_target '<ip_address>'
 	option ping_count '<number>'
 	option ping_timeout '<seconds>'
-	option point_to_point '0|1'
 ```
 
 **Field Specifications**:
@@ -46,7 +45,6 @@ config interface '<name>'
 | ping_target | string | Valid IPv4 address | - | Yes |
 | ping_count | integer | 1-10 | 3 | No |
 | ping_timeout | integer | 1-30 | 2 | No |
-| point_to_point | boolean | 0, 1 | 0 | No |
 
 **Validation Rules**:
 - At least 2 interface sections MUST be defined
