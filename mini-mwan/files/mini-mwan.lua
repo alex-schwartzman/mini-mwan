@@ -52,6 +52,9 @@ local deps = {
 		handle:close()
 		return output
 	end,
+	log = function(msg, priority)
+		nixio.syslog(priority, msg)
+	end,
 	sleep = function(seconds)
 		nixio.nanosleep(seconds)
 	end,
@@ -85,20 +88,7 @@ end
 -- Uses syslog for centralized logging (standard on OpenWRT)
 local function log(msg, priority)
 	priority = priority or "info"
-
-	if nixio then
-		-- Production: use syslog via nixio
-		nixio.syslog(priority, msg)
-	else
-		-- Test mode: write to file with timestamp
-		local timestamp = os.date("%Y-%m-%d %H:%M:%S")
-		local log_msg = string.format("[%s] %s\n", timestamp, msg)
-		local f = deps.open_file(LOG_FILE, "a")
-		if f then
-			f:write(log_msg)
-			f:close()
-		end
-	end
+	deps.log(msg, priority)
 end
 
 -- Execute read-only system probe (ping, ubus, ip route show, etc.)
@@ -742,6 +732,7 @@ if os.getenv("MINI_MWAN_TEST_MODE") then
 		classify_interfaces = classify_interfaces,
 		deprioritize_unusable_interfaces = deprioritize_unusable_interfaces,
 		work = work,
+		log = log,
 		register_ubus = register_ubus
 	}
 else

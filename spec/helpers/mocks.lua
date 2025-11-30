@@ -9,9 +9,13 @@ local M = {}
 -- Command history tracking
 M.executed_commands = {}
 
+-- Log history tracking
+M.logged_messages = {}
+
 -- Reset all mocks to initial state
 function M.reset()
 	M.executed_commands = {}
+	M.logged_messages = {}
 end
 
 -- Track executed command
@@ -255,6 +259,62 @@ function M.build_file_mock(file_contents)
 	end
 end
 
+-- Mock logging function
+function M.mock_log()
+	--[[
+	Build log mock that:
+	1. Saves logs to file for visibility (test mode)
+	2. Remembers all logged strings until reset()
+	3. Can be used to test that debug logs don't appear when error level is set
+
+	Usage:
+		local log_mock = M.mock_log()
+		deps.log = log_mock.log
+		-- ... run tests ...
+		local messages = log_mock.get_messages()
+		local debug_msgs = log_mock.get_messages_by_priority("debug")
+	]]
+	local LOG_FILE = "/var/log/mini-mwan.log"
+	local log_file_content = ""
+
+	return {
+		log = function(msg, priority)
+			priority = priority or "info"
+
+			-- Track message with priority
+			local entry = {
+				message = msg,
+				priority = priority,
+				timestamp = os.date("%Y-%m-%d %H:%M:%S")
+			}
+			table.insert(M.logged_messages, entry)
+
+			-- Also write to mock log file (for test visibility)
+			local log_line = string.format("[%s] [%s] %s\n", entry.timestamp, priority, msg)
+			log_file_content = log_file_content .. log_line
+		end,
+		get_messages = function()
+			return M.logged_messages
+		end,
+		get_messages_by_priority = function(priority)
+			local filtered = {}
+			for _, entry in ipairs(M.logged_messages) do
+				if entry.priority == priority then
+					table.insert(filtered, entry)
+				end
+			end
+			return filtered
+		end,
+		get_log_file_content = function()
+			return log_file_content
+		end,
+		reset = function()
+			M.logged_messages = {}
+			log_file_content = ""
+		end
+	}
+end
+
 -- Mock ubus connection
 function M.mock_ubus()
 	local registered_objects = {}
@@ -312,23 +372,27 @@ function M.build_deps(overrides)
 	Build complete dependency object with optional overrides
 
 	Usage:
-		local deps = M.build_deps({
+		local deps, ubus_mock, log_mock = M.build_deps({
 			exec = custom_exec_function,
 			time = function() return 1234567890 end
 		})
 
-	Returns: deps table, ubus_mock object
+	Returns: deps table, ubus_mock object, log_mock object
 	]]
 	overrides = overrides or {}
 
 	-- Default ubus mock
 	local ubus_mock = overrides.ubus_mock or M.mock_ubus()
 
+	-- Default log mock
+	local log_mock = overrides.log_mock or M.mock_log()
+
 	local deps = {
 		exec = overrides.exec or function(cmd)
 			M.track_command(cmd)
 			return ""
 		end,
+		log = overrides.log or log_mock.log,
 		sleep = overrides.sleep or function(seconds) end,
 		time = overrides.time or function() return 1698765432 end,
 		open_file = overrides.open_file or M.mock_file_io().open,
@@ -351,7 +415,7 @@ function M.build_deps(overrides)
 		uloop_run = overrides.uloop_run or function() end
 	}
 
-	return deps, ubus_mock
+	return deps, ubus_mock, log_mock
 end
 
 -- Assertion helpers

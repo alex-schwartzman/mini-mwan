@@ -36,6 +36,8 @@ describe("FR-1.6: Degradation Detection", function()
 		describe("Requirement: Regular interface without gateway", function()
 			it("should mark as degraded with reason 'no_gateway'", function()
 				-- GIVEN: Regular interface with no gateway (DHCP incomplete)
+				local deps = mocks.build_deps({})
+				mini_mwan.set_dependencies(deps)
 
 				-- WHEN: Checking degradation
 				mini_mwan.check_degradation(first_iface_cfg, first_iface_state)
@@ -58,6 +60,9 @@ describe("FR-1.6: Degradation Detection", function()
 					degraded_reason = "",
 					point_to_point = true  -- P2P interface (VPN/tunnel)
 				}
+
+				local deps = mocks.build_deps({})
+				mini_mwan.set_dependencies(deps)
 
 				-- WHEN: Checking degradation
 				mini_mwan.check_degradation(iface_cfg, iface_state)
