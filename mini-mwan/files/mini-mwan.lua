@@ -403,6 +403,14 @@ local function update_interface_status(iface_cfg, iface_state)
 
 	-- Check if interface exists and is UP
 	local does_exist, is_up = check_interface_is_up(iface_cfg.device)
+
+	-- Log interface disappearance/reappearance
+	if iface_state.does_exist and not does_exist then
+		log(string.format("%s: Interface DISAPPEARED (USB dongle removed? tunnel down?)", iface_cfg.device), "warning")
+	elseif not iface_state.does_exist and does_exist then
+		log(string.format("%s: Interface APPEARED (device reconnected)", iface_cfg.device), "info")
+	end
+
 	iface_state.does_exist = does_exist;
 
 	if not is_up then

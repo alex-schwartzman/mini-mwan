@@ -15,7 +15,7 @@ This document maps functional requirements to their corresponding test files.
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
 | FR-1.1 | Connectivity Detection | Critical | `spec/integration/failover_spec.lua` | 🔶 |
-| FR-1.2 | Interface State Detection | Critical | `spec/integration/failover_spec.lua` | 🔶 |
+| FR-1.2 | Interface State Detection | Critical | `spec/unit/interface_state_spec.lua` + `spec/integration/failover_spec.lua` | ✅ |
 | FR-1.3 | Gateway Discovery | Critical | `spec/unit/gateway_spec.lua` | 🔶 |
 | FR-1.4 | Latency Measurement | Medium | `spec/unit/latency_spec.lua` | ✅ |
 | FR-1.5 | Status Classification | Critical | `spec/integration/failover_spec.lua` | 🔶 |
@@ -30,7 +30,17 @@ This document maps functional requirements to their corresponding test files.
 - ✓ Interface recovers after failure
 
 #### FR-1.2: Interface State Detection
-**Test Cases** in `spec/integration/failover_spec.lua`:
+**Unit Tests** in `spec/unit/interface_state_spec.lua`:
+- ✓ Detect interface UP state (UP + LOWER_UP flags)
+- ✓ Detect interface DOWN state (no UP flag)
+- ✓ Detect non-existent interface ("does not exist" message)
+- ✓ Handle interface with only UP flag (no LOWER_UP)
+- ✓ Handle interface with LOWER_UP only (matches "UP" substring)
+- ✓ Handle empty output (no device match)
+- ✓ Parse real OpenWrt ip addr output format
+- ✓ Handle VLAN interfaces (eth0.100 naming)
+
+**Integration Tests** in `spec/integration/failover_spec.lua`:
 - ✓ Interface physically UP
 - ✓ Interface physically DOWN
 - ✓ Interface recovery
@@ -131,22 +141,52 @@ This document maps functional requirements to their corresponding test files.
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-3.1 | UCI Configuration | Critical | (needs test) | ⏳ |
-| FR-3.2 | Global Settings | Critical | (needs test) | ⏳ |
-| FR-3.3 | Interface Configuration | Critical | (needs test) | ⏳ |
-| FR-3.4 | Dynamic Interface Support | Medium | (needs test) | ⏳ |
-| FR-3.5 | Validation Requirements | High | (needs test) | ⏳ |
+| FR-3.1 | UCI Configuration | Critical | `spec/unit/config_spec.lua` | ✅ |
+| FR-3.2 | Global Settings | Critical | `spec/unit/config_spec.lua` | ✅ |
+| FR-3.3 | Interface Configuration | Critical | `spec/unit/config_spec.lua` | ✅ |
+| FR-3.4 | Dynamic Interface Support | Medium | `spec/unit/config_spec.lua` | ✅ |
+| FR-3.5 | Validation Requirements | High | (partial coverage) | 🔶 |
 
-### Coverage Gap
-Configuration management tests are needed. Suggested file: `spec/unit/config_spec.lua`
+### Test Coverage Details
 
+#### FR-3.1: UCI Configuration
+**Test Cases** in `spec/unit/config_spec.lua`:
+- ✓ Load configuration from UCI
+- ✓ Convert string values to appropriate types (boolean, number)
+
+#### FR-3.2: Global Settings
+**Test Cases** in `spec/unit/config_spec.lua`:
+- ✓ Load enabled flag (string "1" → boolean true)
+- ✓ Detect disabled state (string "0" → boolean false)
+- ✓ Load mode setting (failover/multiuplink)
+- ✓ Default mode to "failover" if missing
+- ✓ Load check_interval as number
+- ✓ Default check_interval to 30 if missing
+- ✓ Load audit log level
+- ✓ Default log_level to "emerg" if missing
+
+#### FR-3.3: Interface Configuration
+**Test Cases** in `spec/unit/config_spec.lua`:
+- ✓ Load interface with all fields
+- ✓ Apply default metric (10) if missing
+- ✓ Apply default weight (3) if missing
+- ✓ Apply default ping_count (3) if missing
+- ✓ Apply default ping_timeout (2) if missing
+- ✓ Handle VLAN interface names (eth0.100)
+- ✓ Convert string numbers to integers
+
+#### FR-3.4: Dynamic Interface Support
+**Test Cases** in `spec/unit/config_spec.lua`:
+- ✓ Load multiple interfaces (2, 3, N)
+- ✓ Minimal valid configuration (only required fields)
+- ✓ All devices loaded correctly (metrics determine priority, not config order)
+
+#### FR-3.5: Validation Requirements
+**Coverage**: Partial - defaults are tested, but missing field validation not yet implemented
 **Test Cases Needed**:
-- Load configuration from UCI
-- Parse global settings
-- Parse interface sections
-- Handle missing required fields
-- Handle invalid values (use defaults)
-- Support arbitrary number of interfaces
+- Validation when device is nil
+- Validation when ping_target is nil
+- Validation when less than 2 interfaces configured
 
 ---
 
@@ -189,6 +229,12 @@ State persistence tests needed. Suggested file: `spec/unit/state_spec.lua`
 - ✓ Ping results logged at debug level
 - ✓ System probes logged at debug level
 
+**Test Cases** in `spec/integration/interface_lifecycle_spec.lua`:
+- ✓ Interface disappearance logged at warning level (USB dongle, tunnel down)
+- ✓ Interface reappearance logged at info level (device reconnected)
+- ✓ VPN tunnel lifecycle (down → up)
+- ✓ No duplicate logs when state unchanged
+
 #### FR-5.2: Audit Logging
 **Test Cases** in `spec/integration/logging_spec.lua`:
 - ✓ System probes (ubus, ip addr, ping) logged at debug level
@@ -219,11 +265,11 @@ FR-6.1 and FR-6.2 require system-level testing (init scripts, procd integration)
 |----------|-------|--------|---------|---------|------------|
 | FR-1: Monitoring | 6 | 6 | 0 | 0 | 100% |
 | FR-2: Routing | 5 | 5 | 0 | 0 | 100% |
-| FR-3: Configuration | 5 | 0 | 0 | 5 | 0% |
+| FR-3: Configuration | 5 | 4 | 1 | 0 | 80% |
 | FR-4: State | 2 | 1 | 0 | 1 | 50% |
 | FR-5: Logging | 3 | 2 | 0 | 1 | 67% |
 | FR-6: Operational | 3 | 1 | 0 | 2 | 33% |
-| **TOTAL** | **24** | **15** | **0** | **9** | **63%** |
+| **TOTAL** | **24** | **19** | **1** | **4** | **79%** |
 
 ### Priority Coverage
 

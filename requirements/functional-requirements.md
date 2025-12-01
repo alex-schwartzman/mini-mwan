@@ -253,6 +253,7 @@
 **info** - Operational state changes:
 - Interface UP transitions (with latency)
 - Interface DOWN transitions
+- Interface reappearance (device reconnected)
 
 **notice** - System interventions:
 - Route additions/replacements
@@ -262,6 +263,7 @@
 **warning** - Degradation conditions:
 - Interface missing gateway (DHCP incomplete)
 - IPv6 detected on interface (not supported)
+- Interface disappearance (USB dongle removed, tunnel down)
 
 **err** - Critical failures:
 - Ping command execution failure (tool missing)
