@@ -38,8 +38,7 @@ local current_status = {
 	interfaces = {}
 }
 
--- Global ubus connection (used by ubus method handlers)
-local conn
+-- Global ubus connection moved to deps table for better testability
 
 -- Dependencies table (defaults to real implementations)
 -- In production: uses real OpenWrt modules
@@ -82,6 +81,8 @@ local function set_dependencies(new_deps)
 	for k, v in pairs(new_deps) do
 		deps[k] = v
 	end
+	-- Reset connection to force fresh connection with new deps
+	deps.ubus_conn = nil
 end
 
 -- Logging function
@@ -196,12 +197,12 @@ end
 local function probe_all_gateways()
 	-- Use libubus directly instead of shelling out to ubus binary
 	-- conn is either initialized by register_ubus() or we get it from deps
-	if not conn then
-		conn = deps.ubus_connect()
+	if not deps.ubus_conn then
+		deps.ubus_conn = deps.ubus_connect()
 	end
 
 	log("Probe: ubus call network.interface dump", "debug")
-	local data = conn:call("network.interface", "dump", {})
+	local data = deps.ubus_conn:call("network.interface", "dump", {})
 
 	local gateway_map = {}
 
@@ -676,7 +677,7 @@ local ubus_methods = {
 		status = {
 			function(req, msg)
 				-- Return current status as JSON
-				conn:reply(req, current_status)
+				deps.ubus_conn:reply(req, current_status)
 			end,
 			{}  -- No parameters required
 		}
@@ -686,14 +687,14 @@ local ubus_methods = {
 -- Register ubus methods
 local function register_ubus()
 	-- Connect to ubus
-	conn = deps.ubus_connect()
-	if not conn then
+	deps.ubus_conn = deps.ubus_connect()
+	if not deps.ubus_conn then
 		log("Failed to connect to ubus", "err")
 		return false
 	end
 
 	-- Register ubus methods
-	conn:add(ubus_methods)
+	deps.ubus_conn:add(ubus_methods)
 	log("Registered ubus object: mini-mwan", "notice")
 	return true
 end
@@ -713,8 +714,8 @@ local function run_event_loop()
 	deps.uloop_run()
 
 	-- Cleanup on exit
-	if conn then
-		conn:close()
+	if deps.ubus_conn then
+		deps.ubus_conn:close()
 	end
 end
 

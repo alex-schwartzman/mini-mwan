@@ -295,8 +295,6 @@ local deps = mocks.build_deps({
 ```lua
 mocks.mock_ping_success(12.5)                        -- Successful ping with latency
 mocks.mock_ping_failure()                            -- Failed ping
-mocks.mock_ubus_with_gateway("eth0", "192.168.1.1") -- ubus dump with single interface with gateway
-mocks.mock_ubus_p2p("wg0")                           -- ubus dump with P2P interface (no gateway)
 mocks.mock_ubus_network_dump({...})                  -- ubus dump with multiple interfaces
 mocks.mock_interface_up()                            -- Interface UP state
 mocks.mock_interface_down()                          -- Interface DOWN state

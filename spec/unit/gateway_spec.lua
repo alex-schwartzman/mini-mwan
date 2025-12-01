@@ -42,11 +42,14 @@ describe("FR-1.3: Gateway Discovery", function()
 	describe("when interface is point-to-point (no gateway)", function()
 		it("should not include device in gateway map", function()
 			-- GIVEN: P2P interface (VPN tunnel) with no gateway in ubus dump
-			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = mocks.mock_ubus_p2p("wg0")
-			})
+			local exec_mock = mocks.build_exec_mock({})
 
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "wg0", gateway = nil }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Probing all gateways
@@ -57,31 +60,12 @@ describe("FR-1.3: Gateway Discovery", function()
 		end)
 	end)
 
-	describe("when ubus returns invalid JSON", function()
-		it("should log error and return empty map", function()
-			-- GIVEN: Malformed JSON response from ubus
-			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = "{invalid json"
-			})
-
-			local deps = mocks.build_deps({ exec = exec_mock })
-			mini_mwan.set_dependencies(deps)
-
-			-- WHEN: Probing all gateways
-			local gateway_map = mini_mwan.probe_all_gateways()
-
-			-- THEN: Should handle gracefully and return empty map
-			assert.is_table(gateway_map)
-			assert.equals(0, #gateway_map)
-		end)
-	end)
-
 	describe("when ubus returns empty response", function()
 		it("should return empty map", function()
 			-- GIVEN: No output from ubus
 			local exec_mock = mocks.build_exec_mock({})
 
-			local deps = mocks.build_deps({ 
+			local deps = mocks.build_deps({
 				exec = exec_mock,
 				ubus_network_dump = mocks.mock_ubus_network_dump({})
 				 })
@@ -99,32 +83,30 @@ describe("FR-1.3: Gateway Discovery", function()
 	describe("when multiple routes exist", function()
 		it("should extract only default route (0.0.0.0/0)", function()
 			-- GIVEN: Multiple routes including default in ubus dump
-			local json = require("cjson")
-			local ubus_response = json.encode({
-				interface = {
-					{
-						l3_device = "eth0",
-						route = {
-							{
-								target = "192.168.1.0",
-								mask = 24,
-								nexthop = "192.168.1.254"
-							},
-							{
-								target = "0.0.0.0",
-								mask = 0,
-								nexthop = "192.168.1.1"
+			local exec_mock = mocks.build_exec_mock({})
+
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = {
+					interface = {
+						{
+							l3_device = "eth0",
+							route = {
+								{
+									target = "192.168.1.0",
+									mask = 24,
+									nexthop = "192.168.1.254"
+								},
+								{
+									target = "0.0.0.0",
+									mask = 0,
+									nexthop = "192.168.1.1"
+								}
 							}
 						}
 					}
 				}
 			})
-
-			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = ubus_response
-			})
-
-			local deps = mocks.build_deps({ exec = exec_mock })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Probing all gateways
@@ -137,16 +119,17 @@ describe("FR-1.3: Gateway Discovery", function()
 
 	describe("when multiple interfaces exist", function()
 		it("should return gateways for all interfaces", function()
-			-- GIVEN: Multiple interfaces with different gateways
-			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
+			local exec_mock = mocks.build_exec_mock({})
+
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				-- GIVEN: Multiple interfaces with different gateways
+				ubus_network_dump = mocks.mock_ubus_network_dump({
 					{ l3_device = "eth0", gateway = "192.168.1.1" },
 					{ l3_device = "eth1", gateway = "192.168.2.1" },
-					{ l3_device = "wg0", gateway = nil }  -- P2P, no gateway
-				})
-			})
-
-			local deps = mocks.build_deps({ exec = exec_mock })
+					{ l3_device = "wg0", gateway = nil }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Probing all gateways

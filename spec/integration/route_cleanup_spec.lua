@@ -251,7 +251,6 @@ default via 192.168.1.1 dev eth0 metric 10
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_p2p("wg0"),
 				["ip link show dev wg0"] = "12: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
 				["ip addr show dev wg0"] = mocks.mock_interface_up(),
 				["ping.*wg0"] = mocks.mock_ping_success(50.0),
@@ -266,7 +265,12 @@ default dev wg0 metric 22
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "wg0", gateway = nil }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle

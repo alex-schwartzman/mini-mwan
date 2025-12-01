@@ -179,7 +179,7 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			local deps, ubus_mock, log_mock = mocks.build_deps({
 				exec = exec_mock,
 				ubus_network_dump = mocks.mock_ubus_network_dump({
-					{ l3_device = "wg0", gateway = "nil" } -- P2P, no gateway
+					{ l3_device = "wg0", gateway = nil } -- P2P, no gateway
 					})
 				})
 			mini_mwan.set_dependencies(deps)
@@ -202,7 +202,7 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			deps, ubus_mock, log_mock = mocks.build_deps({
 				exec = exec_mock,
 				ubus_network_dump = mocks.mock_ubus_network_dump({
-					{ l3_device = "wg0", gateway = "nil" }
+					{ l3_device = "wg0", gateway = nil }
 					})
 				 })
 			mini_mwan.set_dependencies(deps)
@@ -239,7 +239,7 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			deps, ubus_mock, log_mock = mocks.build_deps({
 				exec = exec_mock,
 				ubus_network_dump = mocks.mock_ubus_network_dump({
-					{ l3_device = "wg0", gateway = "nil" }
+					{ l3_device = "wg0", gateway = nil }
 					})
 				 })
 			mini_mwan.set_dependencies(deps)

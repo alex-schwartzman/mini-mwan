@@ -296,7 +296,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 				-- eth0 has gateway, wg0 doesn't (P2P)
 				ubus_network_dump = mocks.mock_ubus_network_dump({
 					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "wg0", gateway = "nil" }
+					{ l3_device = "wg0", gateway = nil }
 					}) })
 			mini_mwan.set_dependencies(deps)
 
@@ -345,7 +345,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 				-- eth0 has gateway, eth1 doesn't (degraded - DHCP incomplete)
 				ubus_network_dump = mocks.mock_ubus_network_dump({
 					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "nil" }
+					{ l3_device = "eth1", gateway = nil }
 					})
 				 })
 			mini_mwan.set_dependencies(deps)

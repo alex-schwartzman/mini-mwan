@@ -139,13 +139,6 @@ function M.mock_ubus_network_dump(interfaces)
 	return { interface = interface_list }
 end
 
--- Mock ubus dump with P2P interface (no gateway) (convenience helper)
-function M.mock_ubus_p2p(device)
-	return M.mock_ubus_network_dump({
-		{ l3_device = device, gateway = nil }
-	})
-end
-
 -- Mock interface UP state
 function M.mock_interface_up()
 	return "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP"
