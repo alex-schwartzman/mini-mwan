@@ -67,9 +67,6 @@ describe("FR-5.3: Audit Logging - Integration", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -77,7 +74,12 @@ describe("FR-5.3: Audit Logging - Integration", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -120,9 +122,6 @@ describe("FR-5.3: Audit Logging - Integration", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -130,7 +129,12 @@ describe("FR-5.3: Audit Logging - Integration", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle (will set routes)
@@ -161,9 +165,6 @@ describe("FR-5.3: Audit Logging - Integration", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -175,7 +176,12 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle (will clean up duplicates)
@@ -208,9 +214,6 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_failure(),  -- 100% packet loss
 				["ip %-6 addr show dev eth0"] = "",
@@ -218,7 +221,12 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle (interface will go DOWN due to ping failure)
@@ -249,9 +257,6 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(12.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -259,7 +264,12 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle (interface will go UP)
@@ -292,9 +302,6 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = nil }  -- No gateway
-				}),
 				["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",  -- Not P2P
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.5),
@@ -303,7 +310,12 @@ default via 192.168.1.1 dev eth0 metric 21
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "nil" } -- No gateway
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle

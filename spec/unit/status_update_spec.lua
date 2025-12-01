@@ -102,10 +102,6 @@ describe("FR-4.2: Status Update", function()
 			-- GIVEN: Complete work cycle with all mocks
 			local exec_mock = mocks.build_exec_mock({
 				-- Gateway discovery
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				-- Interface status
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
@@ -126,7 +122,11 @@ describe("FR-4.2: Status Update", function()
 
 			local deps, ubus_mock = mocks.build_deps({
 				exec = exec_mock,
-				open_file = file_mock
+				open_file = file_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					})
 			})
 			mini_mwan.set_dependencies(deps)
 
@@ -155,10 +155,6 @@ describe("FR-4.2: Status Update", function()
 		it("should convert network stats to numbers", function()
 			-- GIVEN: Complete work cycle with large network stats
 			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -177,7 +173,11 @@ describe("FR-4.2: Status Update", function()
 
 			local deps, ubus_mock = mocks.build_deps({
 				exec = exec_mock,
-				open_file = file_mock
+				open_file = file_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					})
 			})
 			mini_mwan.set_dependencies(deps)
 

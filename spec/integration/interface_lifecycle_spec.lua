@@ -29,9 +29,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- First cycle: interface exists and is UP
 			local exec_responses_cycle1 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "usb0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev usb0"] = mocks.mock_interface_up(),
 				["ip link show dev usb0"] = "3: usb0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
 				["ping.*usb0"] = mocks.mock_ping_success(15.0),
@@ -40,7 +37,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "usb0", gateway = "192.168.1.1" }
+					})
+				})
 			mini_mwan.set_dependencies(deps)
 
 			-- Run first cycle
@@ -51,9 +53,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- Second cycle: interface disappeared (USB dongle removed)
 			local exec_responses_cycle2 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "usb0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev usb0"] = "Device \"usb0\" does not exist.",
 				["ip link show dev usb0"] = "Device \"usb0\" does not exist.",
 				["ip %-6 addr show dev usb0"] = "",
@@ -61,7 +60,11 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
-			deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "usb0", gateway = "192.168.1.1" }
+					})
+				})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running second cycle
@@ -95,9 +98,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- First cycle: interface doesn't exist
 			local exec_responses_cycle1 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "usb0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev usb0"] = "Device \"usb0\" does not exist.",
 				["ip link show dev usb0"] = "Device \"usb0\" does not exist.",
 				["ip %-6 addr show dev usb0"] = "",
@@ -105,7 +105,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "usb0", gateway = "192.168.1.1" }
+					})
+				})
 			mini_mwan.set_dependencies(deps)
 
 			-- Run first cycle
@@ -116,9 +121,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- Second cycle: interface reappeared (USB dongle reconnected)
 			local exec_responses_cycle2 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "usb0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev usb0"] = mocks.mock_interface_up(),
 				["ip link show dev usb0"] = "3: usb0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
 				["ping.*usb0"] = mocks.mock_ping_success(15.0),
@@ -127,7 +129,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
-			deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "usb0", gateway = "192.168.1.1" }
+					})
+				})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running second cycle
@@ -161,9 +168,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- First cycle: tunnel exists and is UP
 			local exec_responses_cycle1 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "wg0", gateway = nil }  -- P2P, no gateway
-				}),
 				["ip addr show dev wg0"] = mocks.mock_interface_up(),
 				["ip link show dev wg0"] = "5: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
 				["ping.*wg0"] = mocks.mock_ping_success(5.0),
@@ -172,7 +176,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "wg0", gateway = "nil" } -- P2P, no gateway
+					})
+				})
 			mini_mwan.set_dependencies(deps)
 
 			-- Run first cycle
@@ -183,9 +192,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- Second cycle: tunnel disappeared
 			local exec_responses_cycle2 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "wg0", gateway = nil }
-				}),
 				["ip addr show dev wg0"] = "Device \"wg0\" does not exist.",
 				["ip link show dev wg0"] = "Device \"wg0\" does not exist.",
 				["ip %-6 addr show dev wg0"] = "",
@@ -193,7 +199,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
-			deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "wg0", gateway = "nil" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running second cycle
@@ -217,9 +228,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 
 			-- Third cycle: tunnel reappeared
 			local exec_responses_cycle3 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "wg0", gateway = nil }
-				}),
 				["ip addr show dev wg0"] = mocks.mock_interface_up(),
 				["ip link show dev wg0"] = "5: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
 				["ping.*wg0"] = mocks.mock_ping_success(5.0),
@@ -228,7 +236,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			exec_mock = mocks.build_exec_mock(exec_responses_cycle3)
-			deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "wg0", gateway = "nil" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running third cycle
@@ -261,9 +274,6 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "usb0", gateway = "192.168.1.1" }
-				}),
 				["ip addr show dev usb0"] = "Device \"usb0\" does not exist.",
 				["ip link show dev usb0"] = "Device \"usb0\" does not exist.",
 				["ip %-6 addr show dev usb0"] = "",
@@ -271,7 +281,12 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps, ubus_mock, log_mock = mocks.build_deps({ exec = exec_mock })
+			local deps, ubus_mock, log_mock = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "usb0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- Run first cycle

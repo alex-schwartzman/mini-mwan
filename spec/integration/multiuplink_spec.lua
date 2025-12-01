@@ -46,12 +46,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_responses = {
-				-- ubus returns both interfaces with gateways
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
-
 				-- Both interfaces UP and pingable
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
@@ -66,7 +60,14 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				-- ubus returns both interfaces with gateways
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					})
+ 				})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle in multiuplink mode
@@ -92,11 +93,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" },
-					{ l3_device = "eth2", gateway = "192.168.3.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.0),
 				["ip %-6 addr show dev eth0"] = "",
@@ -110,7 +106,13 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" },
+					{ l3_device = "eth2", gateway = "192.168.3.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -154,11 +156,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
-
 				-- eth0 is UP and pingable
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.0),
@@ -173,7 +170,12 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -210,11 +212,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
-
 				-- Both interfaces UP but NOT pingable
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_failure(),
@@ -228,7 +225,12 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -274,12 +276,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_responses = {
-				-- eth0 has gateway, wg0 doesn't (P2P)
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "wg0", gateway = nil }
-				}),
-
 				-- eth0 is regular interface
 				["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
@@ -296,7 +292,12 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ exec = exec_mock,
+				-- eth0 has gateway, wg0 doesn't (P2P)
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "wg0", gateway = "nil" }
+					}) })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -323,11 +324,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_responses = {
-				-- eth0 has gateway, eth1 doesn't (degraded - DHCP incomplete)
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = nil }  -- No gateway (degraded)
-				}),
 
 				-- Both are shared medium (not P2P)
 				["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
@@ -345,7 +341,13 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ exec = exec_mock,
+				-- eth0 has gateway, eth1 doesn't (degraded - DHCP incomplete)
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "nil" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -385,10 +387,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 
 			-- CYCLE 1: eth1 is down
 			local exec_responses_cycle1 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.0),
 				["ip %-6 addr show dev eth0"] = "",
@@ -399,7 +397,12 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- First work cycle
@@ -414,10 +417,6 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			mocks.reset()
 
 			local exec_responses_cycle2 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_success(10.0),
 				["ip %-6 addr show dev eth0"] = "",
@@ -428,7 +427,11 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 			}
 
 			exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
-			deps = mocks.build_deps({ exec = exec_mock })
+			deps = mocks.build_deps({ exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+					}) })
 			mini_mwan.set_dependencies(deps)
 
 			-- Second work cycle

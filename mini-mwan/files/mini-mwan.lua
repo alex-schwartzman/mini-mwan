@@ -194,23 +194,23 @@ end
 -- Returns device -> gateway map for O(1) lookups
 -- P2P interfaces and interfaces without gateways will not be in the map
 local function probe_all_gateways()
-	local cmd = "ubus call network.interface dump"
-	local output = system_probe(cmd)
+	-- Use libubus directly instead of shelling out to ubus binary
+	-- conn is either initialized by register_ubus() or we get it from deps
+	if not conn then
+		conn = deps.ubus_connect()
+	end
+
+	log("Probe: ubus call network.interface dump", "debug")
+	local data = conn:call("network.interface", "dump", {})
 
 	local gateway_map = {}
 
-	if not output or output == "" then
+	if not data then
+		log("Failed to call network.interface dump via ubus", "err")
 		return gateway_map
 	end
 
-	-- Parse JSON using cjson
-	local success, data = pcall(json.decode, output)
-	if not success or not data then
-		log("Failed to parse network.interface dump JSON", "err")  -- err
-		return gateway_map
-	end
-
-	-- Build device -> gateway map
+	-- data.interface is already a Lua table from libubus (no JSON parsing needed)
 	if data.interface then
 		for _, iface in ipairs(data.interface) do
 			if iface.l3_device and iface.route then

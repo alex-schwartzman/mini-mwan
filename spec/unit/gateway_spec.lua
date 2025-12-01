@@ -21,11 +21,14 @@ describe("FR-1.3: Gateway Discovery", function()
 	describe("when interface has default route with gateway", function()
 		it("should extract gateway from ubus network.interface dump", function()
 			-- GIVEN: ubus returns valid gateway info for device
-			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = mocks.mock_ubus_with_gateway("eth0", "192.168.1.1")
-			})
+			local exec_mock = mocks.build_exec_mock({})
 
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Probing all gateways
@@ -76,11 +79,12 @@ describe("FR-1.3: Gateway Discovery", function()
 	describe("when ubus returns empty response", function()
 		it("should return empty map", function()
 			-- GIVEN: No output from ubus
-			local exec_mock = mocks.build_exec_mock({
-				["ubus call network.interface dump"] = ""
-			})
+			local exec_mock = mocks.build_exec_mock({})
 
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({ 
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Probing all gateways

@@ -73,12 +73,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 		it("should use primary (lowest metric) interface", function()
 			-- GIVEN: Two interfaces configured, both UP
 			local exec_responses = {
-				-- ubus returns both interfaces with gateways
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
-
 				-- Primary interface (eth0) - UP and pingable
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
@@ -91,7 +85,14 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				-- ubus returns both interfaces with gateways
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -109,12 +110,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 		it("should use backup interface when primary is down", function()
 			-- GIVEN: Primary is DOWN, backup is UP
 			local exec_responses = {
-				-- ubus returns both interfaces with gateways
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
-
 				-- Primary interface (eth0) - UP but NOT pingable (connection lost)
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_failure(),  -- FAILED
@@ -128,7 +123,14 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				-- ubus returns both interfaces with gateways
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -150,10 +152,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 
 			-- CYCLE 1: Primary down
 			local exec_responses_cycle1 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_down(),  -- Interface DOWN
 				["ip addr show dev eth1"] = mocks.mock_interface_up(),
 				["ping.*eth1"] = mocks.mock_ping_success(15.0),
@@ -161,7 +159,13 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- First run - primary down
@@ -174,10 +178,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			mocks.reset()
 
 			local exec_responses_cycle2 = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),  -- Now UP
 				["ping.*eth0"] = mocks.mock_ping_success(10.0),        -- Now working
 				["ip %-6 addr show dev eth0"] = "",  -- No IPv6
@@ -187,7 +187,13 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
-			deps = mocks.build_deps({ exec = exec_mock })
+			deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- Second run - primary recovered
@@ -202,10 +208,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 		it("should log warning but not crash", function()
 			-- GIVEN: All interfaces down
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0"] = mocks.mock_ping_failure(),  -- FAILED
 				["ip %-6 addr show dev eth0"] = "",  -- No IPv6
@@ -216,7 +218,13 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -233,12 +241,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 		it("should handle P2P interface (no gateway) correctly", function()
 			-- GIVEN: Regular interface (eth0) and VPN tunnel (wg0)
 			local exec_responses = {
-				-- ubus returns both: eth0 with gateway, wg0 without (P2P)
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = "192.168.1.1" },
-					{ l3_device = "wg0", gateway = nil }  -- P2P, no gateway
-				}),
-
 				-- Regular interface (eth0) - has gateway
 				["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether 60:cf:84:ee:10:68 brd ff:ff:ff:ff:ff:ff",
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
@@ -253,7 +255,14 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				-- ubus returns both: eth0 with gateway, wg0 without (P2P)
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" },
+					{ l3_device = "wg0", gateway = nil }  -- P2P, no gateway
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- Custom config with P2P interface
@@ -296,12 +305,6 @@ describe("FR-2.1: Failover Mode - End to End", function()
 		it("should not route through shared medium interface without gateway", function()
 			-- GIVEN: wan1 is degraded (no gateway, DHCP incomplete), wan2 is healthy
 			local exec_responses = {
-				-- ubus returns eth0 without gateway (degraded), eth1 with gateway
-				["ubus call network.interface dump"] = mocks.mock_ubus_network_dump({
-					{ l3_device = "eth0", gateway = nil },  -- No gateway (DHCP incomplete)
-					{ l3_device = "eth1", gateway = "192.168.2.1" }
-				}),
-
 				-- wan1 (eth0) - shared medium interface UP but no gateway (DHCP incomplete)
 				["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether 60:cf:84:ee:10:68 brd ff:ff:ff:ff:ff:ff",
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
@@ -316,7 +319,14 @@ describe("FR-2.1: Failover Mode - End to End", function()
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				-- ubus returns eth0 without gateway (degraded), eth1 with gateway
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = nil },  -- No gateway (DHCP incomplete)
+					{ l3_device = "eth1", gateway = "192.168.2.1" }
+				})
+			})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle

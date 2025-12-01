@@ -39,7 +39,6 @@ describe("FR-2.4: Route Cleanup - Duplicate Route Handling", function()
 			-- Simulate external tool (like surfshark) creating multiple routes
 			local exec_responses = {
 				-- Interface is UP and pingable
-				["ubus call network.interface dump"] = mocks.mock_ubus_with_gateway("eth0", "192.168.1.1"),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",  -- No IPv6
@@ -54,7 +53,12 @@ default dev eth0 scope link metric 23
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -92,7 +96,6 @@ default dev eth0 scope link metric 23
 		it("should handle routes without explicit metric", function()
 			-- GIVEN: Duplicate route without explicit metric (default metric)
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_with_gateway("eth0", "192.168.1.1"),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -105,7 +108,12 @@ default dev eth0 scope link
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -128,7 +136,6 @@ default dev eth0 scope link
 		it("should preserve our route when cleaning duplicates", function()
 			-- GIVEN: Multiple routes including our metric
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_with_gateway("eth0", "192.168.1.1"),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -141,7 +148,12 @@ default via 192.168.1.1 dev eth0 metric 20
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
@@ -181,7 +193,6 @@ default via 192.168.1.1 dev eth0 metric 20
 		it("should work normally without unnecessary deletions", function()
 			-- GIVEN: Only our route exists (no duplicates)
 			local exec_responses = {
-				["ubus call network.interface dump"] = mocks.mock_ubus_with_gateway("eth0", "192.168.1.1"),
 				["ip addr show dev eth0"] = mocks.mock_interface_up(),
 				["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
 				["ip %-6 addr show dev eth0"] = "",
@@ -193,7 +204,12 @@ default via 192.168.1.1 dev eth0 metric 10
 			}
 
 			local exec_mock = mocks.build_exec_mock(exec_responses)
-			local deps = mocks.build_deps({ exec = exec_mock })
+			local deps = mocks.build_deps({
+				exec = exec_mock,
+				ubus_network_dump = mocks.mock_ubus_network_dump({
+					{ l3_device = "eth0", gateway = "192.168.1.1" }
+					})
+				 })
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle

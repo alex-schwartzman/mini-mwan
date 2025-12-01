@@ -51,7 +51,6 @@ function M.build_exec_mock(responses)
 
 	Usage:
 		local mock = M.build_exec_mock({
-			["ubus call network.interface dump"] = mocks.mock_ubus_with_gateway("eth0", "192.168.1.1"),
 			["ping.*eth0"] = "3 packets transmitted, 3 received",
 		})
 	]]
@@ -106,6 +105,7 @@ end
 
 
 -- Mock ubus network.interface dump with multiple interfaces
+-- Returns Lua table (as libubus would), not JSON string
 function M.mock_ubus_network_dump(interfaces)
 	--[[
 	Build ubus network.interface dump response with multiple interfaces
@@ -135,15 +135,8 @@ function M.mock_ubus_network_dump(interfaces)
 		})
 	end
 
-	local json = require("cjson")
-	return json.encode({ interface = interface_list })
-end
-
--- Mock ubus dump with single interface with gateway (convenience helper)
-function M.mock_ubus_with_gateway(device, gateway)
-	return M.mock_ubus_network_dump({
-		{ l3_device = device, gateway = gateway }
-	})
+	-- Return Lua table directly (as libubus conn:call() would)
+	return { interface = interface_list }
 end
 
 -- Mock ubus dump with P2P interface (no gateway) (convenience helper)
@@ -325,6 +318,9 @@ function M.mock_ubus()
 	local last_reply = nil
 	local conn_instance
 
+	-- Storage for ubus call responses (for mocking network.interface dump, etc)
+	local ubus_call_responses = {}
+
 	conn_instance = {
 		add = function(self, methods)
 			-- Store registered methods for verification
@@ -336,8 +332,22 @@ function M.mock_ubus()
 			-- Store the last reply for verification
 			last_reply = data
 		end,
+		call = function(self, namespace, method, args)
+			-- Mock ubus calls (e.g., network.interface dump)
+			local key = namespace .. "." .. method
+			if ubus_call_responses[key] then
+				return ubus_call_responses[key]
+			end
+			-- Return nil if not mocked
+			return nil
+		end,
 		close = function(self)
 			-- No-op
+		end,
+		-- Test helper: set response for ubus call
+		set_call_response = function(namespace, method, response)
+			local key = namespace .. "." .. method
+			ubus_call_responses[key] = response
 		end
 	}
 
@@ -378,7 +388,8 @@ function M.build_deps(overrides)
 	Usage:
 		local deps, ubus_mock, log_mock = M.build_deps({
 			exec = custom_exec_function,
-			time = function() return 1234567890 end
+			time = function() return 1234567890 end,
+			ubus_network_dump = mocks.mock_ubus_network_dump({...})  -- optional
 		})
 
 	Returns: deps table, ubus_mock object, log_mock object
@@ -387,6 +398,12 @@ function M.build_deps(overrides)
 
 	-- Default ubus mock
 	local ubus_mock = overrides.ubus_mock or M.mock_ubus()
+
+	-- If ubus_network_dump response is provided, configure it in the mock
+	if overrides.ubus_network_dump then
+		local conn = ubus_mock.connect()
+		conn.set_call_response("network.interface", "dump", overrides.ubus_network_dump)
+	end
 
 	-- Default log mock
 	local log_mock = overrides.log_mock or M.mock_log()
