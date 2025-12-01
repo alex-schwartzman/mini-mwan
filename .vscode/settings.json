@@ -6,5 +6,9 @@
     "[lua]": {
       "editor.insertSpaces": true,
       "editor.tabSize": 2
+    },
+    "Lua.format.defaultConfig": {
+      "indent_style": "space",
+      "indent_size": "2"
     }
 }
