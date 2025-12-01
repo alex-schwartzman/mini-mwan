@@ -238,17 +238,17 @@ interface_state = {
 
 ## DR-5: External Interface Dependencies
 
-### DR-5.1 netifd JSON Interface
+### DR-5.1 netifd ubus Interface
 **ID**: DR-5.1
 **Priority**: Critical
-**Description**: Gateway discovery via netifd's `ubus dump` command.
+**Description**: Gateway discovery via netifd's ubus API using libubus library.
 
-**Command**:
-```bash
-ubus call network.interface dump
+**Implementation**:
+```lua
+local data = conn:call("network.interface", "dump", {})
 ```
 
-**Expected JSON Response**:
+**Expected Response Structure** (Lua table):
 ```json
 {
     "up": true,

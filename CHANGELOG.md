@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Gateway Discovery**: Refactored to use libubus library directly instead of shell execution
+  - Changed from `exec("ubus call network.interface dump")` with JSON parsing to native `conn:call()` API
+  - Eliminates shell command overhead and JSON serialization/deserialization
+  - Fixes test state pollution by moving `conn` from module-level to `deps.ubus_conn`
+  - Removes impossible "invalid JSON" error scenario (libubus guarantees valid Lua tables)
 - **BREAKING**: Replaced file-based status communication with ubus
   - Status now exposed via `ubus call mini-mwan status` instead of `/var/run/mini-mwan.status`
   - Status format changed from INI to JSON

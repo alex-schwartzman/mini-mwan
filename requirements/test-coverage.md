@@ -47,11 +47,11 @@ This document maps functional requirements to their corresponding test files.
 
 #### FR-1.3: Gateway Discovery
 **Test Cases** in `spec/unit/gateway_spec.lua`:
-- ✓ Extract gateway from ubus dump JSON
+- ✓ Extract gateway from libubus network.interface dump
 - ✓ Handle P2P interface (no gateway)
-- ✓ Handle invalid JSON response
 - ✓ Handle empty response
 - ✓ Extract default route from multiple routes
+- ✓ Handle multiple interfaces
 
 #### FR-1.4: Latency Measurement
 **Test Cases** in `spec/unit/latency_spec.lua`:

@@ -30,7 +30,7 @@
 **Description**: The system SHALL automatically discover gateway addresses for managed interfaces.
 
 **Acceptance Criteria**:
-- Gateway MUST be obtained using ubus network.interface.dump call
+- Gateway MUST be obtained using libubus network.interface.dump call (via libubus library)
 - System SHALL look for default route (target "0.0.0.0", mask 0) in route table for each interface
 - Gateway discovery SHALL match interfaces by device name, not interface name
 - Missing gateway SHALL be handled gracefully for P2P interfaces
@@ -282,7 +282,7 @@
 **Description**: The system SHALL log executed commands at appropriate verbosity levels.
 
 **Acceptance Criteria**:
-- System probes (read-only commands: ubus call, ip addr show, ping) MUST be logged at **debug** level with format "Probe: <command>"
+- System probes (read-only operations: libubus calls, ip addr show, ping) MUST be logged at **debug** level with format "Probe: <operation>"
 - System interventions (state-changing commands: ip route replace/delete) MUST be logged at **notice** level with format "Intervention: <command>"
 - Interface state transitions MUST be logged at **info** level
 - Error conditions MUST be logged at **err** level

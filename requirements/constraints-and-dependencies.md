@@ -119,7 +119,7 @@ opkg install lua libuci-lua luci-lib-nixio lua-cjson
 
 | Service | Purpose | Interaction |
 |---------|---------|-------------|
-| netifd | Network management | Provides interface status via `ubus call ` |
+| netifd | Network management | Provides interface status via libubus API |
 | procd | Process management | Manages daemon lifecycle |
 | uci | Configuration system | Provides config access |
 | logd | Log management | Receives syslog messages |
@@ -300,7 +300,7 @@ opkg install lua libuci-lua luci-lib-nixio lua-cjson
 **Description**: Limitations of netifd integration.
 
 **Constraints**:
-- `ubus dump` returns JSON (requires parsing)
+- libubus provides synchronous call interface only (no async callbacks)
 - No API for route notifications
 - No callbacks for interface state changes
 - Gateway information may lag actual state

@@ -297,7 +297,8 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
 				ubus_network_dump = mocks.mock_ubus_network_dump({
 					{ l3_device = "eth0", gateway = "192.168.1.1" },
 					{ l3_device = "wg0", gateway = nil }
-					}) })
+					})
+				})
 			mini_mwan.set_dependencies(deps)
 
 			-- WHEN: Running work cycle
