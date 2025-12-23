@@ -5,7 +5,7 @@ PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Alex Schwartzman <openwrt@schwartzman.uk>
-PKG_LICENSE:=GPL-2.0
+PKG_LICENSE:=GPL-2.0-only
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -13,7 +13,13 @@ define Package/mini-mwan
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Mini Multi-WAN daemon
-  DEPENDS:=+lua +libuci-lua +luci-lib-nixio +lua-cjson +libubus-lua +libubox-lua
+  DEPENDS:= \
+    +libubox-lua \
+    +libubus-lua \
+    +libuci-lua \
+    +lua \
+    +lua-cjson \
+    +luci-lib-nixio
   PKGARCH:=all
 endef
 

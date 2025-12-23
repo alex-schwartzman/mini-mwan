@@ -8,10 +8,12 @@ PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI support for Mini-MWAN
 LUCI_DESCRIPTION:=LuCI web interface for Mini-MWAN multi-WAN daemon
-LUCI_DEPENDS:=+mini-mwan +luci-base
+LUCI_DEPENDS:= \
+  +mini-mwan\
+  +luci-base
 
 PKG_MAINTAINER:=Alex Schwartzman <openwrt@schwartzman.uk>
-PKG_LICENSE:=GPL-2.0
+PKG_LICENSE:=GPL-2.0-only
 
 # Standard LuCI makefile include - handles i18n compilation automatically
 include ../../luci.mk
