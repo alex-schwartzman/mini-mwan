@@ -90,8 +90,13 @@
 
 **Package Installation**:
 ```bash
-opkg update
-opkg install lua libuci-lua luci-lib-nixio lua-cjson
+# ---- For OpenWrt 25+ ----
+apk update
+apk add lua libuci-lua luci-lib-nixio lua-cjson
+
+# ---- For OpenWrt 24 and earlier ----
+# opkg update
+# opkg install lua libuci-lua luci-lib-nixio lua-cjson
 ```
 
 ### CD-2.3 System Tools

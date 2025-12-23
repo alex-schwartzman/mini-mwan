@@ -19,7 +19,7 @@ build:
 		make package/feeds/luci/luci-app-mini-mwan/compile V=s && \
 		echo '' && \
 		echo '=== Packages Built ===' && \
-		find bin/packages -name '*mini-mwan*.ipk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
+		find bin/packages -name '*mini-mwan*.apk' | xargs ls -lh 2>/dev/null || echo 'Check build logs for errors'"
 
 # Open a shell in the build container
 shell:

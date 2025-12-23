@@ -42,7 +42,7 @@
 			"args": [
 				"/builder/bin/packages",
 				"-name",
-				"mini-mwan*.ipk",
+				"mini-mwan*.apk",
 				"-exec",
 				"ls",
 				"-lh",

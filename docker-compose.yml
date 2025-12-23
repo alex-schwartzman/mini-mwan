@@ -18,15 +18,15 @@ x-common-volumes:
   - &vol-bin ./bin:/builder/bin
 
 services:
-  openwrt-sdk-x86:
+  openwrt-sdk-x86-25:
     <<: *common-config
     build:
       context: *build-context
       dockerfile: *build-dockerfile
       args:
         ARCH: x86-64
-    image: mini-mwan-builder-x86
-    container_name: mini-mwan-builder-x86-64
+    image: mini-mwan-builder-x86-25
+    container_name: mini-mwan-builder-x86-64-25
     volumes:
       # Shared mounted directories (same source code for all architectures)
       - *vol-openwrt-repos
@@ -38,15 +38,15 @@ services:
       - openwrt-feeds-x86:/builder/feeds
       - openwrt-dl-x86:/builder/dl
 
-  openwrt-sdk-ramips:
+  openwrt-sdk-ramips-25:
     <<: *common-config
     build:
       context: *build-context
       dockerfile: *build-dockerfile
       args:
         ARCH: ramips-mt76x8
-    image: mini-mwan-builder-ramips-mt76x8
-    container_name: mini-mwan-builder-ramips-mt76x8
+    image: mini-mwan-builder-ramips-mt76x8-25
+    container_name: mini-mwan-builder-ramips-mt76x8-25
     volumes:
       # Shared mounted directories (same source code for all architectures)
       - *vol-openwrt-repos

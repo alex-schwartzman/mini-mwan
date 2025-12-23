@@ -53,8 +53,13 @@ scp mini-mwan_*.ipk luci-app-mini-mwan_*.ipk root@192.168.1.1:/tmp/
 ssh root@192.168.1.1
 
 # Install the packages
-opkg install /tmp/mini-mwan_*.ipk
-opkg install /tmp/luci-app-mini-mwan_*.ipk
+# ---- For OpenWrt 25+ ----
+apk add --allow-untrusted /tmp/mini-mwan_*.ipk
+apk add --allow-untrusted /tmp/luci-app-mini-mwan_*.ipk
+
+# ---- For OpenWrt 24 and earlier ----
+# opkg install /tmp/mini-mwan_*.ipk
+# opkg install /tmp/luci-app-mini-mwan_*.ipk
 ```
 
 **Via LuCI Web Interface:**
@@ -334,7 +339,11 @@ logread | grep mini-mwan
 uci show mini-mwan
 
 # Verify dependencies
-opkg list-installed | grep -E 'lua|uci|nixio|cjson'
+# ---- For OpenWrt 25+ ----
+apk list -I | grep -E 'lua|uci|nixio|cjson'
+
+# ---- For OpenWrt 24 and earlier ----
+# opkg list-installed | grep -E 'lua|uci|nixio|cjson'
 ```
 
 ### Interface not monitored

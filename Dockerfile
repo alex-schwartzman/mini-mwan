@@ -1,7 +1,7 @@
 # Parametrized Dockerfile for OpenWRT SDK builds
 # Use build arg to specify architecture (e.g., x86-64, ramips-mt76x8)
 ARG ARCH=x86-64
-FROM openwrt/sdk:${ARCH}-24.10.0
+FROM openwrt/sdk:${ARCH}-25.12.0-rc1
 
 # Switch to root to set up directories
 USER root
