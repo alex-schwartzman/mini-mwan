@@ -29,14 +29,18 @@ describe("FR-5.3: Audit Logging - Integration", function()
 
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",  -- No duplicates
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
           })
@@ -70,14 +74,18 @@ describe("FR-5.3: Audit Logging - Integration", function()
 
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
           })
@@ -125,14 +133,18 @@ describe("FR-5.3: Audit Logging - Integration", function()
 
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",  -- No existing routes
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
           })
@@ -168,7 +180,6 @@ describe("FR-5.3: Audit Logging - Integration", function()
 
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         ["ip %-6 addr show dev eth0"] = "",
         -- Duplicate routes exist
         ["ip route show default dev eth0"] = [[
@@ -176,10 +187,15 @@ default via 192.168.1.1 dev eth0 metric 10
 default via 192.168.1.1 dev eth0 metric 21
 ]],
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
           })
@@ -217,14 +233,18 @@ default via 192.168.1.1 dev eth0 metric 21
 
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_failure(),  -- 100% packet loss
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_failure(),  -- 100% packet loss
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
           })
@@ -260,14 +280,18 @@ default via 192.168.1.1 dev eth0 metric 21
 
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_success(12.5),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(12.5),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
           })
@@ -306,14 +330,18 @@ default via 192.168.1.1 dev eth0 metric 21
       local exec_responses = {
         ["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",  -- Not P2P
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default"] = "",
       }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = nil } -- No gateway
           })

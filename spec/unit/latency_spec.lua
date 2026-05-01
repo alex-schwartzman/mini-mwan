@@ -29,10 +29,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 round-trip min/avg/max = 81.305/82.154/83.003 ms
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -56,10 +53,7 @@ PING 8.8.8.8 (8.8.8.8): 56 data bytes
 round-trip min/avg/max = 23.456/23.457/23.458 ms
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -83,10 +77,7 @@ PING 192.168.1.1 (192.168.1.1): 56 data bytes
 round-trip min/avg/max = 0.823/0.923/1.045 ms
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -110,10 +101,7 @@ PING 8.8.8.8 (8.8.8.8): 56 data bytes
 round-trip min/avg/max = 250.123/251.456/252.789 ms
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -137,10 +125,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 round-trip min/avg/max = 10/11/12 ms
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -162,10 +147,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 3 packets transmitted, 0 received, 100% packet loss
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -178,10 +160,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 
     it("should return false and latency 0 when ping command produces no output", function()
       -- GIVEN: Ping command returns nil (command execution failed)
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = nil
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = nil }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -194,10 +173,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 
     it("should return false and latency 0 when ping output is empty string", function()
       -- GIVEN: Empty output from ping
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ""
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = "" }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -220,10 +196,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 round-trip min/avg/max = 15.234/15.512/15.789 ms
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -246,10 +219,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 3 packets transmitted, 3 packets received, 0% packet loss
 ]]
 
-      local exec_mock = mocks.build_exec_mock({
-        ["ping.*"] = ping_output
-      })
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -261,64 +231,69 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
     end)
 
     it("should use correct ping command parameters", function()
-      -- GIVEN: Mock that tracks executed command
-      local executed_cmd = nil
-      local exec_mock = function(cmd)
-        executed_cmd = cmd
-        mocks.track_command(cmd)
+      -- GIVEN: Mock that captures executed args
+      local executed_args = nil
+      local argvexec_mock = function(args)
+        executed_args = args
+        mocks.track_command(table.concat(args, " "))
         return mocks.mock_ping_success(10.0)
       end
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = argvexec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check with specific parameters
       mini_mwan.check_ping("8.8.8.8", 5, 3, "eth1")
 
-      -- THEN: Command should have correct parameters
-      assert.is_not_nil(executed_cmd)
-      assert.is_not_nil(executed_cmd:match("%-I eth1"), "Should specify interface with -I")
-      assert.is_not_nil(executed_cmd:match("%-c 5"), "Should specify count with -c")
-      assert.is_not_nil(executed_cmd:match("%-W 3"), "Should specify timeout with -W")
-      assert.is_not_nil(executed_cmd:match("8%.8%.8%.8"), "Should specify target IP")
+      -- THEN: Args should have correct parameters
+      assert.is_not_nil(executed_args)
+      assert.equals("ping",    executed_args[1])
+      assert.equals("-I",      executed_args[2])
+      assert.equals("eth1",    executed_args[3])
+      assert.equals("-c",      executed_args[4])
+      assert.equals("5",       executed_args[5])
+      assert.equals("-W",      executed_args[6])
+      assert.equals("3",       executed_args[7])
+      assert.equals("8.8.8.8", executed_args[10])
     end)
 
     it("should use default parameters when not specified", function()
-      -- GIVEN: Mock that tracks executed command
-      local executed_cmd = nil
-      local exec_mock = function(cmd)
-        executed_cmd = cmd
-        mocks.track_command(cmd)
+      -- GIVEN: Mock that captures executed args
+      local executed_args = nil
+      local argvexec_mock = function(args)
+        executed_args = args
+        mocks.track_command(table.concat(args, " "))
         return mocks.mock_ping_success(10.0)
       end
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = argvexec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check without count/timeout (nil parameters)
       mini_mwan.check_ping("1.1.1.1", nil, nil, "eth0")
 
-      -- THEN: Command should use default values (count=3, timeout=2)
-      assert.is_not_nil(executed_cmd)
-      assert.is_not_nil(executed_cmd:match("%-c 3"), "Should use default count of 3")
-      assert.is_not_nil(executed_cmd:match("%-W 2"), "Should use default timeout of 2")
+      -- THEN: Args should use default values (count=3, timeout=2)
+      assert.is_not_nil(executed_args)
+      assert.equals("3", executed_args[5], "Should use default count of 3")
+      assert.equals("2", executed_args[7], "Should use default timeout of 2")
     end)
 
     it("should calculate correct deadline parameter", function()
-      -- GIVEN: Mock that tracks executed command
-      local executed_cmd = nil
-      local exec_mock = function(cmd)
-        executed_cmd = cmd
-        mocks.track_command(cmd)
+      -- GIVEN: Mock that captures executed args
+      local executed_args = nil
+      local argvexec_mock = function(args)
+        executed_args = args
+        mocks.track_command(table.concat(args, " "))
         return mocks.mock_ping_success(10.0)
       end
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps({ argvexec = argvexec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping with count=5, timeout=4
       mini_mwan.check_ping("1.1.1.1", 5, 4, "eth0")
 
       -- THEN: Deadline should be (count * timeout) + 2 = (5 * 4) + 2 = 22
-      assert.is_not_nil(executed_cmd)
-      assert.is_not_nil(executed_cmd:match("%-w 22"), "Deadline should be (5*4)+2 = 22")
+      assert.is_not_nil(executed_args)
+      assert.equals("-w", executed_args[8])
+      assert.equals("22", executed_args[9], "Deadline should be (5*4)+2 = 22")
     end)
   end)
 end)

@@ -44,6 +44,20 @@ function M.get_route_commands()
   return M.find_commands("ip route")
 end
 
+-- Mock argvexec function builder (argv-style, no shell)
+function M.build_argvexec_mock(responses)
+  return function(args)
+    local cmd = table.concat(args, " ")
+    M.track_command(cmd)
+    for pattern, response in pairs(responses) do
+      if cmd:match(pattern) then
+        return response
+      end
+    end
+    return ""
+  end
+end
+
 -- Mock exec function builder
 function M.build_exec_mock(responses)
   --[[
@@ -414,6 +428,7 @@ function M.build_deps(overrides)
         interfaces = {}
       })
     end,
+    argvexec = overrides.argvexec or M.build_argvexec_mock({}),
     ubus_connect = overrides.ubus_connect or function()
       return ubus_mock.connect()
     end,

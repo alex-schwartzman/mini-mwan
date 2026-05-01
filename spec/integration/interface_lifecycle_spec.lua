@@ -31,14 +31,18 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
       local exec_responses_cycle1 = {
         ["ip addr show dev usb0"] = mocks.mock_interface_up(),
         ["ip link show dev usb0"] = "3: usb0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
-        ["ping.*usb0"] = mocks.mock_ping_success(15.0),
         ["ip %-6 addr show dev usb0"] = "",
         ["ip route show default dev usb0"] = "",
       }
+      local argvexec_responses_cycle1 = {
+        ["ping.*usb0"] = mocks.mock_ping_success(15.0),
+      }
 
       local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
+      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses_cycle1)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "usb0", gateway = "192.168.1.1" }
           })
@@ -123,14 +127,17 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
       local exec_responses_cycle2 = {
         ["ip addr show dev usb0"] = mocks.mock_interface_up(),
         ["ip link show dev usb0"] = "3: usb0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
-        ["ping.*usb0"] = mocks.mock_ping_success(15.0),
         ["ip %-6 addr show dev usb0"] = "",
         ["ip route show default dev usb0"] = "",
+      }
+      local argvexec_responses_cycle2 = {
+        ["ping.*usb0"] = mocks.mock_ping_success(15.0),
       }
 
       exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
       deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = mocks.build_argvexec_mock(argvexec_responses_cycle2),
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "usb0", gateway = "192.168.1.1" }
           })
@@ -170,14 +177,17 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
       local exec_responses_cycle1 = {
         ["ip addr show dev wg0"] = mocks.mock_interface_up(),
         ["ip link show dev wg0"] = "5: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
-        ["ping.*wg0"] = mocks.mock_ping_success(5.0),
         ["ip %-6 addr show dev wg0"] = "",
         ["ip route show default dev wg0"] = "",
+      }
+      local argvexec_responses_cycle1 = {
+        ["ping.*wg0"] = mocks.mock_ping_success(5.0),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
       local deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = mocks.build_argvexec_mock(argvexec_responses_cycle1),
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "wg0", gateway = nil } -- P2P, no gateway
           })
@@ -230,14 +240,17 @@ describe("Interface Lifecycle - Disappearance and Reappearance", function()
       local exec_responses_cycle3 = {
         ["ip addr show dev wg0"] = mocks.mock_interface_up(),
         ["ip link show dev wg0"] = "5: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
-        ["ping.*wg0"] = mocks.mock_ping_success(5.0),
         ["ip %-6 addr show dev wg0"] = "",
         ["ip route show default dev wg0"] = "",
+      }
+      local argvexec_responses_cycle3 = {
+        ["ping.*wg0"] = mocks.mock_ping_success(5.0),
       }
 
       exec_mock = mocks.build_exec_mock(exec_responses_cycle3)
       deps, ubus_mock, log_mock = mocks.build_deps({
         exec = exec_mock,
+        argvexec = mocks.build_argvexec_mock(argvexec_responses_cycle3),
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "wg0", gateway = nil }
           })

@@ -73,6 +73,23 @@ local deps = {
   end,
   uloop_run = function()
     return uloop.run()
+  end,
+  argvexec = function(args)
+    local rd, wr = nixio.pipe()
+    local pid = nixio.fork()
+    if pid == 0 then
+      wr:dup(nixio.stdout)
+      rd:close()
+      local _, errmsg, errno = nixio.exec(args[1], table.unpack(args, 2))
+      nixio.syslog("err", string.format("exec failed: %s", errmsg or "unknown error"))
+      os.exit(errno or 1)
+    else
+      wr:close()
+      local output = rd:read("*a")
+      rd:close()
+      nixio.waitpid(pid)
+      return output
+    end
   end
 }
 
@@ -99,6 +116,13 @@ local function system_probe(cmd)
   return deps.exec(cmd)
 end
 
+-- argv-style probe: no shell, no injection risk
+-- Gradually replaces system_probe(cmd) call sites
+local function system_exec(args)
+  log(string.format("Probe: %s", table.concat(args, " ")), "debug")
+  return deps.argvexec(args)
+end
+
 -- Execute state-changing system intervention (ip route add/replace/delete)
 -- Logged at notice level (5) - important to track configuration changes
 local function system_intervention(cmd)
@@ -114,18 +138,18 @@ local function check_ping(target, count, timeout, device)
   -- Ping through specific interface using source routing
     -- Use -I to specify interface
   local deadline = (count * timeout) + 2
-  local cmd = string.format("ping -I %s -c %d -W %d -w %d %s 2>&1", device, count, timeout, deadline, target)
-  local output = system_probe(cmd)
+  local args = {"ping", "-I", device, "-c", tostring(count), "-W", tostring(timeout), "-w", tostring(deadline), target}
+  local output = system_exec(args)
 
   if not output then
-    log(string.format("Ping failed: no output from command: %s", cmd), "err")  -- err
+    log(string.format("Ping failed: no output from command for device: %s", device), "err")  -- err
     return false, 0
   end
 
   -- Parse ping statistics
   local received = output:match("(%d+) packets received")
   if not received then
-    log(string.format("Ping failed: could not parse output: %s", cmd), "err")
+    log(string.format("Ping failed: could not parse output for device: %s", device), "err")
     return false, 0
   end
 
