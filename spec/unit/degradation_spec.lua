@@ -102,16 +102,11 @@ describe("FR-1.6: Degradation Detection", function()
         -- GIVEN: Interface with IPv6 address
         first_iface_state.gateway= "192.168.1.1"  -- Has IPv4 gateway
 
-        -- Mock IPv6 detection (ip -6 addr show returns IPv6)
-        local exec_mock = function(cmd)
-          if cmd:match("ip %-6 addr show dev eth0") then
-            -- Simulate IPv6 address found (note: %-6 escapes the dash)
-            return "inet6 fe80::1/64 scope global"
-          end
-          return ""
-        end
-
-        local deps = mocks.build_deps({ exec = exec_mock })
+        -- Simulate IPv6 address found (note: %-6 escapes the dash)
+        local exec_mock = mocks.build_argvexec_mock({
+          ["ip %-6 addr show dev eth0"] = "inet6 fe80::1/64 scope global"
+        })
+        local deps = mocks.build_deps({ argvexec = exec_mock })
         mini_mwan.set_dependencies(deps)
 
         -- WHEN: Checking degradation

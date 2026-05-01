@@ -28,11 +28,11 @@ describe("FR-5.3: Audit Logging - Integration", function()
       }
 
       local exec_responses = {
+      }
+      local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",  -- No duplicates
-      }
-      local argvexec_responses = {
         ["ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 
@@ -73,11 +73,11 @@ describe("FR-5.3: Audit Logging - Integration", function()
       }
 
       local exec_responses = {
+      }
+      local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",
-      }
-      local argvexec_responses = {
         ["ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 
@@ -132,11 +132,11 @@ describe("FR-5.3: Audit Logging - Integration", function()
       }
 
       local exec_responses = {
+      }
+      local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",  -- No existing routes
-      }
-      local argvexec_responses = {
         ["ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 
@@ -179,10 +179,10 @@ describe("FR-5.3: Audit Logging - Integration", function()
       }
 
       local exec_responses = {
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",
       }
       local argvexec_responses = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         -- Duplicate routes exist
         ["ip route show default dev eth0"] = [[
@@ -232,11 +232,11 @@ default via 192.168.1.1 dev eth0 metric 21
       }
 
       local exec_responses = {
+      }
+      local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",
-      }
-      local argvexec_responses = {
         ["ping.*eth0"] = mocks.mock_ping_failure(),  -- 100% packet loss
       }
 
@@ -279,11 +279,11 @@ default via 192.168.1.1 dev eth0 metric 21
       }
 
       local exec_responses = {
+      }
+      local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default dev eth0"] = "",
-      }
-      local argvexec_responses = {
         ["ping.*eth0"] = mocks.mock_ping_success(12.5),
       }
 
@@ -329,11 +329,11 @@ default via 192.168.1.1 dev eth0 metric 21
 
       local exec_responses = {
         ["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",  -- Not P2P
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",
         ["ip route show default"] = "",
       }
       local argvexec_responses = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 

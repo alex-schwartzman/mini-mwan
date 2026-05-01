@@ -39,10 +39,10 @@ describe("FR-2.4: Route Cleanup - Duplicate Route Handling", function()
       -- Simulate external tool (like surfshark) creating multiple routes
       local exec_responses = {
         -- Interface is UP and pingable
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
       }
       local argvexec_responses = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- Mock ip route show to return multiple duplicate routes
         ["ip route show default dev eth0"] = [[
@@ -99,10 +99,10 @@ default dev eth0 scope link metric 23
     it("should handle routes without explicit metric", function()
       -- GIVEN: Duplicate route without explicit metric (default metric)
       local exec_responses = {
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",
       }
       local argvexec_responses = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- Mock ip route show with route without metric
         ["ip route show default dev eth0"] = [[
@@ -142,10 +142,10 @@ default dev eth0 scope link
     it("should preserve our route when cleaning duplicates", function()
       -- GIVEN: Multiple routes including our metric
       local exec_responses = {
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",
       }
       local argvexec_responses = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         ["ip route show default dev eth0"] = [[
 default via 192.168.1.1 dev eth0 metric 10
@@ -202,10 +202,10 @@ default via 192.168.1.1 dev eth0 metric 20
     it("should work normally without unnecessary deletions", function()
       -- GIVEN: Only our route exists (no duplicates)
       local exec_responses = {
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",
       }
       local argvexec_responses = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- Only one route (ours)
         ["ip route show default dev eth0"] = [[
@@ -264,10 +264,10 @@ default via 192.168.1.1 dev eth0 metric 10
 
       local exec_responses = {
         ["ip link show dev wg0"] = "12: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
-        ["ip addr show dev wg0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev wg0"] = "",
       }
       local argvexec_responses = {
+        ["ip addr show dev wg0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev wg0"] = "",
         ["ping.*wg0"] = mocks.mock_ping_success(50.0),
         -- P2P interface with duplicate routes
         ["ip route show default dev wg0"] = [[

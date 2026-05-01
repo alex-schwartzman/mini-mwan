@@ -167,8 +167,7 @@ end
 -- Check if interface exists and is UP
 -- Returns: (does_exist: boolean, is_up: boolean)
 local function check_interface_is_up(iface)
-  local cmd = string.format("ip addr show dev %s 2>/dev/null", iface)
-  local output = system_probe(cmd)
+  local output = system_exec({"ip", "addr", "show", "dev", iface})
 
   if not output then
     log(string.format("Failed to start ip addr show for iface: %s", iface), "err")
@@ -294,8 +293,7 @@ local function check_degradation(iface_cfg, iface_state)
 
   -- Check 2: IPv6 detection (application not compatible with IPv6)
   if iface_cfg.device and iface_cfg.device ~= "" then
-    local cmd = string.format("ip -6 addr show dev %s 2>/dev/null", iface_cfg.device)
-    local output = system_probe(cmd)
+    local output = system_exec({"ip", "-6", "addr", "show", "dev", iface_cfg.device})
 
     -- Check if output contains global IPv6 addresses
     if output and output:match("inet6.*scope global") then
