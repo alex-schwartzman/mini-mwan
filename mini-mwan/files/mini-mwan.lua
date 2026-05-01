@@ -7,10 +7,11 @@ Manages multi-WAN failover and load balancing
 
 -- Conditionally load OpenWRT-specific dependencies
 -- In test mode, these will be mocked via dependency injection
-local uci, nixio, ubus, uloop
+local uci, nixio, ubus, uloop, unixio
 if not os.getenv("MINI_MWAN_TEST_MODE") then
   uci = require("uci")
   nixio = require("nixio")
+  unixio = require("nixio.util")
   ubus = require("ubus")
   uloop = require("uloop")
 else
