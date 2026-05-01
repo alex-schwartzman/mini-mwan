@@ -70,7 +70,7 @@ local deps = {
       nixio.dup(wr, nixio.stdout)
       rd:close()
       wr:close()
-      local _, errmsg, errno = nixio.exec(args[1], table.unpack(args, 2))
+      local _, errmsg, errno = nixio.exec(args[1], unpack(args, 2))
       nixio.syslog("err", string.format("exec failed: %s", errmsg or "unknown error"))
       os.exit(errno or 1)
     else
@@ -554,16 +554,17 @@ local function classify_interfaces(config, state)
   for i, iface_cfg in ipairs(config.interfaces) do
     local iface_state = state.interfaces[i]
 
-    -- we don't touch routes of degraded interfaces
-    if iface_state.degraded == 0 then
-      if iface_state.is_up then
+    -- we shall replace metric of degraded interfaces to 900 hence they shall be in "unusable" list
+    if iface_state.is_up then
+      if iface_state.degraded == 0 then
         -- Interface is up and has connectivity (ping succeeded)
-        table.insert(usable, {cfg = iface_cfg, state = iface_state})
+        table.insert(usable, { cfg = iface_cfg, state = iface_state })
       else
-        -- Interface is up but no connectivity (ping failed)
-        table.insert(unusable, {cfg = iface_cfg, state = iface_state})
+        -- Interface is either degraded (up but no connectivity (ping failed)) or is down
+        table.insert(unusable, { cfg = iface_cfg, state = iface_state })
       end
     end
+    -- If is_up is false, we do nothing. The kernel handles the cleanup.
   end
 
   return {usable = usable, unusable = unusable}
@@ -576,10 +577,10 @@ local function deprioritize_unusable_interfaces(unusable)
     -- Use 'replace' instead of 'add' to handle cases where route already exists
     -- But we still need to delete first, so that eventually all duplicates get removed
     if iface.state.gateway and iface.state.gateway ~= "" then
-      system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", iface.cfg.device})
+      system_intervention_argv({"/sbin/ip", "route", "flush", "default", "dev", iface.cfg.device})
       system_intervention_argv({"/sbin/ip", "route", "replace", "default", "via", iface.state.gateway, "dev", iface.cfg.device, "metric", "900"})
     else
-      system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", iface.cfg.device})
+      system_intervention_argv({"/sbin/ip", "route", "flush", "default", "dev", iface.cfg.device})
       system_intervention_argv({"/sbin/ip", "route", "replace", "default", "dev", iface.cfg.device, "metric", "900" })
     end
   end
