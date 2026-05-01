@@ -43,15 +43,6 @@ describe("FR-4.2: Status Update", function()
 
   describe("ubus status publishing", function()
     it("should publish status via ubus after work cycle", function()
-      -- GIVEN: Mock dependencies with network stats
-      local exec_responses = {
-        ["cat /sys/class/net/eth0/statistics/rx_bytes"] = "1234567",
-        ["cat /sys/class/net/eth0/statistics/tx_bytes"] = "7654321",
-        ["cat /sys/class/net/eth1/statistics/rx_bytes"] = "9876543",
-        ["cat /sys/class/net/eth1/statistics/tx_bytes"] = "3456789",
-      }
-
-      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps, ubus_mock = mocks.build_deps({
         exec = exec_mock,
         time = function() return 1698765432 end
@@ -75,12 +66,6 @@ describe("FR-4.2: Status Update", function()
       test_config.mode = "multiuplink"
       test_config.check_interval = 60
 
-      local exec_mock = mocks.build_exec_mock({
-        ["cat /sys/class/net/eth0/statistics/rx_bytes"] = "100",
-        ["cat /sys/class/net/eth0/statistics/tx_bytes"] = "200",
-        ["cat /sys/class/net/eth1/statistics/rx_bytes"] = "300",
-        ["cat /sys/class/net/eth1/statistics/tx_bytes"] = "400",
-      })
       local deps, ubus_mock = mocks.build_deps({
         exec = exec_mock,
         time = function() return 9999999999 end
@@ -150,6 +135,17 @@ describe("FR-4.2: Status Update", function()
       assert.is_not_nil(iface1.gateway)
       assert.equals(111, iface1.rx_bytes)
       assert.equals(222, iface1.tx_bytes)
+
+      local iface2 = status.interfaces[2]
+      assert.equals("eth1", iface2.device)
+      assert.is_not_nil(iface2.does_exist)
+      assert.is_not_nil(iface2.is_up)
+      assert.is_not_nil(iface2.degraded)
+      assert.is_not_nil(iface2.degraded_reason)
+      assert.is_not_nil(iface2.latency)
+      assert.is_not_nil(iface2.gateway)
+      assert.equals(333, iface2.rx_bytes)
+      assert.equals(444, iface2.tx_bytes)
     end)
 
     it("should convert network stats to numbers", function()
