@@ -37,10 +37,8 @@ describe("FR-2.4: Route Cleanup - Duplicate Route Handling", function()
     it("should clean up duplicate routes while maintaining connectivity", function()
       -- GIVEN: Multiple duplicate routes for eth0 with different metrics
       -- Simulate external tool (like surfshark) creating multiple routes
-      local exec_responses = {
-        -- Interface is UP and pingable
-      }
       local argvexec_responses = {
+        -- Interface is UP and pingable
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
@@ -53,10 +51,8 @@ default dev eth0 scope link metric 23
 ]],
       }
 
-      local exec_mock = mocks.build_exec_mock(exec_responses)
       local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps = mocks.build_deps({
-        exec = exec_mock,
         argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
@@ -98,8 +94,6 @@ default dev eth0 scope link metric 23
 
     it("should handle routes without explicit metric", function()
       -- GIVEN: Duplicate route without explicit metric (default metric)
-      local exec_responses = {
-      }
       local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
@@ -111,10 +105,8 @@ default dev eth0 scope link
 ]],
       }
 
-      local exec_mock = mocks.build_exec_mock(exec_responses)
       local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps = mocks.build_deps({
-        exec = exec_mock,
         argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
@@ -141,8 +133,6 @@ default dev eth0 scope link
 
     it("should preserve our route when cleaning duplicates", function()
       -- GIVEN: Multiple routes including our metric
-      local exec_responses = {
-      }
       local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
@@ -154,10 +144,8 @@ default via 192.168.1.1 dev eth0 metric 20
 ]],
       }
 
-      local exec_mock = mocks.build_exec_mock(exec_responses)
       local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps = mocks.build_deps({
-        exec = exec_mock,
         argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
@@ -201,8 +189,6 @@ default via 192.168.1.1 dev eth0 metric 20
   describe("Scenario: No duplicate routes", function()
     it("should work normally without unnecessary deletions", function()
       -- GIVEN: Only our route exists (no duplicates)
-      local exec_responses = {
-      }
       local argvexec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
@@ -213,10 +199,8 @@ default via 192.168.1.1 dev eth0 metric 10
 ]],
       }
 
-      local exec_mock = mocks.build_exec_mock(exec_responses)
       local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps = mocks.build_deps({
-        exec = exec_mock,
         argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" }
@@ -262,10 +246,8 @@ default via 192.168.1.1 dev eth0 metric 10
         }
       }
 
-      local exec_responses = {
-        ["ip link show dev wg0"] = "12: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
-      }
       local argvexec_responses = {
+        ["ip link show dev wg0"] = "12: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
         ["ip addr show dev wg0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev wg0"] = "",
         ["ping.*wg0"] = mocks.mock_ping_success(50.0),
@@ -277,10 +259,8 @@ default dev wg0 metric 22
 ]],
       }
 
-      local exec_mock = mocks.build_exec_mock(exec_responses)
       local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
       local deps = mocks.build_deps({
-        exec = exec_mock,
         argvexec = argvexec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "wg0", gateway = nil }

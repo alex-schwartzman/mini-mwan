@@ -51,9 +51,9 @@ describe("FR-4.2: Status Update", function()
         ["cat /sys/class/net/eth1/statistics/tx_bytes"] = "3456789",
       }
 
-      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local exec_mock = mocks.build_argvexec_mock(exec_responses)
       local deps, ubus_mock = mocks.build_deps({
-        exec = exec_mock,
+        argvexec = exec_mock,
         time = function() return 1698765432 end
       })
       mini_mwan.set_dependencies(deps)
@@ -75,14 +75,14 @@ describe("FR-4.2: Status Update", function()
       test_config.mode = "multiuplink"
       test_config.check_interval = 60
 
-      local exec_mock = mocks.build_exec_mock({
+      local exec_mock = mocks.build_argvexec_mock({
         ["cat /sys/class/net/eth0/statistics/rx_bytes"] = "100",
         ["cat /sys/class/net/eth0/statistics/tx_bytes"] = "200",
         ["cat /sys/class/net/eth1/statistics/rx_bytes"] = "300",
         ["cat /sys/class/net/eth1/statistics/tx_bytes"] = "400",
       })
       local deps, ubus_mock = mocks.build_deps({
-        exec = exec_mock,
+        argvexec = exec_mock,
         time = function() return 9999999999 end
       })
       mini_mwan.set_dependencies(deps)
@@ -100,7 +100,7 @@ describe("FR-4.2: Status Update", function()
 
     it("should include all interface fields", function()
       -- GIVEN: Complete work cycle with all mocks
-      local exec_mock = mocks.build_exec_mock({
+      local exec_mock = mocks.build_argvexec_mock({
         -- Gateway discovery
         -- Interface status
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
@@ -121,7 +121,7 @@ describe("FR-4.2: Status Update", function()
       })
 
       local deps, ubus_mock = mocks.build_deps({
-        exec = exec_mock,
+        argvexec = exec_mock,
         open_file = file_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -154,7 +154,7 @@ describe("FR-4.2: Status Update", function()
 
     it("should convert network stats to numbers", function()
       -- GIVEN: Complete work cycle with large network stats
-      local exec_mock = mocks.build_exec_mock({
+      local exec_mock = mocks.build_argvexec_mock({
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         ["ip %-6 addr show dev eth0"] = "",
@@ -172,7 +172,7 @@ describe("FR-4.2: Status Update", function()
       })
 
       local deps, ubus_mock = mocks.build_deps({
-        exec = exec_mock,
+        argvexec = exec_mock,
         open_file = file_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -195,13 +195,13 @@ describe("FR-4.2: Status Update", function()
 
     it("should handle missing network stats gracefully", function()
       -- GIVEN: Network stats unavailable (empty response)
-      local exec_mock = mocks.build_exec_mock({
+      local exec_mock = mocks.build_argvexec_mock({
         ["cat /sys/class/net/eth0/statistics/rx_bytes"] = "",
         ["cat /sys/class/net/eth0/statistics/tx_bytes"] = "",
         ["cat /sys/class/net/eth1/statistics/rx_bytes"] = "",
         ["cat /sys/class/net/eth1/statistics/tx_bytes"] = "",
       })
-      local deps, ubus_mock = mocks.build_deps({ exec = exec_mock })
+      local deps, ubus_mock = mocks.build_deps({ argvexec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Registering ubus and running work

@@ -111,11 +111,7 @@ describe("FR-1.2: Interface State Detection", function()
     it("should handle empty output (no match for device)", function()
       -- GIVEN: Command returns empty string (default mock behavior when no pattern matches)
       -- This happens when checking non-existent device and error is redirected to /dev/null
-      local exec_mock = function(cmd)
-        mocks.track_command(cmd)
-        return ""  -- Empty output
-      end
-      local deps = mocks.build_deps({ exec = exec_mock })
+      local deps = mocks.build_deps()
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up

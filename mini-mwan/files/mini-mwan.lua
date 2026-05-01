@@ -7,21 +7,15 @@ Manages multi-WAN failover and load balancing
 
 -- Conditionally load OpenWRT-specific dependencies
 -- In test mode, these will be mocked via dependency injection
-local uci, nixio, json, ubus, uloop
+local uci, nixio, ubus, uloop
 if not os.getenv("MINI_MWAN_TEST_MODE") then
   uci = require("uci")
   nixio = require("nixio")
-  json = require("cjson")
   ubus = require("ubus")
   uloop = require("uloop")
 else
   -- Test mode: use standard JSON if available, or it will be mocked
   local ok, cjson = pcall(require, "cjson")
-  json = ok and cjson or {
-    decode = function(str)
-      error("JSON decoder not available - please install lua-cjson or mock it")
-    end
-  }
 end
 
 -- Configuration
@@ -44,13 +38,6 @@ local current_status = {
 -- In production: uses real OpenWrt modules
 -- In test mode: must be completely replaced via set_dependencies()
 local deps = {
-  exec = function(cmd)
-    local handle = io.popen(cmd)
-    if not handle then return nil, "Failed to execute command" end
-    local output = handle:read("*a")
-    handle:close()
-    return output
-  end,
   log = function(msg, priority)
     nixio.syslog(priority, msg)
   end,
@@ -107,13 +94,6 @@ end
 local function log(msg, priority)
   priority = priority or "info"
   deps.log(msg, priority)
-end
-
--- Execute read-only system probe (ping, ubus, ip route show, etc.)
--- Logged at debug level (7) - only visible when audit_log_level >= 7
-local function system_probe(cmd)
-  log(string.format("Probe: %s", cmd), "debug")  -- debug
-  return deps.exec(cmd)
 end
 
 -- argv-style probe: no shell, no injection risk
@@ -264,9 +244,7 @@ local function detect_point_to_point(device)
     return false
   end
 
-  local cmd = string.format("ip link show dev %s 2>/dev/null", device)
-  local output = system_probe(cmd)
-
+  local output = system_exec({ "ip", "link", "show", "dev", device })
   if not output or output == "" then
     return false
   end

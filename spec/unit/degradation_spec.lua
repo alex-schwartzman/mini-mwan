@@ -85,8 +85,7 @@ describe("FR-1.6: Degradation Detection", function()
         point_to_point = true  -- P2P interface
         }
 
-        local exec_mock = mocks.build_exec_mock({})
-        local deps = mocks.build_deps({ exec = exec_mock })
+        local deps = mocks.build_deps()
         mini_mwan.set_dependencies(deps)
 
         -- WHEN: Setting route
@@ -124,10 +123,7 @@ describe("FR-1.6: Degradation Detection", function()
         first_iface_state.gateway = "192.168.1.1"
 
         -- Mock no IPv6
-        local exec_mock = function(cmd)
-          return ""  -- No IPv6 found
-        end
-        local deps = mocks.build_deps({ exec = exec_mock })
+        local deps = mocks.build_deps()
         mini_mwan.set_dependencies(deps)
 
         -- WHEN: Checking degradation
@@ -149,10 +145,7 @@ describe("FR-1.6: Degradation Detection", function()
         }
 
         -- Mock no IPv6
-        local exec_mock = function(cmd)
-          return ""  -- No IPv6 found
-        end
-        local deps = mocks.build_deps({ exec = exec_mock })
+        local deps = mocks.build_deps()
         mini_mwan.set_dependencies(deps)
 
         -- WHEN: Checking degradation again
