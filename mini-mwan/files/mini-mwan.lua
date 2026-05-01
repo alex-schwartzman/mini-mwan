@@ -201,6 +201,11 @@ local function probe_all_gateways()
     deps.ubus_conn = deps.ubus_connect()
   end
 
+  if not deps.ubus_conn then
+    log("Failed to connect to ubus", "err")
+    return {}
+  end
+
   log("Probe: ubus call network.interface dump", "debug")
   local data = deps.ubus_conn:call("network.interface", "dump", {})
 
@@ -334,19 +339,20 @@ end
 
 -- Load configuration from UCI (immutable)
 local function load_config()
-  deps.uci_cursor():load("mini-mwan")
+  local c = deps.uci_cursor()
+  c:load("mini-mwan")
 
   local config = {
-    enabled = deps.uci_cursor():get("mini-mwan", "settings", "enabled") == "1",
-    mode = deps.uci_cursor():get("mini-mwan", "settings", "mode") or "failover",
-    check_interval = tonumber(deps.uci_cursor():get("mini-mwan", "settings", "check_interval")) or 30,
-    log_level = deps.uci_cursor():get("mini-mwan", "settings", "audit") or "emerg",
+    enabled = c:get("mini-mwan", "settings", "enabled") == "1",
+    mode = c:get("mini-mwan", "settings", "mode") or "failover",
+    check_interval = tonumber(c:get("mini-mwan", "settings", "check_interval")) or 30,
+    log_level = c:get("mini-mwan", "settings", "audit") or "emerg",
     interfaces = {}
   }
 
   -- Load all interface configurations (config only, no state)
   -- Section name is the device name (e.g., config interface 'eth0')
-  deps.uci_cursor():foreach("mini-mwan", "interface", function(section)
+  c:foreach("mini-mwan", "interface", function(section)
     local iface_cfg = {
       device = section.device,
       metric = tonumber(section.metric) or 10,
@@ -620,10 +626,14 @@ local function set_route_multiuplink(usable_ifaces)
   system_intervention(multipath_cmd)
 end
 
-local function at_least_two_wans_configured(config)
-  local wan1_configured = config.interfaces[1] and config.interfaces[1].device and config.interfaces[1].device ~= ""
-  local wan2_configured = config.interfaces[2] and config.interfaces[2].device and config.interfaces[2].device ~= ""
-  return wan1_configured and wan2_configured
+local function count_wans_configured(config)
+  local configured_count = 0
+  for _, iface in ipairs(config.interfaces or {}) do
+    if iface and iface.device and iface.device ~= "" then
+      configured_count = configured_count + 1
+    end
+  end
+  return configured_count
 end
 
 local function work(config)
@@ -660,7 +670,7 @@ local function work_cycle()
   nixio.setlogmask(config.log_level)
 
   if config.enabled then
-    if at_least_two_wans_configured(config) then
+    if count_wans_configured(config) >= 2 then
       work(config)
     else
       log("Both WAN interfaces must be configured. Refusing to work!", "err")  -- err
@@ -756,7 +766,8 @@ if os.getenv("MINI_MWAN_TEST_MODE") then
     deprioritize_unusable_interfaces = deprioritize_unusable_interfaces,
     work = work,
     log = log,
-    register_ubus = register_ubus
+    register_ubus = register_ubus,
+    count_wans_configured = count_wans_configured
   }
 else
   -- Normal operation - run daemon

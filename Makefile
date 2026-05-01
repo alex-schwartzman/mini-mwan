@@ -1,7 +1,7 @@
 # Mini-MWAN Build Orchestration
 # Uses docker-compose to build packages with official Makefile structure
 
-.PHONY: all build shell feeds-fetch feeds-register help
+.PHONY: all build shell feeds-fetch feeds-register test test-unit test-integration help
 .DEFAULT_GOAL := all
 
 # Full build: refetch feeds, register them, then build packages
@@ -33,6 +33,18 @@ nginx:
 	mkdir -p nginx-run/{logs,run,client_body_temp,proxy_temp,fastcgi_temp,uwsgi_temp,scgi_temp}
 	nginx -c `pwd`/localhost-development-nginx.conf -p `pwd`
 
+# Run all tests
+test:
+	./run-tests.sh
+
+# Run unit tests only
+test-unit:
+	./run-tests.sh --unit
+
+# Run integration tests only
+test-integration:
+	./run-tests.sh --integration
+
 # Open a shell in the build container
 check:
 	luacheck mini-mwan/files/mini-mwan.lua
@@ -45,11 +57,16 @@ help:
 	@echo "For fast development iteration, use VS Code devcontainer (uses Makefile.devcontainer)."
 	@echo ""
 	@echo "Available targets:"
-	@echo "  all            - Fetch feeds, register, and build (default)"
-	@echo "  build          - Build both packages only (assumes feeds ready)"
-	@echo "  shell          - Open shell in build container for debugging"
-	@echo "  help           - Show this help message"
+	@echo "  all              - Fetch feeds, register, and build (default)"
+	@echo "  build            - Build both packages only (assumes feeds ready)"
+	@echo "  test             - Run all tests"
+	@echo "  test-unit        - Run unit tests only"
+	@echo "  test-integration - Run integration tests only"
+	@echo "  shell            - Open shell in build container for debugging"
+	@echo "  help             - Show this help message"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make           # Full build from scratch"
-	@echo "  make build     # Quick rebuild (feeds already set up)"
+	@echo "  make             # Full build from scratch"
+	@echo "  make build       # Quick rebuild (feeds already set up)"
+	@echo "  make test        # Run all tests"
+	@echo "  make test-unit   # Run unit tests only"

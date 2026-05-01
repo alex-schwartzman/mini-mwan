@@ -262,6 +262,25 @@ Built packages will be in `./bin/packages/x86_64/*/`:
 - `mini-mwan_1.0.0-r1_all.ipk`
 - `luci-app-mini-mwan_1.0.0-r1_all.ipk`
 
+### Running Tests
+
+Tests require [busted](https://lunarmodules.github.io/busted/) (`luarocks install busted`).
+
+```bash
+make test              # Run all tests
+make test-unit         # Unit tests only
+make test-integration  # Integration tests only
+```
+
+For more options, call the runner directly:
+
+```bash
+./run-tests.sh -v              # Verbose output
+./run-tests.sh -u -v           # Unit tests, verbose
+./run-tests.sh -p 'Gateway'    # Tests matching a name pattern
+./run-tests.sh -c              # All tests + coverage report
+```
+
 ### Development Environment
 
 This project includes two build modes:

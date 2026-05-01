@@ -80,6 +80,27 @@ describe("FR-1.3: Gateway Discovery", function()
     end)
   end)
 
+  describe("when ubus connection fails", function()
+    it("should return empty map and log an error", function()
+      -- GIVEN: ubus_connect() returns nil (daemon/socket not available)
+      local deps, _, log_mock = mocks.build_deps({
+        ubus_connect = function() return nil end
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Probing all gateways
+      local gateway_map = mini_mwan.probe_all_gateways()
+
+      -- THEN: Should return empty map (not crash)
+      assert.is_table(gateway_map)
+      assert.equals(0, #gateway_map)
+
+      -- AND: Should log an error
+      local err_messages = log_mock.get_messages_by_priority("err")
+      assert.is_true(#err_messages > 0)
+    end)
+  end)
+
   describe("when multiple routes exist", function()
     it("should extract only default route (0.0.0.0/0)", function()
       -- GIVEN: Multiple routes including default in ubus dump
