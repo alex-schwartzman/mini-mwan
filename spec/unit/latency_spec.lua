@@ -246,7 +246,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 
       -- THEN: Args should have correct parameters
       assert.is_not_nil(executed_args)
-      assert.equals("ping",    executed_args[1])
+      assert.equals("/bin/ping",    executed_args[1])
       assert.equals("-I",      executed_args[2])
       assert.equals("eth1",    executed_args[3])
       assert.equals("-c",      executed_args[4])

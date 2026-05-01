@@ -74,15 +74,15 @@ describe("FR-2.1: Failover Mode - End to End", function()
       -- GIVEN: Two interfaces configured, both UP
       local exec_responses = {
         -- Primary interface (eth0) - UP
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
+        ["/sbin/ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["/sbin/ip %-6 addr show dev eth0"] = "", -- No IPv6
 
         -- Backup interface (eth1) - UP
-        ["ip addr show dev eth1"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth1"] = "",  -- No IPv6
+        ["/sbin/ip addr show dev eth1"] = mocks.mock_interface_up(),
+        ["/sbin/ip %-6 addr show dev eth1"] = "",  -- No IPv6
 
-        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
-        ["ping.*eth1.*8%.8%.8%.8"] = mocks.mock_ping_success(15.2),
+        ["/bin/ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+        ["/bin/ping.*eth1.*8%.8%.8%.8"] = mocks.mock_ping_success(15.2),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)

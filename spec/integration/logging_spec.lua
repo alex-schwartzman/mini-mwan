@@ -69,10 +69,10 @@ describe("FR-5.3: Audit Logging - Integration", function()
       }
 
       local exec_responses = {
-        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
-        ["ip %-6 addr show dev eth0"] = "",
-        ["ip route show default dev eth0"] = "",
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+        ["/sbin/ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["/sbin/ip %-6 addr show dev eth0"] = "",
+        ["/sbin/ip route show default dev eth0"] = "",
+        ["/bin/ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
@@ -98,10 +98,10 @@ describe("FR-5.3: Audit Logging - Integration", function()
         if msg.message:match("Probe: ubus call network%.interface dump") then
           found_ubus_probe = true
         end
-        if msg.message:match("Probe: ip addr show") then
+        if msg.message:match("Probe: /sbin/ip addr show") then
           found_ip_probe = true
         end
-        if msg.message:match("Probe: ping") then
+        if msg.message:match("Probe: /bin/ping") then
           found_ping_probe = true
         end
       end
@@ -147,7 +147,7 @@ describe("FR-5.3: Audit Logging - Integration", function()
       local found_route_intervention = false
 
       for _, msg in ipairs(notice_msgs) do
-        if msg.message:match("Intervention: ip route replace default") then
+        if msg.message:match("Intervention: /sbin/ip route replace default") then
           found_route_intervention = true
           break
         end
@@ -194,7 +194,7 @@ default via 192.168.1.1 dev eth0 metric 21
       local found_delete_intervention = false
 
       for _, msg in ipairs(notice_msgs) do
-        if msg.message:match("Intervention: ip route delete default") then
+        if msg.message:match("Intervention: /sbin/ip route delete default") then
           found_delete_intervention = true
           break
         end

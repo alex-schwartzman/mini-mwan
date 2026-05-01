@@ -118,7 +118,7 @@ local function check_ping(target, count, timeout, device)
   -- Ping through specific interface using source routing
     -- Use -I to specify interface
   local deadline = (count * timeout) + 2
-  local args = {"ping", "-I", device, "-c", tostring(count), "-W", tostring(timeout), "-w", tostring(deadline), target}
+  local args = {"/bin/ping", "-I", device, "-c", tostring(count), "-W", tostring(timeout), "-w", tostring(deadline), target}
   local output = system_exec(args)
 
   if not output then
@@ -147,7 +147,7 @@ end
 -- Check if interface exists and is UP
 -- Returns: (does_exist: boolean, is_up: boolean)
 local function check_interface_is_up(iface)
-  local output = system_exec({"ip", "addr", "show", "dev", iface})
+  local output = system_exec({"/sbin/ip", "addr", "show", "dev", iface})
 
   if not output then
     log(string.format("Failed to start ip addr show for iface: %s", iface), "err")
@@ -244,7 +244,7 @@ local function detect_point_to_point(device)
     return false
   end
 
-  local output = system_exec({ "ip", "link", "show", "dev", device })
+  local output = system_exec({ "/sbin/ip", "link", "show", "dev", device })
   if not output or output == "" then
     return false
   end
@@ -271,7 +271,7 @@ local function check_degradation(iface_cfg, iface_state)
 
   -- Check 2: IPv6 detection (application not compatible with IPv6)
   if iface_cfg.device and iface_cfg.device ~= "" then
-    local output = system_exec({"ip", "-6", "addr", "show", "dev", iface_cfg.device})
+    local output = system_exec({"/sbin/ip", "-6", "addr", "show", "dev", iface_cfg.device})
 
     -- Check if output contains global IPv6 addresses
     if output and output:match("inet6.*scope global") then
@@ -290,7 +290,7 @@ end
 -- is usually terminated by LuCI and restarted. therefore there will be a leftover route from previous run
 -- and we need to delete it
 local function delete_all_routes_except(iface_cfg)
-  local output = system_exec({"ip", "route", "show", "default", "dev", iface_cfg.device})
+  local output = system_exec({"/sbin/ip", "route", "show", "default", "dev", iface_cfg.device})
 
   if output and output ~= "" then
     local routes = {}
@@ -304,10 +304,10 @@ local function delete_all_routes_except(iface_cfg)
       if metric then
         -- Delete all routes except that one which we added with a given metric
         if metric ~= iface_cfg.metric then
-          system_intervention_argv({"ip", "route", "delete", "default", "dev", iface_cfg.device, "metric", metric})
+          system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", iface_cfg.device, "metric", metric})
         end
       else
-        system_intervention_argv({"ip", "route", "delete", "default",  "dev", iface_cfg.device})
+        system_intervention_argv({"/sbin/ip", "route", "delete", "default",  "dev", iface_cfg.device})
       end
     end
   end
@@ -316,10 +316,10 @@ end
 local function replace_default_gw(iface_cfg, iface_state)
   if iface_state.gateway and iface_state.gateway ~= "" then
     -- Regular interface with gateway (e.g., ethernet)
-    system_intervention_argv({"ip", "route", "replace", "default", "via", iface_state.gateway, "dev", iface_cfg.device, "metric", iface_cfg.metric})
+    system_intervention_argv({"/sbin/ip", "route", "replace", "default", "via", iface_state.gateway, "dev", iface_cfg.device, "metric", iface_cfg.metric})
   else
     -- Point-to-point interface without gateway (e.g., VPN tunnel)
-    system_intervention_argv({"ip", "route", "replace", "default", "dev", iface_cfg.device, "metric", iface_cfg.metric})
+    system_intervention_argv({"/sbin/ip", "route", "replace", "default", "dev", iface_cfg.device, "metric", iface_cfg.metric})
   end
 end
 
@@ -517,7 +517,7 @@ local function cleanup_unmanaged_routes(config)
   end
 
   -- Get all current default routes
-  local output = system_exec({"ip", "route", "show", "default"})
+  local output = system_exec({"/sbin/ip", "route", "show", "default"})
   if not output or output == "" then
     return
   end
@@ -531,11 +531,11 @@ local function cleanup_unmanaged_routes(config)
     if device and not managed_devices[device] then
       local via = line:match("via%s+(%S+)")
       if via then
-        system_intervention_argv({"ip", "route", "delete", "default", "via", via, "dev", device})
-        system_intervention_argv({"ip", "route", "replace", "default", "via", via, "dev", device, "metric", "999"})
+        system_intervention_argv({"/sbin/ip", "route", "delete", "default", "via", via, "dev", device})
+        system_intervention_argv({"/sbin/ip", "route", "replace", "default", "via", via, "dev", device, "metric", "999"})
       else
-        system_intervention_argv({"ip", "route", "delete", "default", "dev", device})
-        system_intervention_argv({"ip", "route", "replace", "default", "dev", device, "metric", "999"})
+        system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", device})
+        system_intervention_argv({"/sbin/ip", "route", "replace", "default", "dev", device, "metric", "999"})
       end
     end
   end
@@ -573,11 +573,11 @@ local function deprioritize_unusable_interfaces(unusable)
     -- Use 'replace' instead of 'add' to handle cases where route already exists
     -- But we still need to delete first, so that eventually all duplicates get removed
     if iface.state.gateway and iface.state.gateway ~= "" then
-      system_intervention_argv({"ip", "route", "delete", "default", "dev", iface.cfg.device})
-      system_intervention_argv({"ip", "route", "replace", "default", "via", iface.state.gateway, "dev", iface.cfg.device, "metric", "900"})
+      system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", iface.cfg.device})
+      system_intervention_argv({"/sbin/ip", "route", "replace", "default", "via", iface.state.gateway, "dev", iface.cfg.device, "metric", "900"})
     else
-      system_intervention_argv({"ip", "route", "delete", "default", "dev", iface.cfg.device})
-      system_intervention_argv({"ip", "route", "replace", "default", "dev", iface.cfg.device, "metric", "900" })
+      system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", iface.cfg.device})
+      system_intervention_argv({"/sbin/ip", "route", "replace", "default", "dev", iface.cfg.device, "metric", "900" })
     end
   end
 end
@@ -604,7 +604,7 @@ local function set_route_multiuplink(usable_ifaces)
   end
 
   -- Initialize the base command as individual table elements
-  local cmd_args = { "ip", "route", "replace", "default" }
+  local cmd_args = { "/sbin/ip", "route", "replace", "default" }
 
   for _, iface in ipairs(usable_ifaces) do
     -- Add the nexthop keyword for every interface
@@ -623,7 +623,7 @@ local function set_route_multiuplink(usable_ifaces)
     table.insert(cmd_args, tostring(iface.cfg.weight))
   end
 
-  -- Now cmd_args is a flat table: {"ip", "route", "replace", "default", "nexthop", "via", ...}
+  -- Now cmd_args is a flat table: {"/sbin/ip", "route", "replace", "default", "nexthop", "via", ...}
   system_intervention_argv(cmd_args)
 end
 

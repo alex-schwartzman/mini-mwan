@@ -429,7 +429,7 @@ function M.assert_route_set(gateway, device, metric)
   --[[
   Assert that a route was set with specific parameters
   ]]
-  local pattern = string.format("ip route replace default via %s dev %s metric %d",
+  local pattern = string.format("/sbin/ip route replace default via %s dev %s metric %d",
     gateway, device, metric)
   local found = false
   for _, cmd in ipairs(M.executed_commands) do
@@ -449,7 +449,7 @@ function M.assert_p2p_route_set(device, metric)
   --[[
   Assert that a P2P route (without gateway) was set
   ]]
-  local pattern = string.format("ip route replace default dev %s metric %d",
+  local pattern = string.format("/sbin/ip route replace default dev %s metric %d",
     device, metric)
   local found = false
   for _, cmd in ipairs(M.executed_commands) do
@@ -496,7 +496,7 @@ function M.assert_multipath_route(expected_nexthops)
   -- Find the multipath route command
   local multipath_cmd = nil
   for _, cmd in ipairs(M.executed_commands) do
-    if cmd:match("^ip route replace default nexthop") then
+    if cmd:match("/sbin/ip route replace default nexthop") then
       multipath_cmd = cmd
       break
     end
