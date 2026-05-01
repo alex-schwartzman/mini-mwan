@@ -72,7 +72,7 @@ describe("FR-2.1: Failover Mode - End to End", function()
   describe("Scenario: Both interfaces healthy", function()
     it("should use primary (lowest metric) interface", function()
       -- GIVEN: Two interfaces configured, both UP
-      local argvexec_responses = {
+      local exec_responses = {
         -- Primary interface (eth0) - UP
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
@@ -85,9 +85,9 @@ describe("FR-2.1: Failover Mode - End to End", function()
         ["ping.*eth1.*8%.8%.8%.8"] = mocks.mock_ping_success(15.2),
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- ubus returns both interfaces with gateways
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -110,7 +110,7 @@ describe("FR-2.1: Failover Mode - End to End", function()
   describe("Scenario: Primary fails, backup takes over", function()
     it("should use backup interface when primary is down", function()
       -- GIVEN: Primary is DOWN, backup is UP
-      local argvexec_responses = {
+      local exec_responses = {
         -- Primary interface (eth0) - UP but NOT pingable (connection lost)
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
@@ -125,9 +125,9 @@ describe("FR-2.1: Failover Mode - End to End", function()
         ["ip route show"] = mocks.ip_route_show_eth0_default()
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- ubus returns both interfaces with gateways
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -154,16 +154,16 @@ describe("FR-2.1: Failover Mode - End to End", function()
       -- Cycle 2: Primary recovers, becomes primary again
 
       -- CYCLE 1: Primary down
-      local argvexec_responses_cycle1 = {
+      local exec_responses_cycle1 = {
         ["ip addr show dev eth0"] = mocks.mock_interface_down(),  -- Interface DOWN
         ["ip addr show dev eth1"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth1"] = "",  -- No IPv6
         ["ping.*eth1"] = mocks.mock_ping_success(15.0),
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses_cycle1)
+      local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }
@@ -180,7 +180,7 @@ describe("FR-2.1: Failover Mode - End to End", function()
       -- CYCLE 2: Primary recovers
       mocks.reset()
 
-      local argvexec_responses_cycle2 = {
+      local exec_responses_cycle2 = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),  -- Now UP
         ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
         ["ip addr show dev eth1"] = mocks.mock_interface_up(),
@@ -189,9 +189,9 @@ describe("FR-2.1: Failover Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_success(15.0),
       }
 
-      argvexec_mock = mocks.build_argvexec_mock(argvexec_responses_cycle2)
+      exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
       deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }
@@ -210,7 +210,11 @@ describe("FR-2.1: Failover Mode - End to End", function()
   describe("Scenario: Both interfaces fail", function()
     it("should log warning but not crash", function()
       -- GIVEN: All interfaces down
-      local argvexec_responses = {
+      local exec_responses = {
+        -- Regular interface (eth0) - has gateway
+        ["ip link show dev eth0"] =
+        "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether 60:cf:84:ee:10:68 brd ff:ff:ff:ff:ff:ff",
+
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
 
@@ -221,9 +225,9 @@ describe("FR-2.1: Failover Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_failure(),  -- FAILED
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }
@@ -244,7 +248,7 @@ describe("FR-2.1: Failover Mode - End to End", function()
   describe("Scenario: VPN tunnel with ISP failover", function()
     it("should handle P2P interface (no gateway) correctly", function()
       -- GIVEN: Regular interface (eth0) and VPN tunnel (wg0)
-      local argvexec_responses = {
+      local exec_responses = {
         -- Regular interface (eth0) - has gateway
         ["ip link show dev eth0"] =
         "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether 60:cf:84:ee:10:68 brd ff:ff:ff:ff:ff:ff",
@@ -261,9 +265,9 @@ describe("FR-2.1: Failover Mode - End to End", function()
         ["ping.*wg0"] = mocks.mock_ping_success(50.0),
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- ubus returns both: eth0 with gateway, wg0 without (P2P)
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -311,7 +315,7 @@ describe("FR-2.1: Failover Mode - End to End", function()
   describe("Scenario: Degraded interface should be skipped", function()
     it("should not route through shared medium interface without gateway", function()
       -- GIVEN: wan1 is degraded (no gateway, DHCP incomplete), wan2 is healthy
-      local argvexec_responses = {
+      local exec_responses = {
         -- wan1 (eth0) - shared medium interface UP but no gateway (DHCP incomplete)
         ["ip link show dev eth0"] =
         "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether 60:cf:84:ee:10:68 brd ff:ff:ff:ff:ff:ff",
@@ -330,9 +334,9 @@ describe("FR-2.1: Failover Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_success(15.0),
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- ubus returns eth0 without gateway (degraded), eth1 with gateway
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = nil },  -- No gateway (DHCP incomplete)

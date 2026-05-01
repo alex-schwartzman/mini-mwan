@@ -45,7 +45,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         }
       }
 
-      local argvexec_responses = {
+      local exec_responses = {
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         ["ping.*eth1.*8%.8%.8%.8"] = mocks.mock_ping_success(15.2),
         -- Both interfaces UP
@@ -59,9 +59,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ip route show default"] = "",
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- ubus returns both interfaces with gateways
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -92,7 +92,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         }
       }
 
-      local argvexec_responses = {
+      local exec_responses = {
         ["ping.*eth0"] = mocks.mock_ping_success(10.0),
         ["ping.*eth1"] = mocks.mock_ping_success(12.0),
         ["ping.*eth2"] = mocks.mock_ping_success(8.0),
@@ -105,9 +105,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ip route show default"] = "",
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" },
@@ -156,7 +156,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         }
       }
 
-      local argvexec_responses = {
+      local exec_responses = {
         -- eth0 is UP
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
@@ -170,9 +170,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_failure(),
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }
@@ -213,7 +213,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         }
       }
 
-      local argvexec_responses = {
+      local exec_responses = {
         -- Both interfaces UP but NOT pingable
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
@@ -226,9 +226,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_failure(),
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }
@@ -278,7 +278,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         }
       }
 
-      local argvexec_responses = {
+      local exec_responses = {
         -- eth0 is regular interface
         ["ip addr show dev eth0"]     = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
@@ -293,9 +293,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ip route show default"]     = "",
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- eth0 has gateway, wg0 doesn't (P2P)
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -327,7 +327,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         }
       }
 
-      local argvexec_responses = {
+      local exec_responses = {
         -- Both are shared medium (not P2P)
         ["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>",
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
@@ -342,9 +342,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ip route show default"] = "",
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses)
+      local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         -- eth0 has gateway, eth1 doesn't (degraded - DHCP incomplete)
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
@@ -389,7 +389,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
       }
 
       -- CYCLE 1: eth1 is down
-      local argvexec_responses_cycle1 = {
+      local exec_responses_cycle1 = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip addr show dev eth1"] = mocks.mock_interface_up(),
@@ -399,9 +399,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_failure(), -- DOWN
       }
 
-      local argvexec_mock = mocks.build_argvexec_mock(argvexec_responses_cycle1)
+      local exec_mock = mocks.build_exec_mock(exec_responses_cycle1)
       local deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }
@@ -420,7 +420,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
       -- CYCLE 2: eth1 recovers
       mocks.reset()
 
-      local argvexec_responses_cycle2 = {
+      local exec_responses_cycle2 = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
         ["ip addr show dev eth1"] = mocks.mock_interface_up(),
@@ -430,9 +430,9 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         ["ping.*eth1"] = mocks.mock_ping_success(15.0), -- Now UP
       }
 
-      argvexec_mock = mocks.build_argvexec_mock(argvexec_responses_cycle2)
+      exec_mock = mocks.build_exec_mock(exec_responses_cycle2)
       deps = mocks.build_deps({
-        argvexec = argvexec_mock,
+        exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
           { l3_device = "eth0", gateway = "192.168.1.1" },
           { l3_device = "eth1", gateway = "192.168.2.1" }

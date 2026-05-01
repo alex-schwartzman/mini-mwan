@@ -21,10 +21,10 @@ describe("FR-1.2: Interface State Detection", function()
       -- GIVEN: Interface that is UP
       local ip_output = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP"
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up
@@ -39,10 +39,10 @@ describe("FR-1.2: Interface State Detection", function()
       -- GIVEN: Interface that exists but is DOWN
       local ip_output = "3: eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc fq_codel state DOWN"
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up
@@ -57,10 +57,10 @@ describe("FR-1.2: Interface State Detection", function()
       -- GIVEN: Interface that doesn't exist
       local ip_output = "Device \"wlan99\" does not exist."
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev wlan99"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up
@@ -75,10 +75,10 @@ describe("FR-1.2: Interface State Detection", function()
       -- GIVEN: Interface with UP but not LOWER_UP (cable unplugged)
       local ip_output = "3: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN"
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up
@@ -94,10 +94,10 @@ describe("FR-1.2: Interface State Detection", function()
       -- NOTE: Current regex matches "UP" substring, so LOWER_UP also triggers match
       local ip_output = "3: eth0: <BROADCAST,MULTICAST,LOWER_UP> mtu 1500 qdisc fq_codel state DOWN"
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up
@@ -133,10 +133,10 @@ describe("FR-1.2: Interface State Detection", function()
        valid_lft forever preferred_lft forever
 ]]
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up
@@ -151,10 +151,10 @@ describe("FR-1.2: Interface State Detection", function()
       -- GIVEN: Interface with dots in name (VLAN)
       local ip_output = "5: eth0.100: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP"
 
-      local exec_mock = mocks.build_argvexec_mock({
+      local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0.100"] = ip_output
       })
-      local deps = mocks.build_deps({ argvexec = exec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Checking if interface is up

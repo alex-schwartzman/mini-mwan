@@ -44,8 +44,8 @@ function M.get_route_commands()
   return M.find_commands("ip route")
 end
 
--- Mock argvexec function builder (argv-style, no shell)
-function M.build_argvexec_mock(responses)
+-- Mock exec function builder (argv-style, no shell)
+function M.build_exec_mock(responses)
   --[[
   Build exec mock that returns different responses based on command pattern
 
@@ -62,31 +62,6 @@ function M.build_argvexec_mock(responses)
         return response
       end
     end
-    return ""
-  end
-end
-
--- Mock exec function builder
-function M.build_exec_mock(responses)
-  --[[
-  Build exec mock that returns different responses based on command pattern
-
-  Usage:
-    local mock = M.build_exec_mock({
-      ["ping.*eth0"] = "3 packets transmitted, 3 received",
-    })
-  ]]
-  return function(cmd)
-    M.track_command(cmd)
-
-    -- Check each pattern
-    for pattern, response in pairs(responses) do
-      if cmd:match(pattern) then
-        return response
-      end
-    end
-
-    -- Default: return empty string
     return ""
   end
 end
@@ -432,7 +407,7 @@ function M.build_deps(overrides)
         interfaces = {}
       })
     end,
-    argvexec = overrides.argvexec or M.build_argvexec_mock({}),
+    exec = overrides.exec or M.build_exec_mock({}),
     ubus_connect = overrides.ubus_connect or function()
       return ubus_mock.connect()
     end,

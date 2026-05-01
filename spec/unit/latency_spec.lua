@@ -29,7 +29,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 round-trip min/avg/max = 81.305/82.154/83.003 ms
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -53,7 +53,7 @@ PING 8.8.8.8 (8.8.8.8): 56 data bytes
 round-trip min/avg/max = 23.456/23.457/23.458 ms
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -77,7 +77,7 @@ PING 192.168.1.1 (192.168.1.1): 56 data bytes
 round-trip min/avg/max = 0.823/0.923/1.045 ms
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -101,7 +101,7 @@ PING 8.8.8.8 (8.8.8.8): 56 data bytes
 round-trip min/avg/max = 250.123/251.456/252.789 ms
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -125,7 +125,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 round-trip min/avg/max = 10/11/12 ms
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -147,7 +147,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 3 packets transmitted, 0 received, 100% packet loss
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -160,7 +160,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 
     it("should return false and latency 0 when ping command produces no output", function()
       -- GIVEN: Ping command returns nil (command execution failed)
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = nil }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = nil }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -173,7 +173,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 
     it("should return false and latency 0 when ping output is empty string", function()
       -- GIVEN: Empty output from ping
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = "" }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = "" }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -196,7 +196,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 round-trip min/avg/max = 15.234/15.512/15.789 ms
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -219,7 +219,7 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
 3 packets transmitted, 3 packets received, 0% packet loss
 ]]
 
-      local deps = mocks.build_deps({ argvexec = mocks.build_argvexec_mock({ ["ping.*"] = ping_output }) })
+      local deps = mocks.build_deps({ exec = mocks.build_exec_mock({ ["ping.*"] = ping_output }) })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check
@@ -233,12 +233,12 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
     it("should use correct ping command parameters", function()
       -- GIVEN: Mock that captures executed args
       local executed_args = nil
-      local argvexec_mock = function(args)
+      local exec_mock = function(args)
         executed_args = args
         mocks.track_command(table.concat(args, " "))
         return mocks.mock_ping_success(10.0)
       end
-      local deps = mocks.build_deps({ argvexec = argvexec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check with specific parameters
@@ -259,12 +259,12 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
     it("should use default parameters when not specified", function()
       -- GIVEN: Mock that captures executed args
       local executed_args = nil
-      local argvexec_mock = function(args)
+      local exec_mock = function(args)
         executed_args = args
         mocks.track_command(table.concat(args, " "))
         return mocks.mock_ping_success(10.0)
       end
-      local deps = mocks.build_deps({ argvexec = argvexec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping check without count/timeout (nil parameters)
@@ -279,12 +279,12 @@ PING 1.1.1.1 (1.1.1.1): 56 data bytes
     it("should calculate correct deadline parameter", function()
       -- GIVEN: Mock that captures executed args
       local executed_args = nil
-      local argvexec_mock = function(args)
+      local exec_mock = function(args)
         executed_args = args
         mocks.track_command(table.concat(args, " "))
         return mocks.mock_ping_success(10.0)
       end
-      local deps = mocks.build_deps({ argvexec = argvexec_mock })
+      local deps = mocks.build_deps({ exec = exec_mock })
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Running ping with count=5, timeout=4

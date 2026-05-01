@@ -61,7 +61,7 @@ local deps = {
   uloop_run = function()
     return uloop.run()
   end,
-  argvexec = function(args)
+  exec = function(args)
     local rd, wr = nixio.pipe()
     local pid = nixio.fork()
     if pid == 0 then
@@ -100,14 +100,14 @@ end
 -- Gradually replaces system_probe(cmd) call sites
 local function system_exec(args)
   log(string.format("Probe: %s", table.concat(args, " ")), "debug")
-  return deps.argvexec(args)
+  return deps.exec(args)
 end
 
 -- Execute state-changing system intervention (ip route add/replace/delete)
 -- Logged at notice level (5) - important to track configuration changes
 local function system_intervention_argv(args)
   log(string.format("Intervention: %s", table.concat(args, " ")), "notice") -- notice
-  return deps.argvexec(args)
+  return deps.exec(args)
 end
 
 -- Ping check function through specific interface
@@ -307,7 +307,7 @@ local function delete_all_routes_except(iface_cfg)
           system_intervention_argv({"ip", "route", "delete", "default", "dev", iface_cfg.device, "metric", metric})
         end
       else
-        system_intervention_argv({"ip", "route", "delete", "default",  "dev", "iface_cfg.device"})
+        system_intervention_argv({"ip", "route", "delete", "default",  "dev", iface_cfg.device})
       end
     end
   end
