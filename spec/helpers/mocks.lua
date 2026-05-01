@@ -422,10 +422,6 @@ function M.build_deps(overrides)
   local log_mock = overrides.log_mock or M.mock_log()
 
   local deps = {
-    exec = overrides.exec or function(cmd)
-      M.track_command(cmd)
-      return ""
-    end,
     log = overrides.log or log_mock.log,
     sleep = overrides.sleep or function(seconds) end,
     time = overrides.time or function() return 1698765432 end,

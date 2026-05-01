@@ -105,9 +105,9 @@ end
 
 -- Execute state-changing system intervention (ip route add/replace/delete)
 -- Logged at notice level (5) - important to track configuration changes
-local function system_intervention(cmd)
-  log(string.format("Intervention: %s", cmd), "notice")  -- notice
-  return deps.exec(cmd)
+local function system_intervention_argv(args)
+  log(string.format("Intervention: %s", table.concat(args, " ")), "notice") -- notice
+  return deps.argvexec(args)
 end
 
 -- Ping check function through specific interface
@@ -304,12 +304,10 @@ local function delete_all_routes_except(iface_cfg)
       if metric then
         -- Delete all routes except that one which we added with a given metric
         if metric ~= iface_cfg.metric then
-          system_intervention(string.format("ip route delete default dev %s metric %s 2>/dev/null",
-            iface_cfg.device, metric))
+          system_intervention_argv({"ip", "route", "delete", "default", "dev", iface_cfg.device, "metric", metric})
         end
       else
-        system_intervention(string.format("ip route delete default dev %s 2>/dev/null",
-          iface_cfg.device))
+        system_intervention_argv({"ip", "route", "delete", "default",  "dev", "iface_cfg.device"})
       end
     end
   end
@@ -318,12 +316,10 @@ end
 local function replace_default_gw(iface_cfg, iface_state)
   if iface_state.gateway and iface_state.gateway ~= "" then
     -- Regular interface with gateway (e.g., ethernet)
-    system_intervention(string.format("ip route replace default via %s dev %s metric %d",
-                    iface_state.gateway, iface_cfg.device, iface_cfg.metric))
+    system_intervention_argv({"ip", "route", "replace", "default", "via", iface_state.gateway, "dev", iface_cfg.device, "metric", iface_cfg.metric})
   else
     -- Point-to-point interface without gateway (e.g., VPN tunnel)
-    system_intervention(string.format("ip route replace default dev %s metric %d",
-                    iface_cfg.device, iface_cfg.metric))
+    system_intervention_argv({"ip", "route", "replace", "default", "dev", iface_cfg.device, "metric", iface_cfg.metric})
   end
 end
 
@@ -535,11 +531,11 @@ local function cleanup_unmanaged_routes(config)
     if device and not managed_devices[device] then
       local via = line:match("via%s+(%S+)")
       if via then
-        system_intervention(string.format("ip route delete default via %s dev %s", via, device))
-        system_intervention(string.format("ip route replace default via %s dev %s metric 999", via, device))
+        system_intervention_argv({"ip", "route", "delete", "default", "via", via, "dev", device})
+        system_intervention_argv({"ip", "route", "replace", "default", "via", via, "dev", device, "metric", "999"})
       else
-        system_intervention(string.format("ip route delete default dev %s", device))
-        system_intervention(string.format("ip route replace default dev %s metric 999", device))
+        system_intervention_argv({"ip", "route", "delete", "default", "dev", device})
+        system_intervention_argv({"ip", "route", "replace", "default", "dev", device, "metric", "999"})
       end
     end
   end
@@ -577,12 +573,11 @@ local function deprioritize_unusable_interfaces(unusable)
     -- Use 'replace' instead of 'add' to handle cases where route already exists
     -- But we still need to delete first, so that eventually all duplicates get removed
     if iface.state.gateway and iface.state.gateway ~= "" then
-      system_intervention(string.format("ip route delete default dev %s", iface.cfg.device))
-      system_intervention(string.format("ip route replace default via %s dev %s metric 900",
-        iface.state.gateway, iface.cfg.device))
+      system_intervention_argv({"ip", "route", "delete", "default", "dev", iface.cfg.device})
+      system_intervention_argv({"ip", "route", "replace", "default", "via", iface.state.gateway, "dev", iface.cfg.device, "metric", "900"})
     else
-      system_intervention(string.format("ip route delete default dev %s", iface.cfg.device))
-      system_intervention(string.format("ip route replace default dev %s metric 900", iface.cfg.device))
+      system_intervention_argv({"ip", "route", "delete", "default", "dev", iface.cfg.device})
+      system_intervention_argv({"ip", "route", "replace", "default", "dev", iface.cfg.device, "metric", "900" })
     end
   end
 end
@@ -608,22 +603,28 @@ local function set_route_multiuplink(usable_ifaces)
     return
   end
 
-  -- Build multipath route command
-  -- ip route replace default nexthop via GW1 dev DEV1 weight W1 nexthop dev DEV2 weight W2
-  local route_parts = {}
+  -- Initialize the base command as individual table elements
+  local cmd_args = { "ip", "route", "replace", "default" }
+
   for _, iface in ipairs(usable_ifaces) do
-    local nexthop
+    -- Add the nexthop keyword for every interface
+    table.insert(cmd_args, "nexthop")
+
+    -- Conditionally add the gateway
     if iface.state.gateway and iface.state.gateway ~= "" then
-      nexthop = string.format("nexthop via %s dev %s weight %d",
-        iface.state.gateway, iface.cfg.device, iface.cfg.weight)
-    else
-      nexthop = string.format("nexthop dev %s weight %d", iface.cfg.device, iface.cfg.weight)
+      table.insert(cmd_args, "via")
+      table.insert(cmd_args, iface.state.gateway)
     end
-    table.insert(route_parts, nexthop)
+
+    -- Add device and weight
+    table.insert(cmd_args, "dev")
+    table.insert(cmd_args, iface.cfg.device)
+    table.insert(cmd_args, "weight")
+    table.insert(cmd_args, tostring(iface.cfg.weight))
   end
 
-  local multipath_cmd = "ip route replace default " .. table.concat(route_parts, " ")
-  system_intervention(multipath_cmd)
+  -- Now cmd_args is a flat table: {"ip", "route", "replace", "default", "nexthop", "via", ...}
+  system_intervention_argv(cmd_args)
 end
 
 local function count_wans_configured(config)
