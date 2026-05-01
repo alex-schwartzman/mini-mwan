@@ -41,7 +41,9 @@ describe("FR-2.4: Route Cleanup - Duplicate Route Handling", function()
         -- Interface is UP and pingable
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",  -- No IPv6
-
+      }
+      local argvexec_responses = {
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- Mock ip route show to return multiple duplicate routes
         ["ip route show default dev eth0"] = [[
 default via 192.168.1.1 dev eth0 metric 10
@@ -49,9 +51,6 @@ default dev eth0 scope link metric 21
 default dev eth0 scope link metric 22
 default dev eth0 scope link metric 23
 ]],
-      }
-      local argvexec_responses = {
-        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
@@ -102,15 +101,14 @@ default dev eth0 scope link metric 23
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
-
+      }
+      local argvexec_responses = {
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- Mock ip route show with route without metric
         ["ip route show default dev eth0"] = [[
 default via 192.168.1.1 dev eth0 metric 10
 default dev eth0 scope link
 ]],
-      }
-      local argvexec_responses = {
-        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
@@ -146,15 +144,14 @@ default dev eth0 scope link
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
-
+      }
+      local argvexec_responses = {
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         ["ip route show default dev eth0"] = [[
 default via 192.168.1.1 dev eth0 metric 10
 default via 192.168.1.1 dev eth0 metric 15
 default via 192.168.1.1 dev eth0 metric 20
 ]],
-      }
-      local argvexec_responses = {
-        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
@@ -207,14 +204,13 @@ default via 192.168.1.1 dev eth0 metric 20
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
-
+      }
+      local argvexec_responses = {
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- Only one route (ours)
         ["ip route show default dev eth0"] = [[
 default via 192.168.1.1 dev eth0 metric 10
 ]],
-      }
-      local argvexec_responses = {
-        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
@@ -270,16 +266,15 @@ default via 192.168.1.1 dev eth0 metric 10
         ["ip link show dev wg0"] = "12: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
         ["ip addr show dev wg0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev wg0"] = "",
-
+      }
+      local argvexec_responses = {
+        ["ping.*wg0"] = mocks.mock_ping_success(50.0),
         -- P2P interface with duplicate routes
         ["ip route show default dev wg0"] = [[
 default dev wg0 metric 10
 default dev wg0 metric 21
 default dev wg0 metric 22
 ]],
-      }
-      local argvexec_responses = {
-        ["ping.*wg0"] = mocks.mock_ping_success(50.0),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)

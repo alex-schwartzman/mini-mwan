@@ -181,14 +181,14 @@ describe("FR-5.3: Audit Logging - Integration", function()
       local exec_responses = {
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
+      }
+      local argvexec_responses = {
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         -- Duplicate routes exist
         ["ip route show default dev eth0"] = [[
 default via 192.168.1.1 dev eth0 metric 10
 default via 192.168.1.1 dev eth0 metric 21
 ]],
-      }
-      local argvexec_responses = {
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)

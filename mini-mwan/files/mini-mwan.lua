@@ -314,7 +314,7 @@ end
 -- is usually terminated by LuCI and restarted. therefore there will be a leftover route from previous run
 -- and we need to delete it
 local function delete_all_routes_except(iface_cfg)
-  local output = system_probe(string.format("ip route show default dev %s", iface_cfg.device))
+  local output = system_exec({"ip", "route", "show", "default", "dev", iface_cfg.device})
 
   if output and output ~= "" then
     local routes = {}
@@ -545,7 +545,7 @@ local function cleanup_unmanaged_routes(config)
   end
 
   -- Get all current default routes
-  local output = system_probe("ip route show default")
+  local output = system_exec({"ip", "route", "show", "default"})
   if not output or output == "" then
     return
   end
