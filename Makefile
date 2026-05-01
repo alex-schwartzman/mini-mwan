@@ -12,7 +12,7 @@ all: build
 # Build both packages.
 build:
 	@echo "=== Building packages (official structure with luci.mk) ==="
-	docker-compose run --rm openwrt-sdk-ramips bash -c "\
+	docker-compose run --rm openwrt-sdk-ramips-25 bash -c "\
 		scripts/feeds update luci-app-mini-mwan && \
 		scripts/feeds install luci-app-mini-mwan && \
 		make defconfig && \
@@ -23,7 +23,7 @@ build:
 
 # Open a shell in the build container
 shell:
-	docker-compose run --rm openwrt-sdk-ramips bash
+	docker-compose run --rm openwrt-sdk-ramips-25 bash
 
 #listen to localhost:8080 and replace static content for the app
 #to make it work, you need to replace "asusrouter" with name of

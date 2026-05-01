@@ -64,15 +64,18 @@ local deps = {
   exec = function(args)
     local rd, wr = nixio.pipe()
     local pid = nixio.fork()
+
     if pid == 0 then
-      wr:dup(nixio.stdout)
+      -- Use the functional style: nixio.dup(source_obj, dest_obj)
+      nixio.dup(wr, nixio.stdout)
       rd:close()
+      wr:close()
       local _, errmsg, errno = nixio.exec(args[1], table.unpack(args, 2))
       nixio.syslog("err", string.format("exec failed: %s", errmsg or "unknown error"))
       os.exit(errno or 1)
     else
       wr:close()
-      local output = rd:read("*a")
+      local output = rd:readall()
       rd:close()
       nixio.waitpid(pid)
       return output
