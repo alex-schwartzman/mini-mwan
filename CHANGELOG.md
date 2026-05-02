@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Interface classification refactored to explicit 5-state FSA** (`routing_class` replaces `degraded`/`degraded_reason`/`is_up`/`does_exist`)
+  - States: `absent` | `down` | `unconfigured` | `probe_only` | `usable`
+  - `probe_only` (kernel-UP, no ping) now receives metric-900 routes for recovery probing — previously these interfaces were silently ignored
+  - `unconfigured` (no gateway or IPv6 detected) receives no route — prevents routing blackholes during DHCP renegotiation
+  - All routing decisions (failover, multiuplink, probe routes) now keyed on `routing_class` string
+  - LuCI status page updated to display `routing_class` with per-state badge and row colouring
+  - ubus `mini-mwan.status` response updated: removed `does_exist`, `is_up`, `degraded`, `degraded_reason`; added `routing_class`
+- **P2P gateway fix**: `probe_all_gateways` now ignores nexthop `"0.0.0.0"` (netifd encoding for P2P routes) — previously WireGuard interfaces were assigned `gateway = "0.0.0.0"` causing `via 0.0.0.0` to be re-set every cycle
 - **Gateway Discovery**: Refactored to use libubus library directly instead of shell execution
   - Changed from `exec("ubus call network.interface dump")` with JSON parsing to native `conn:call()` API
   - Eliminates shell command overhead and JSON serialization/deserialization

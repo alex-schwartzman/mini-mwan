@@ -75,10 +75,7 @@ config interface '<name>'
     {
       "device": "eth0",
       "ping_target": "8.8.8.8",
-      "does_exist": true,
-      "is_up": true,
-      "degraded": 0,
-      "degraded_reason": "",
+      "routing_class": "usable",
       "status_since": "1234567890",
       "last_check": "1234567890",
       "latency": 12.5,
@@ -104,23 +101,13 @@ config interface '<name>'
 |-------|------|-------------|
 | device | string | Physical interface name |
 | ping_target | string | IP address used for connectivity checks |
-| does_exist | boolean | Whether the interface exists in the system |
-| is_up | boolean | Whether the interface is up |
-| degraded | integer | Degradation flag: 0 (healthy) or 1 (degraded) |
-| degraded_reason | string | Reason for degradation (empty if not degraded) |
-| status_since | string | Unix epoch of last status change |
+| routing_class | string | One of: `absent`, `down`, `unconfigured`, `probe_only`, `usable` |
+| status_since | string | Unix epoch of last routing_class change |
 | last_check | string | Unix epoch of last health check |
-| latency | float | Average ping latency in milliseconds (0 if down) |
-| gateway | string | Gateway IP address (empty if unavailable) |
+| latency | float | Average ping latency in milliseconds (0 if not usable) |
+| gateway | string | Gateway IP address (empty for P2P or when unavailable) |
 | rx_bytes | integer | Received bytes counter |
 | tx_bytes | integer | Transmitted bytes counter |
-
-**Degradation Reasons**:
-| Reason String | Description |
-|---------------|-------------|
-| `` (empty) | Interface is healthy |
-| `no_gateway` | Regular interface missing gateway (DHCP incomplete) |
-| `ipv6_detected` | Interface has IPv6 address (not supported) |
 
 **Status Characteristics**:
 - Status MUST be updated after each monitoring cycle
@@ -147,13 +134,12 @@ config interface '<name>'
 | Category | Example |
 |----------|---------|
 | Startup | `Mini-MWAN daemon starting` |
-| Status Change | `wan1 (eth0): Status changed from down to up` |
-| Degradation | `wan1 (eth0): DEGRADED - Regular interface missing gateway (DHCP incomplete?)` |
-| Route Change | `Using wan1 (eth0) as primary with metric 1` |
-| Configuration | `Skipping degraded interface wan1 (eth0): no_gateway` |
-| Error | `ERROR: Both WAN interfaces must be configured` |
-| Warning | `WARNING: No WAN connections are available!` |
-| Audit | `Executing: ip route replace default via 192.168.1.1 dev eth0 metric 1` |
+| Class transition | `eth0: Interface UP (latency: 12.50 ms)` |
+| Class transition | `eth0: Interface UP but unusable (connectivity lost)` |
+| Class transition | `eth0: Interface UP but unconfigured (no gateway or IPv6 detected)` |
+| Route Change | `Intervention: /sbin/ip route add default via 192.168.1.1 dev eth0 metric 10` |
+| Configuration | `ERROR: Both WAN interfaces must be configured` |
+| Probe | `Probe: /bin/ping -I eth0 -c 3 -W 2 1.1.1.1` |
 
 **Log Rotation**:
 - Log rotation is handled by OpenWrt's logd
@@ -190,23 +176,23 @@ config interface '<name>'
     ping_count = 3,                   -- integer
     ping_timeout = 2,                 -- integer
     point_to_point = false,           -- boolean
-    status = "up",                    -- string: up|down|interface_down|disabled
+    routing_class = "usable",         -- string: absent|down|unconfigured|probe_only|usable
+    alive = true,                     -- boolean: true only when routing_class is "usable"
+    does_exist = true,                -- boolean: false when routing_class is "absent"
     status_since = 1698765432,        -- integer (unix epoch)
-    latency = 12.5,                   -- number (float)
+    latency = 12.5,                   -- number (float) or "?" when not usable
     gateway = "192.168.1.1",          -- string or nil
-    degraded = 0,                     -- integer: 0 or 1
-    degraded_reason = "",             -- string
     last_check = 1698765432           -- integer (unix epoch)
 }
 ```
 
 **Invariants**:
-- `status` MUST be one of: "up", "down", "interface_down", "disabled"
-- `status_since` MUST be set when status changes
-- `degraded` MUST be 0 or 1
-- `degraded_reason` MUST be empty string when degraded=0
-- `gateway` MAY be nil for P2P interfaces or when unavailable
-- `latency` MUST be 0 when status is not "up"
+- `routing_class` MUST be one of: "absent", "down", "unconfigured", "probe_only", "usable"
+- `routing_class` is computed fresh each cycle from kernel state, ubus state, and ping result
+- `status_since` MUST be updated when `routing_class` changes
+- `alive` MUST be true only when `routing_class == "usable"`
+- `gateway` MAY be nil for P2P interfaces or when DHCP is incomplete
+- `latency` is `"?"` when `routing_class` is not "usable"
 
 ### DR-4.2 Persistent State Table
 **ID**: DR-4.2
@@ -216,17 +202,19 @@ config interface '<name>'
 **Lua Table Structure**:
 ```lua
 interface_state = {
-    ["wan1"] = {
-        status = "up",
+    ["eth0"] = {
+        routing_class = "usable",
+        alive = true,
+        does_exist = true,
         status_since = 1698765432,
         latency = 12.5,
         last_check = 1698765432,
-        degraded = 0,
-        degraded_reason = ""
     },
-    ["wan2"] = { ... }
+    ["eth1"] = { ... }
 }
 ```
+
+Note: The table is keyed by device name (e.g. `"eth0"`), not by UCI interface name.
 
 **Persistence Scope**:
 - Data persists across configuration reloads (UCI changes)
@@ -275,8 +263,8 @@ local data = conn:call("network.interface", "dump", {})
 **Data Extraction**:
 - Gateway SHALL be extracted from route array
 - Look for entry where `target="0.0.0.0"` AND `mask=0`
-- Extract `nexthop` field as gateway IP
-- Return nil if no matching route found
+- Extract `nexthop` field as gateway IP only if it is not `"0.0.0.0"` — netifd encodes P2P routes with `nexthop="0.0.0.0"` which means "no gateway"
+- Return nil if no matching route found or nexthop is `"0.0.0.0"`
 
 **Error Handling**:
 - Invalid JSON → Log error, return nil

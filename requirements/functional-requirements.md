@@ -46,35 +46,40 @@
 - Latency SHALL be reported in milliseconds
 - Failed pings SHALL result in latency value of 0
 
-### FR-1.5 Status Classification
+### FR-1.5 Routing Class
 **ID**: FR-1.5
 **Priority**: Critical
-**Description**: The system SHALL classify each interface into one of the following states:
+**Description**: The system SHALL assign each interface a routing class computed from three orthogonal facts: kernel UP state, routing-info availability, and ping connectivity.
 
-| Status | Description | Condition |
-|--------|-------------|-----------|
-| `up` | Fully operational | Interface UP AND ping successful |
-| `down` | Connectivity lost | Interface UP BUT ping failed |
-| `interface_down` | Physically down | Interface DOWN or non-existent |
-| `disabled` | Not monitored | Interface disabled in config OR missing required parameters |
+| Class | Description | Conditions |
+|-------|-------------|------------|
+| `absent` | Interface not present in kernel | `ip addr show` reports non-existent |
+| `down` | Kernel DOWN flag set | Interface exists but not UP |
+| `unconfigured` | Kernel UP, but routing info unavailable | Ethernet without gateway (DHCP incomplete) OR global IPv6 address detected (not supported) |
+| `probe_only` | Kernel UP, routing info present, no connectivity | Ping fails — metric-900 route kept for recovery probing |
+| `usable` | Fully operational | Kernel UP AND routing info present AND ping successful |
+
+Routing info is defined as: gateway present (ethernet/PPP) OR interface is point-to-point (wg0, tun0).
 
 **Acceptance Criteria**:
-- Status transitions MUST be logged with timestamps
-- Status MUST be persisted across config reloads
-- Status changes MUST include previous and new status in logs
+- Routing class MUST be computed fresh each cycle from current kernel and ubus state
+- Transitions between classes MUST be logged at info level
+- Routing class MUST be persisted across config reloads for transition detection
+- Only `usable` interfaces participate in failover/multiuplink route selection
+- Only `probe_only` interfaces receive metric-900 routes
+- `unconfigured`, `down`, and `absent` interfaces receive no route action
 
-### FR-1.6 Degradation Detection
+### FR-1.6 Interface Classification Details
 **ID**: FR-1.6
 **Priority**: High
-**Description**: The system SHALL detect configuration issues that prevent normal interface operation.
+**Description**: The system SHALL correctly classify ethernet and P2P interfaces.
 
 **Acceptance Criteria**:
-- Regular (non-P2P) interfaces without gateways SHALL be marked degraded
-- Degradation reason "no_gateway" indicates incomplete DHCP configuration
-- Degradation reason "ipv6_detected" indicates IPv6 address on interface (not supported)
-- Degraded regular interfaces SHALL NOT have routes configured
-- Degraded interfaces SHALL continue monitoring for auto-recovery
-- P2P interfaces without gateways SHALL NOT be marked degraded
+- Regular (ethernet/WiFi) interfaces without gateways SHALL be classified `unconfigured`
+- Regular interfaces with global IPv6 addresses SHALL be classified `unconfigured` (IPv6 not supported)
+- P2P interfaces (POINTOPOINT flag) without gateways SHALL NOT be classified `unconfigured` — no gateway is normal for VPN/tunnels
+- A ubus nexthop of `0.0.0.0` SHALL be treated as no gateway (netifd encoding for P2P routes)
+- Auto-recovery: when a previously `unconfigured` interface gains a gateway, it advances to `probe_only` or `usable` on the next cycle
 
 ---
 
@@ -86,10 +91,10 @@
 **Description**: The system SHALL provide failover mode where interfaces are prioritized by metric, with automatic failover to backup interfaces.
 
 **Acceptance Criteria**:
-- Primary interface MUST be the lowest-metric interface with status "up"
+- Primary interface MUST be the lowest-metric `usable` interface
 - Primary interface SHALL have default route at its configured metric
-- Backup interfaces SHALL have default routes at their configured metrics
-- DOWN interfaces SHALL have routes at metric 900 (to allow ping tests)
+- Backup `usable` interfaces SHALL have default routes at their configured metrics
+- `probe_only` interfaces SHALL have routes at metric 900 (to allow ping tests)
 - When primary fails, next-priority backup MUST automatically become primary
 - Failover SHALL occur within one check interval
 
@@ -99,9 +104,9 @@
 **Description**: The system SHALL provide multiuplink mode where traffic is load-balanced across all operational interfaces.
 
 **Acceptance Criteria**:
-- System MUST create multipath route with all "up" interfaces
+- System MUST create multipath route with all `usable` interfaces
 - Each interface SHALL be weighted according to its configured weight
-- DOWN interfaces SHALL have routes at metric 900 (to allow ping tests)
+- `probe_only` interfaces SHALL have routes at metric 900 (to allow ping tests)
 - Load balancing SHALL use Linux kernel's multipath routing
 - Traffic distribution MUST be approximately proportional to weights
 
@@ -112,7 +117,7 @@
 
 **Acceptance Criteria**:
 - Interfaces marked as `point_to_point=1` SHALL create routes without "via" clause
-- P2P interfaces without gateways SHALL NOT be marked degraded
+- P2P interfaces without gateways SHALL NOT be classified `unconfigured` (no gateway is normal for VPN/tunnels)
 - Route format: `ip route replace default dev <device> metric <metric>`
 
 ### FR-2.4 Route Cleanup
@@ -126,7 +131,7 @@
 - System SHALL query existing routes using `ip route show default dev <device>`
 - System SHALL preserve the lowest-metric route (our route) and delete all others
 - In multiuplink mode, all existing default routes (except metric 900) SHALL be removed before setting multipath route
-- Degraded non-P2P interfaces SHALL NOT have routes configured
+- `unconfigured`, `down`, and `absent` interfaces SHALL NOT have routes configured
 - Route changes SHALL use `replace` operation to handle both creation and update
 - Duplicate routes created by external tools SHALL be removed automatically
 
@@ -138,7 +143,7 @@
 **Acceptance Criteria**:
 - Each interface SHALL have a configurable metric (default: 10)
 - Lower metric values MUST have higher priority
-- DOWN interfaces SHALL use metric 900
+- `probe_only` interfaces SHALL use metric 900
 - Metric 900 MUST allow ping tests while not handling normal traffic
 
 ---
@@ -214,12 +219,12 @@
 **Description**: The system SHALL preserve interface state across configuration reloads.
 
 **Persistent State Fields**:
-- `status` - Current interface status
-- `status_since` - Timestamp of last status change
+- `routing_class` - Current routing class (absent/down/unconfigured/probe_only/usable)
+- `alive` - Whether ping connectivity is confirmed
+- `does_exist` - Whether the interface exists in the kernel
+- `status_since` - Timestamp of last routing_class change
 - `latency` - Last measured latency
 - `last_check` - Timestamp of last health check
-- `degraded` - Degradation flag
-- `degraded_reason` - Degradation reason string
 
 **Acceptance Criteria**:
 - State MUST persist in memory across config reloads
@@ -250,19 +255,18 @@
 
 **Logged Events by Priority**:
 
-**info** - Operational state changes:
-- Interface UP transitions (with latency)
-- Interface DOWN transitions
-- Interface reappearance (device reconnected)
+**info** - Routing class transitions:
+- Any `routing_class` change between cycles (e.g. `absent → down`, `probe_only → usable`)
+- `usable` transition includes measured latency
+- `probe_only` transition logs "connectivity lost"
+- `unconfigured` transition logs "no gateway or IPv6 detected"
 
 **notice** - System interventions:
 - Route additions/replacements
 - Route deletions
 - Routing table modifications
 
-**warning** - Degradation conditions:
-- Interface missing gateway (DHCP incomplete)
-- IPv6 detected on interface (not supported)
+**warning** - Interface disappearance:
 - Interface disappearance (USB dongle removed, tunnel down)
 
 **err** - Critical failures:
@@ -284,9 +288,8 @@
 **Acceptance Criteria**:
 - System probes (read-only operations: libubus calls, ip addr show, ping) MUST be logged at **debug** level with format "Probe: <operation>"
 - System interventions (state-changing commands: ip route replace/delete) MUST be logged at **notice** level with format "Intervention: <command>"
-- Interface state transitions MUST be logged at **info** level
+- Routing class transitions MUST be logged at **info** level
 - Error conditions MUST be logged at **err** level
-- Degradation conditions MUST be logged at **warning** level
 - Audit logs MUST NOT log sensitive information
 
 ### FR-5.3 Network Statistics
