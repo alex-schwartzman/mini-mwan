@@ -1,14 +1,15 @@
 --[[
-Unit Tests for Degradation Detection
+Unit Tests for Interface Routing Class Computation
 
-Requirement: FR-1.6 - Degradation Detection
+Requirement: FR-1.6 - Interface Classification
 Priority: High
-Description: System SHALL detect configuration issues that prevent normal interface operation
+Description: System SHALL compute the correct routing class based on kernel state,
+             routing info availability, and ping connectivity.
 ]]
 
 local mocks = require("spec.helpers.mocks")
 
-describe("FR-1.6: Degradation Detection", function()
+describe("FR-1.6: Interface Routing Class - compute_routing_class()", function()
   local mini_mwan
 
   before_each(function()
@@ -16,145 +17,108 @@ describe("FR-1.6: Degradation Detection", function()
     mini_mwan = require("mini-mwan.files.mini-mwan")
   end)
 
-  describe("check_degradation()", function()
-    local first_iface_cfg
-    local first_iface_state
+  local function eth0_cfg()
+    return { device = "eth0", metric = 1, ping_target = "1.1.1.1", ping_count = 3, ping_timeout = 2 }
+  end
 
-    before_each(function()
-      -- Standard interface object
-      first_iface_cfg = {
-        device = "eth0",
-        metric = 1,
-      }
-      first_iface_state = {
-        gateway = nil,
-        degraded = 0,
-        degraded_reason = ""
-      }
+  local function fresh_state(overrides)
+    local s = { does_exist = false, routing_class = nil, alive = nil,
+                latency = "?", status_since = nil, gateway = nil, point_to_point = false }
+    for k, v in pairs(overrides or {}) do s[k] = v end
+    return s
+  end
+
+  describe("Regular interface without gateway (DHCP incomplete)", function()
+    it("should return 'unconfigured'", function()
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+      })
+      mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
+
+      assert.equals("unconfigured", mini_mwan.compute_routing_class(eth0_cfg(), fresh_state()))
+    end)
+  end)
+
+  describe("P2P interface without gateway", function()
+    it("should NOT return 'unconfigured' (gateway is irrelevant for P2P)", function()
+      local wg0_cfg = { device = "wg0", metric = 1, ping_target = "10.0.0.1", ping_count = 3, ping_timeout = 2 }
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev wg0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev wg0"] = "",
+        ["ping.*wg0"] = mocks.mock_ping_success(50.0),
+      })
+      mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
+
+      local result = mini_mwan.compute_routing_class(wg0_cfg, fresh_state({ point_to_point = true }))
+      assert.equals("usable", result)
     end)
 
-    describe("Requirement: Regular interface without gateway", function()
-      it("should mark as degraded with reason 'no_gateway'", function()
-        -- GIVEN: Regular interface with no gateway (DHCP incomplete)
-        local deps = mocks.build_deps({})
-        mini_mwan.set_dependencies(deps)
+    it("should allow route setting without gateway", function()
+      mini_mwan.set_dependencies(mocks.build_deps())
 
-        -- WHEN: Checking degradation
-        mini_mwan.check_degradation(first_iface_cfg, first_iface_state)
+      mini_mwan.enforce_route_state(
+        { cfg = { device = "wg0", metric = 1 }, state = { gateway = nil, point_to_point = true } },
+        1
+      )
 
-        -- THEN: Should be marked degraded
-        assert.equals(1, first_iface_state.degraded)
-        assert.equals("no_gateway", first_iface_state.degraded_reason)
-      end)
+      mocks.assert_p2p_route_set("wg0", 1)
     end)
+  end)
 
-    describe("Requirement: P2P interface without gateway", function()
-      it("should NOT mark as degraded", function()
-        -- GIVEN: P2P interface with no gateway (expected for VPN)
-        local iface_cfg = {
-          device = "wg0",
-          }
-        local iface_state = {
-          gateway = nil,
-          degraded = 0,
-          degraded_reason = "",
-          point_to_point = true  -- P2P interface (VPN/tunnel)
-        }
+  describe("Interface with global IPv6 address", function()
+    it("should return 'unconfigured' (IPv6 not supported)", function()
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "inet6 fe80::1/64 scope global",
+      })
+      mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
 
-        local deps = mocks.build_deps({})
-        mini_mwan.set_dependencies(deps)
-
-        -- WHEN: Checking degradation
-        mini_mwan.check_degradation(iface_cfg, iface_state)
-
-        -- THEN: Should NOT be degraded (normal for P2P)
-        assert.equals(0, iface_state.degraded)
-        assert.equals("", iface_state.degraded_reason)
-      end)
-
-      it("should allow route setting without gateway", function()
-        -- GIVEN: P2P interface without gateway
-        local iface_cfg = {
-          device = "wg0",
-          metric = 1,
-          }
-        local iface_state = {
-          gateway = nil,
-          degraded = 0,
-        degraded_reason = "",
-        point_to_point = true  -- P2P interface
-        }
-
-        local deps = mocks.build_deps()
-        mini_mwan.set_dependencies(deps)
-
-        -- WHEN: Setting route
-        mini_mwan.set_route(iface_cfg, iface_state)
-
-        -- THEN: Should create P2P route (no "via" clause)
-        mocks.assert_p2p_route_set("wg0", 1)
-      end)
+      local result = mini_mwan.compute_routing_class(eth0_cfg(), fresh_state({ gateway = "192.168.1.1" }))
+      assert.equals("unconfigured", result)
     end)
+  end)
 
-    describe("Requirement: Interface with IPv6 address", function()
-      it("should mark as degraded with reason 'ipv6_detected'", function()
-        -- GIVEN: Interface with IPv6 address
-        first_iface_state.gateway= "192.168.1.1"  -- Has IPv4 gateway
+  describe("Regular interface with gateway and connectivity", function()
+    it("should return 'usable'", function()
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      })
+      mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
 
-        -- Simulate IPv6 address found (note: %-6 escapes the dash)
-        local exec_mock = mocks.build_exec_mock({
-          ["ip %-6 addr show dev eth0"] = "inet6 fe80::1/64 scope global"
-        })
-        local deps = mocks.build_deps({ exec = exec_mock })
-        mini_mwan.set_dependencies(deps)
-
-        -- WHEN: Checking degradation
-        local result_state = mini_mwan.check_degradation(first_iface_cfg, first_iface_state)
-
-        -- THEN: Should be degraded (IPv6 not supported)
-        assert.equals(1, result_state.degraded)
-        assert.equals("ipv6_detected", result_state.degraded_reason)
-      end)
+      local result = mini_mwan.compute_routing_class(eth0_cfg(), fresh_state({ gateway = "192.168.1.1" }))
+      assert.equals("usable", result)
     end)
+  end)
 
-    describe("Requirement: Regular interface with gateway", function()
-      it("should NOT mark as degraded", function()
-        -- GIVEN: Regular interface with gateway (healthy, no IPv6)
-        first_iface_state.gateway = "192.168.1.1"
+  describe("Auto-recovery: gateway appears after being unconfigured", function()
+    it("should return 'usable'", function()
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      })
+      mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
 
-        -- Mock no IPv6
-        local deps = mocks.build_deps()
-        mini_mwan.set_dependencies(deps)
-
-        -- WHEN: Checking degradation
-        local result_state = mini_mwan.check_degradation(first_iface_cfg, first_iface_state)
-
-        -- THEN: Should be healthy
-        assert.equals(0, result_state.degraded)
-        assert.equals("", result_state.degraded_reason)
-      end)
+      local state = fresh_state({ routing_class = "unconfigured", gateway = "192.168.1.1" })
+      local result = mini_mwan.compute_routing_class(eth0_cfg(), state)
+      assert.equals("usable", result)
     end)
+  end)
 
-    describe("Requirement: Auto-recovery from degraded state", function()
-      it("should clear degraded flag when gateway appears", function()
-        -- GIVEN: Interface was degraded but now has gateway
-        local iface_state = {
-          gateway = "192.168.1.1",  -- Gateway now available
-          degraded = 1,
-          degraded_reason = "no_gateway"
-        }
+  describe("Interface with kernel UP but no connectivity", function()
+    it("should return 'probe_only'", function()
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_failure(),
+      })
+      mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
 
-        -- Mock no IPv6
-        local deps = mocks.build_deps()
-        mini_mwan.set_dependencies(deps)
-
-        -- WHEN: Checking degradation again
-        local result_state = mini_mwan.check_degradation(first_iface_cfg, iface_state)
-
-        -- THEN: Should be healthy now (auto-recovered)
-        assert.equals(0, result_state.degraded)
-        assert.equals("", result_state.degraded_reason)
-      end)
+      local result = mini_mwan.compute_routing_class(eth0_cfg(), fresh_state({ gateway = "192.168.1.1" }))
+      assert.equals("probe_only", result)
     end)
   end)
 end)

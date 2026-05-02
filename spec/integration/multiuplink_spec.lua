@@ -128,8 +128,8 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
     end)
   end)
 
-  describe("Scenario: One interface DOWN", function()
-    it("should create multipath route with only UP interfaces", function()
+  describe("Scenario: One interface up but loses packets (unusable)", function()
+    it("should create multipath route with only those UP interfaces which pass pings", function()
       -- GIVEN: Two interfaces, one UP, one DOWN
       local config = {
         mode = "multiuplink",
@@ -160,14 +160,14 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         -- eth0 is UP
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.0),
 
         -- eth1 is UP but NOT pingable (connection lost)
         ["ip addr show dev eth1"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth1"] = "",
+        ["ping.*eth1"] = mocks.mock_ping_failure(),
 
         ["ip route show default"] = "",
-        ["ping.*eth0"] = mocks.mock_ping_success(10.0),
-        ["ping.*eth1"] = mocks.mock_ping_failure(),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
@@ -197,7 +197,7 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
           break
         end
       end
-      assert.is_true(found_metric_900, "DOWN interface should have metric 900 route")
+      assert.is_true(found_metric_900, "UP but unusable interface should have metric 900 route")
     end)
   end)
 

@@ -3,7 +3,6 @@
 'require rpc';
 'require ui';
 'require poll';
-var version = 'test3';
 
 var callMiniMwanStatus = rpc.declare({
 	object: 'mini-mwan',
@@ -34,19 +33,16 @@ return view.extend({
 			for (var i = 0; i < data.interfaces.length; i++) {
 				var iface = data.interfaces[i];
 				status.interfaces.push({
-					name: iface.device,
-					device: iface.device,
-					does_exist: iface.does_exist || false,
-					is_up: iface.is_up || false,
-					degraded: iface.degraded || 0,
-					degraded_reason: iface.degraded_reason || '',
-					status_since: iface.status_since || '',
-					last_check: iface.last_check || '',
-					latency: iface.latency || 0,
-					gateway: iface.gateway || '',
-					ping_target: iface.ping_target || '',
-					rx_bytes: iface.rx_bytes || 0,
-					tx_bytes: iface.tx_bytes || 0
+					name:          iface.device,
+					device:        iface.device,
+					routing_class: iface.routing_class || 'absent',
+					status_since:  iface.status_since || '',
+					last_check:    iface.last_check || '',
+					latency:       iface.latency || 0,
+					gateway:       iface.gateway || '',
+					ping_target:   iface.ping_target || '',
+					rx_bytes:      iface.rx_bytes || 0,
+					tx_bytes:      iface.tx_bytes || 0
 				});
 			}
 		}
@@ -86,44 +82,20 @@ return view.extend({
 	},
 
 	getStatusBadge: function(iface) {
-		// Priority: degraded > doesn't exist > is_up + connectivity
-		if (iface.degraded === 1) {
-			var reason = iface.degraded_reason || 'unknown';
-			var reasons = {
-				'no_gateway': _('No Gateway'),
-				'ipv6_detected': _('IPv6 Detected')
-			};
-			var reasonText = reasons[reason] || reason;
-			return '<span style="color: #FF9800; font-weight: bold;">⚠ Degraded (' + reasonText + ')</span>';
-		}
-
-		if (!iface.does_exist) {
-			return '<span style="color: #f44336; font-weight: bold;">✖ Interface Not Found</span>';
-		}
-
-		if (!iface.is_up) {
-			return '<span style="color: #f44336; font-weight: bold;">↓ Interface Down</span>';
-		}
-
-		if (iface.latency > 0) {
-			return '<span style="color: #4CAF50; font-weight: bold;">● UP</span>';
-		}
-
-		// Interface is up but no connectivity (ping failed)
-		return '<span style="color: #FF9800; font-weight: bold;">⚠ No Connectivity</span>';
+		var badges = {
+			'absent':       '<span style="color: #f44336; font-weight: bold;">✖ '  + _('Not Found')      + '</span>',
+			'down':         '<span style="color: #f44336; font-weight: bold;">↓ '  + _('Down')           + '</span>',
+			'unconfigured': '<span style="color: #FF9800; font-weight: bold;">⚠ '  + _('Unconfigured')   + '</span>',
+			'probe_only':   '<span style="color: #FF9800; font-weight: bold;">⚠ '  + _('No Connectivity')+ '</span>',
+			'usable':       '<span style="color: #4CAF50; font-weight: bold;">● '  + _('UP')             + '</span>',
+		};
+		return badges[iface.routing_class] || badges['absent'];
 	},
 
 	getRowStyle: function(iface) {
-		// Red background for interfaces that don't exist
-		if (!iface.does_exist) {
-			return 'background-color: #ffebee;';
-		}
-
-		// Yellow background for degraded interfaces
-		if (iface.degraded === 1) {
-			return 'background-color: #fff9c4;';
-		}
-
+		var rc = iface.routing_class;
+		if (rc === 'absent' || rc === 'down')         return 'background-color: #ffebee;';
+		if (rc === 'unconfigured' || rc === 'probe_only') return 'background-color: #fff9c4;';
 		return '';
 	},
 

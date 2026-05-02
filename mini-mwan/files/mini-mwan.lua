@@ -220,7 +220,7 @@ local function probe_all_gateways()
 
   if not data then
     log("Failed to call network.interface dump via ubus", "err")
-    return gateway_map
+    return {}
   end
 
   -- data.interface is already a Lua table from libubus (no JSON parsing needed)
@@ -229,7 +229,9 @@ local function probe_all_gateways()
       if iface.l3_device and iface.route then
         -- Look for default route (target 0.0.0.0, mask 0)
         for _, route in ipairs(iface.route) do
-          if route.target == "0.0.0.0" and route.mask == 0 and route.nexthop then
+          -- nexthop "0.0.0.0" means P2P/no-gateway in netifd — not a real gateway
+          if route.target == "0.0.0.0" and route.mask == 0 and
+             route.nexthop and route.nexthop ~= "0.0.0.0" then
             gateway_map[iface.l3_device] = route.nexthop
             break
           end
@@ -257,84 +259,119 @@ local function detect_point_to_point(device)
   return output:match("POINTOPOINT") ~= nil
 end
 
--- Check if interface should be marked as degraded
--- Reads from config (name, device), reads/mutates state (point_to_point, gateway, degraded, degraded_reason)
-local function check_degradation(iface_cfg, iface_state)
-  -- Reset degradation first
-  iface_state.degraded = 0
-  iface_state.degraded_reason = ""
+-- Compute the routing class for one interface based on three orthogonal facts:
+--   is_up           — kernel UP flag (ip addr show)
+--   has_routing_info — gateway present (ethernet) OR point-to-point (wg0/tun0)
+--   alive           — ping returned packets
+--
+-- Returns one of: "absent" | "down" | "unconfigured" | "probe_only" | "usable"
+-- Also sets iface_state.latency, iface_state.does_exist, iface_state.alive.
+local function compute_routing_class(iface_cfg, iface_state)
+  local device = iface_cfg.device
 
-  -- Check 1: Regular interface without gateway (DHCP not complete)
-  if not iface_state.point_to_point and (not iface_state.gateway or iface_state.gateway == "") then
-    iface_state.degraded = 1
-    iface_state.degraded_reason = "no_gateway"
-    log(string.format("%s: DEGRADED - Regular interface missing gateway (DHCP incomplete?)",
-                     iface_cfg.device or ""), "warning")  -- warning
-    return iface_state
+  local does_exist, is_up = check_interface_is_up(device)
+
+  -- Log interface disappearance / reappearance (distinct from routing-class transitions)
+  if iface_state.does_exist and not does_exist then
+    log(string.format("%s: Interface DISAPPEARED (USB dongle removed? tunnel down?)", device), "warning")
+  elseif not iface_state.does_exist and does_exist then
+    log(string.format("%s: Interface APPEARED (device reconnected)", device), "info")
+  end
+  iface_state.does_exist = does_exist
+
+  if not does_exist then
+    iface_state.alive = false
+    iface_state.latency = "?"
+    return "absent"
   end
 
-  -- Check 2: IPv6 detection (application not compatible with IPv6)
-  if iface_cfg.device and iface_cfg.device ~= "" then
-    local output = system_exec({"/sbin/ip", "-6", "addr", "show", "dev", iface_cfg.device})
-
-    -- Check if output contains global IPv6 addresses
-    if output and output:match("inet6.*scope global") then
-      iface_state.degraded = 1
-      iface_state.degraded_reason = "ipv6_detected"
-      log(string.format("%s: DEGRADED - IPv6 address detected (not supported)",
-              iface_cfg.device), "warning")  -- warning
-      return iface_state
-    end
+  if not is_up then
+    iface_state.alive = false
+    iface_state.latency = "?"
+    return "down"
   end
-  return iface_state
-end
 
--- It could happen that there are more than one route with this interface
--- one of legitimate reasons - reconfiguration (and restart) of mini-mwan. previous instance
--- is usually terminated by LuCI and restarted. therefore there will be a leftover route from previous run
--- and we need to delete it
-local function delete_all_routes_except(iface_cfg)
-  local output = system_exec({"/sbin/ip", "route", "show", "default", "dev", iface_cfg.device})
+  local has_routing_info = iface_state.point_to_point or
+                           (iface_state.gateway and iface_state.gateway ~= "")
 
-  if output and output ~= "" then
-    local routes = {}
-    for line in output:gmatch("[^\r\n]+") do
-      table.insert(routes, line)
-    end
-
-    for i = 1, #routes do
-      local line = routes[i]
-      local metric = tonumber(line:match("metric (%d+)"))
-      if metric then
-        -- Delete all routes except that one which we added with a given metric
-        if metric ~= iface_cfg.metric then
-          system_intervention_argv({"/sbin/ip", "route", "delete", "default", "dev", iface_cfg.device, "metric", metric})
-        end
-      else
-        system_intervention_argv({"/sbin/ip", "route", "delete", "default",  "dev", iface_cfg.device})
-      end
-    end
+  local ipv6_out = system_exec({"/sbin/ip", "-6", "addr", "show", "dev", device})
+  if ipv6_out and ipv6_out:match("inet6.*scope global") then
+    iface_state.alive = false
+    iface_state.latency = "?"
+    return "unconfigured"
   end
-end
 
-local function replace_default_gw(iface_cfg, iface_state)
-  if iface_state.gateway and iface_state.gateway ~= "" then
-    -- Regular interface with gateway (e.g., ethernet)
-    system_intervention_argv({"/sbin/ip", "route", "replace", "default", "via", iface_state.gateway, "dev", iface_cfg.device, "metric", iface_cfg.metric})
+  if not has_routing_info then
+    iface_state.alive = false
+    iface_state.latency = "?"
+    return "unconfigured"
+  end
+
+  local alive, latency = check_ping(iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, device)
+  if alive then
+    iface_state.alive = true
+    iface_state.latency = latency
+    return "usable"
   else
-    -- Point-to-point interface without gateway (e.g., VPN tunnel)
-    system_intervention_argv({"/sbin/ip", "route", "replace", "default", "dev", iface_cfg.device, "metric", iface_cfg.metric})
+    iface_state.alive = false
+    iface_state.latency = "?"
+    return "probe_only"
   end
 end
 
--- Add/update default route for an interface
--- Reads config (metric), reads state (gateway)
--- Note: Only called for usable interfaces (degraded ones already filtered by classify_interfaces)
-local function set_route(iface_cfg, iface_state)
-  -- Step 1: Add our route with the correct metric (ensures valid route exists)
-  replace_default_gw(iface_cfg, iface_state)
-  -- Step 2: Clean up duplicate routes for this device (created by external tools or by previous invocations of mini-mwan)
-  delete_all_routes_except(iface_cfg)
+-- Log a routing-class transition at info level (silent when class unchanged).
+local function log_state_transition(device, old_class, new_class, iface_state)
+  if old_class == new_class then return end
+  local msg
+  if new_class == "down" then
+    msg = string.format("%s: Interface DOWN", device)
+  elseif new_class == "unconfigured" then
+    msg = string.format("%s: Interface UP but unconfigured (no gateway or IPv6 detected)", device)
+  elseif new_class == "probe_only" then
+    msg = string.format("%s: Interface UP but unusable (connectivity lost)", device)
+  elseif new_class == "usable" then
+    msg = string.format("%s: Interface UP (latency: %s ms)", device, iface_state.latency or "?")
+  end
+  if msg then log(msg, "info") end
+end
+
+-- Enforce a single default route for a device at a given metric.
+-- Reads current kernel routes: if exactly one correct route already exists, does nothing.
+-- Otherwise flushes all default routes for the device and adds the desired one.
+-- Used for both usable interfaces (configured metric) and unusable ones (metric 900).
+local function enforce_route_state(iface, target_metric)
+  local device = iface.cfg.device
+  local desired_gw = (iface.state.gateway and iface.state.gateway ~= "") and iface.state.gateway or nil
+
+  local output = system_exec({"/sbin/ip", "route", "show", "default", "dev", device})
+  local routes = {}
+  if output and output ~= "" then
+    for line in output:gmatch("[^\r\n]+") do
+      local metric = tonumber(line:match("metric (%d+)")) or 0
+      local via = line:match("via%s+(%S+)")
+      table.insert(routes, { metric = metric, via = via })
+    end
+  end
+
+  local is_correct = (#routes == 1 and
+                      routes[1].metric == target_metric and
+                      routes[1].via == desired_gw)
+
+    if not is_correct then
+    -- we can afford flush here, as there are backup routes are available
+    -- (application won't start with less than 2 configured failover interfaces)
+    system_intervention_argv({"/sbin/ip", "route", "flush", "default", "dev", device})
+    local cmd = {"/sbin/ip", "route", "add", "default"}
+    if desired_gw then
+      table.insert(cmd, "via")
+      table.insert(cmd, desired_gw)
+    end
+    table.insert(cmd, "dev")
+    table.insert(cmd, device)
+    table.insert(cmd, "metric")
+    table.insert(cmd, tostring(target_metric))
+    system_intervention_argv(cmd)
+  end
 end
 
 -- Load configuration from UCI (immutable)
@@ -371,104 +408,49 @@ end
 
 local function save_interface_state(device, iface_state)
   iface_state.last_check = deps.time()
-  -- Save state
   interface_state[device] = {
-    does_exist = iface_state.does_exist,
-    is_up = iface_state.is_up,
-    status_since = iface_state.status_since,
-    latency = iface_state.latency,
-    last_check = iface_state.last_check,
-    degraded = iface_state.degraded,
-    degraded_reason = iface_state.degraded_reason,
+    does_exist    = iface_state.does_exist,
+    routing_class = iface_state.routing_class,
+    alive         = iface_state.alive,
+    status_since  = iface_state.status_since,
+    latency       = iface_state.latency,
+    last_check    = iface_state.last_check,
   }
   return iface_state
-end
-
-local function transition_iface_down(device, iface_state)
-  if iface_state.is_up then
-    log(string.format("%s: Interface DOWN (connectivity lost)", device or "unknown"), "info")
-    iface_state.latency = "?"
-    iface_state.is_up = false
-    iface_state.status_since = deps.time()
-  end
-  return iface_state
-end
-
-local function transition_iface_up(device, iface_state)
-  if not iface_state.is_up then
-    log(string.format("%s: Interface UP (latency: %s ms)", device or "unknown", iface_state.latency or "?"), "info")
-    iface_state.is_up = true
-    iface_state.status_since = deps.time()
-  end
-  return iface_state
-end
-
--- Update interface status with timestamp tracking
--- Reads config (enabled, device, ping_target, ping_count, ping_timeout)
--- Mutates state (does_exist, is_up, status_since, last_check, latency)
-local function update_interface_status(iface_cfg, iface_state)
-
-  -- Check if interface exists and is UP
-  local does_exist, is_up = check_interface_is_up(iface_cfg.device)
-
-  -- Log interface disappearance/reappearance
-  if iface_state.does_exist and not does_exist then
-    log(string.format("%s: Interface DISAPPEARED (USB dongle removed? tunnel down?)", iface_cfg.device), "warning")
-  elseif not iface_state.does_exist and does_exist then
-    log(string.format("%s: Interface APPEARED (device reconnected)", iface_cfg.device), "info")
-  end
-
-  iface_state.does_exist = does_exist;
-
-  if not is_up then
-    return save_interface_state(iface_cfg.device, transition_iface_down(iface_cfg.device, iface_state))
-  end
-
-  -- Interface exists and is UP, now ping through it to check connectivity
-  -- Note: gateway can be nil for point-to-point interfaces (e.g., VPN tunnels)
-  local alive, latency = check_ping(iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, iface_cfg.device)
-    if alive then
-    iface_state.latency = latency
-    return save_interface_state(iface_cfg.device, transition_iface_up(iface_cfg.device, iface_state))
-  else
-    return save_interface_state(iface_cfg.device, transition_iface_down(iface_cfg.device, iface_state))
-  end
 end
 
 -- Probe state based on config (mutable, ephemeral)
--- Discovers gateways, checks degradation, probes interface status (up/down, ping, latency)
+-- Discovers gateways, computes routing class, logs transitions.
 local function probe_state(config)
-  local state = {
-    interfaces = {}
-  }
+  local state = { interfaces = {} }
 
-  -- Probe all gateways once per cycle (single ubus call)
   local gateway_map = probe_all_gateways()
 
   for _, iface_cfg in ipairs(config.interfaces) do
-    -- Restore persistent state if it exists
-    local saved_state = interface_state[iface_cfg.device] or {}
+    local saved = interface_state[iface_cfg.device] or {}
 
-    -- State contains ONLY mutable runtime fields
     local iface_state = {
-      does_exist = saved_state.does_exist or false,
-      is_up = saved_state.is_up or false,
-      status_since = saved_state.status_since,
-      latency = saved_state.latency or "?",
-      -- Discover gateway from network dump (O(1) lookup)
-      gateway = gateway_map[iface_cfg.device],
-      degraded = saved_state.degraded or 0,
-      degraded_reason = saved_state.degraded_reason or "",
-      last_check = saved_state.last_check,
-      -- Detect interface type (MUST be done before gateway/degradation checks)
-      point_to_point = detect_point_to_point(iface_cfg.device)
+      does_exist    = saved.does_exist or false,
+      routing_class = saved.routing_class,   -- nil on first cycle
+      alive         = saved.alive,
+      status_since  = saved.status_since,
+      latency       = saved.latency or "?",
+      last_check    = saved.last_check,
+      gateway       = gateway_map[iface_cfg.device],
+      point_to_point = detect_point_to_point(iface_cfg.device),
     }
 
-    check_degradation(iface_cfg, iface_state)
+    local old_class = iface_state.routing_class
+    local new_class = compute_routing_class(iface_cfg, iface_state)
 
-    -- Probe actual interface status (up/down, ping, latency)
-    update_interface_status(iface_cfg, iface_state)
+    log_state_transition(iface_cfg.device, old_class, new_class, iface_state)
 
+    if old_class ~= new_class then
+      iface_state.status_since = deps.time()
+    end
+    iface_state.routing_class = new_class
+
+    save_interface_state(iface_cfg.device, iface_state)
     table.insert(state.interfaces, iface_state)
   end
 
@@ -494,18 +476,15 @@ local function update_status(config, state)
 
     -- Create interface status object
     table.insert(current_status.interfaces, {
-      device = iface_cfg.device or "",
-      ping_target = iface_cfg.ping_target or "",
-      does_exist = iface_state.does_exist,
-      is_up = iface_state.is_up,
-      degraded = iface_state.degraded,
-      degraded_reason = iface_state.degraded_reason or "",
-      status_since = iface_state.status_since or "",
-      last_check = iface_state.last_check or "",
-      latency = iface_state.latency,
-      gateway = iface_state.gateway or "",
-      rx_bytes = tonumber(rx_bytes) or 0,
-      tx_bytes = tonumber(tx_bytes) or 0
+      device        = iface_cfg.device or "",
+      ping_target   = iface_cfg.ping_target or "",
+      routing_class = iface_state.routing_class or "absent",
+      status_since  = iface_state.status_since or "",
+      last_check    = iface_state.last_check or "",
+      latency       = iface_state.latency,
+      gateway       = iface_state.gateway or "",
+      rx_bytes      = tonumber(rx_bytes) or 0,
+      tx_bytes      = tonumber(tx_bytes) or 0,
     })
   end
 end
@@ -545,45 +524,30 @@ local function cleanup_unmanaged_routes(config)
   end
 end
 
--- Classify interfaces into usable (for routing) and unusable
--- Returns {usable = {{cfg, state}, ...}, unusable = {{cfg, state}, ...}}
+-- Classify interfaces by routing_class.
+-- Returns {usable = [...], probe_only = [...]}
+-- absent / down / unconfigured interfaces are silently skipped (no route action).
 local function classify_interfaces(config, state)
-
   local usable = {}
-  local unusable = {}
+  local probe_only = {}
 
   for i, iface_cfg in ipairs(config.interfaces) do
     local iface_state = state.interfaces[i]
-
-    -- we shall replace metric of degraded interfaces to 900 hence they shall be in "unusable" list
-    if iface_state.is_up then
-      if iface_state.degraded == 0 then
-        -- Interface is up and has connectivity (ping succeeded)
-        table.insert(usable, { cfg = iface_cfg, state = iface_state })
-      else
-        -- Interface is either degraded (up but no connectivity (ping failed)) or is down
-        table.insert(unusable, { cfg = iface_cfg, state = iface_state })
-      end
+    local class = iface_state.routing_class
+    if class == "usable" then
+      table.insert(usable, { cfg = iface_cfg, state = iface_state })
+    elseif class == "probe_only" then
+      table.insert(probe_only, { cfg = iface_cfg, state = iface_state })
     end
-    -- If is_up is false, we do nothing. The kernel handles the cleanup.
   end
 
-  return {usable = usable, unusable = unusable}
+  return { usable = usable, probe_only = probe_only }
 end
 
--- Handle unusable interfaces by setting them to metric 900
--- This keeps them routable for ping testing but prevents them from being used for traffic
-local function deprioritize_unusable_interfaces(unusable)
-  for _, iface in ipairs(unusable) do
-    -- Use 'replace' instead of 'add' to handle cases where route already exists
-    -- But we still need to delete first, so that eventually all duplicates get removed
-    if iface.state.gateway and iface.state.gateway ~= "" then
-      system_intervention_argv({"/sbin/ip", "route", "flush", "default", "dev", iface.cfg.device})
-      system_intervention_argv({"/sbin/ip", "route", "replace", "default", "via", iface.state.gateway, "dev", iface.cfg.device, "metric", "900"})
-    else
-      system_intervention_argv({"/sbin/ip", "route", "flush", "default", "dev", iface.cfg.device})
-      system_intervention_argv({"/sbin/ip", "route", "replace", "default", "dev", iface.cfg.device, "metric", "900" })
-    end
+-- Give probe_only interfaces a metric-900 route so `ping -I <dev>` can detect recovery.
+local function set_probe_routes(probe_only)
+  for _, iface in ipairs(probe_only) do
+    enforce_route_state(iface, 900)
   end
 end
 
@@ -591,10 +555,8 @@ end
 -- Receives only usable interfaces (already classified)
 -- Sets routes with configured metrics - kernel handles priority automatically
 local function set_routes_for_failover(usable_ifaces)
-  -- Set all routes with their configured metrics
-  -- Kernel routing table automatically uses lowest metric as primary
   for _, iface in ipairs(usable_ifaces) do
-    set_route(iface.cfg, iface.state)
+    enforce_route_state(iface, iface.cfg.metric)
   end
 end
 
@@ -643,26 +605,20 @@ local function count_wans_configured(config)
 end
 
 local function work(config)
-  -- Probe mutable state based on config (discovers gateway, checks degradation, pings)
   local state = probe_state(config)
 
-  -- Cleanup routes from interfaces no longer managed
   cleanup_unmanaged_routes(config)
 
-  -- Classify interfaces into usable (for routing) and unusable
   local classified = classify_interfaces(config, state)
 
-  -- Handle unusable interfaces (set metric 900 so pings still work)
-  deprioritize_unusable_interfaces(classified.unusable)
+  set_probe_routes(classified.probe_only)
 
-  -- Run appropriate routing mode with only usable interfaces
   if config.mode == "failover" then
     set_routes_for_failover(classified.usable)
   elseif config.mode == "multiuplink" then
     set_route_multiuplink(classified.usable)
   end
 
-  -- Update status (merges config + state for ubus)
   update_status(config, state)
 end
 
@@ -759,17 +715,16 @@ if os.getenv("MINI_MWAN_TEST_MODE") then
     set_dependencies = set_dependencies,
     probe_all_gateways = probe_all_gateways,
     detect_point_to_point = detect_point_to_point,
-    check_degradation = check_degradation,
-    set_route = set_route,
+    compute_routing_class = compute_routing_class,
+    enforce_route_state = enforce_route_state,
     check_ping = check_ping,
     check_interface_is_up = check_interface_is_up,
     set_routes_for_failover = set_routes_for_failover,
     set_route_multiuplink = set_route_multiuplink,
     load_config = load_config,
     probe_state = probe_state,
-    update_interface_status = update_interface_status,
     classify_interfaces = classify_interfaces,
-    deprioritize_unusable_interfaces = deprioritize_unusable_interfaces,
+    set_probe_routes = set_probe_routes,
     work = work,
     log = log,
     register_ubus = register_ubus,

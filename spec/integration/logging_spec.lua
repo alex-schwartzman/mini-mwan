@@ -147,7 +147,7 @@ describe("FR-5.3: Audit Logging - Integration", function()
       local found_route_intervention = false
 
       for _, msg in ipairs(notice_msgs) do
-        if msg.message:match("Intervention: /sbin/ip route replace default") then
+        if msg.message:match("Intervention: /sbin/ip route add default") then
           found_route_intervention = true
           break
         end
@@ -194,19 +194,19 @@ default via 192.168.1.1 dev eth0 metric 21
       local found_delete_intervention = false
 
       for _, msg in ipairs(notice_msgs) do
-        if msg.message:match("Intervention: /sbin/ip route delete default") then
+        if msg.message:match("Intervention: /sbin/ip route flush default") then
           found_delete_intervention = true
           break
         end
       end
 
-      assert.is_true(found_delete_intervention, "Should log route delete intervention at notice level")
+      assert.is_true(found_delete_intervention, "Should log route cleanup intervention at notice level")
     end)
   end)
 
   describe("Scenario: Interface state transitions", function()
-    it("should log interface DOWN transition at info level", function()
-      -- GIVEN: Interface that was UP and then goes DOWN
+    it("should log connectivity lost transition at info level", function()
+      -- GIVEN: Interface that is kernel-UP but loses ping connectivity
       local config = {
         mode = "failover",
         check_interval = 30,
@@ -231,21 +231,21 @@ default via 192.168.1.1 dev eth0 metric 21
          })
       mini_mwan.set_dependencies(deps)
 
-      -- WHEN: Running work cycle (interface will go DOWN due to ping failure)
+      -- WHEN: Running work cycle (ping fails → probe_only state)
       mini_mwan.work(config)
 
-      -- THEN: Should have logged state transition at info level
+      -- THEN: Should have logged the routing-class transition at info level
       local info_msgs = log_mock.get_messages_by_priority("info")
-      local found_down_transition = false
+      local found_transition = false
 
       for _, msg in ipairs(info_msgs) do
-        if msg.message:match("eth0") and msg.message:match("DOWN") then
-          found_down_transition = true
+        if msg.message:match("eth0") and msg.message:match("unusable") then
+          found_transition = true
           break
         end
       end
 
-      assert.is_true(found_down_transition, "Should log interface DOWN transition at info level")
+      assert.is_true(found_transition, "Should log connectivity lost transition at info level")
     end)
 
     it("should log interface UP transition at info level with latency", function()
@@ -292,9 +292,9 @@ default via 192.168.1.1 dev eth0 metric 21
     end)
   end)
 
-  describe("Scenario: Degradation detection", function()
-    it("should log degradation warning when interface has no gateway", function()
-      -- GIVEN: Regular interface without gateway (DHCP incomplete)
+  describe("Scenario: Unconfigured interface detection", function()
+    it("should log usable => unconfigured transition at info level when interface has no gateway", function()
+      -- GIVEN: Interface that was usable (from prior cycles) but now has no gateway (DHCP lease dropped)
       local config = {
         mode = "failover",
         check_interval = 30,
@@ -304,18 +304,15 @@ default via 192.168.1.1 dev eth0 metric 21
       }
 
       local exec_responses = {
-        ["ip link show dev eth0"] = "3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP>", -- Not P2P
-        ["ip route show default"] = "",
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "",
-        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
       }
 
       local exec_mock = mocks.build_exec_mock(exec_responses)
       local deps, _, log_mock = mocks.build_deps({
         exec = exec_mock,
         ubus_network_dump = mocks.mock_ubus_network_dump({
-          { l3_device = "eth0", gateway = nil } -- No gateway
+          { l3_device = "eth0", gateway = nil }
           })
          })
       mini_mwan.set_dependencies(deps)
@@ -323,18 +320,18 @@ default via 192.168.1.1 dev eth0 metric 21
       -- WHEN: Running work cycle
       mini_mwan.work(config)
 
-      -- THEN: Should have logged degradation warning
-      local warning_msgs = log_mock.get_messages_by_priority("warning")
-      local found_degradation = false
+      -- THEN: Should have logged routing-class transition at info level
+      local info_msgs = log_mock.get_messages_by_priority("info")
+      local found_unconfigured = false
 
-      for _, msg in ipairs(warning_msgs) do
-        if msg.message:match("DEGRADED") and msg.message:match("missing gateway") then
-          found_degradation = true
+      for _, msg in ipairs(info_msgs) do
+        if msg.message:match("eth0") and msg.message:match("unconfigured") then
+          found_unconfigured = true
           break
         end
       end
 
-      assert.is_true(found_degradation, "Should log degradation warning at warning level")
+      assert.is_true(found_unconfigured, "Should log usable => unconfigured transition at info level")
     end)
   end)
 end)
