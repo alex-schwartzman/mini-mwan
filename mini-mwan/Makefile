@@ -17,7 +17,7 @@ define Package/mini-mwan
     +libubox-lua \
     +libubus-lua \
     +libuci-lua \
-    +lua \
+    +lua-5.1 \
     +lua-cjson \
     +luci-lib-nixio
   PKGARCH:=all
