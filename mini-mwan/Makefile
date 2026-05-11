@@ -17,7 +17,7 @@ define Package/mini-mwan
     +libubox-lua \
     +libubus-lua \
     +libuci-lua \
-    +lua-5.1 \
+    +lua \
     +lua-cjson \
     +luci-lib-nixio
   PKGARCH:=all
@@ -46,5 +46,13 @@ define Package/mini-mwan/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/mini-mwan.init $(1)/etc/init.d/mini-mwan
 endef
+
+# NOTE: There are platforms, where lua does not default to 5.1.
+# We need to exclude those, because libuci-lua is built against 5.1
+# and we rely on libuci-lua in the code
+
+ifneq ($(filter i386% x86% aarch64% arm_cortex%,$(ARCH)),)
+  BROKEN:=1
+endif
 
 $(eval $(call BuildPackage,mini-mwan))
