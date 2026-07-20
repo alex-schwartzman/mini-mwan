@@ -2,3 +2,4 @@ bin/**
 luacov.*.out
 .DS_Store
 nginx-run/**
+.c*/**

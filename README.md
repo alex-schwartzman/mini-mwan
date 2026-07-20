@@ -25,6 +25,18 @@ With mwan3 unavailable in OpenWrt 24+, Mini-MWAN provides a simpler, more mainta
 - **Compatible with all OpenWrt versions**: No dependency on specific firewall implementations
 - **Less complexity**: Fewer moving parts means fewer things that can break
 
+**IPv6-Safe Routing**: Mini-MWAN uses IPv4 connectivity as the primary routing signal. Interfaces with only IPv6 connectivity are not used for routing. This prevents DNS leak scenarios where:
+  - An IPv4 interface has connectivity (ping target reachable)
+  - An IPv6 interface has connectivity (e.g., VPN tunnel)
+  - Without this protection, DNS AAAA queries could use IPv6 while traffic routes via IPv4, leaking your real IP
+
+  Mini-MWAN ensures that if IPv4 routing is configured for an interface, IPv6 routing is added as well. If IPv4 connectivity fails, no traffic is routed (fail-closed) rather than falling back to IPv6.
+
+**Transparent Route Management**: Routes are visible in the kernel routing table and can be inspected with standard tools:
+  - `ip route show` - view all routes
+  - `ip route show table main` - view main table routes
+  - No hidden iptables/nftables rules to debug
+
 ## Requirements
 
 - **OpenWrt**: 24.x or later recommended
@@ -192,7 +204,7 @@ logread | grep mini-mwan
 
 | Feature | Mini-MWAN | mwan3 |
 |---------|-----------|-------|
-| **IPv6** | ❌ No | ✅ Yes |
+| **IPv6** | ⚠️ IPv4-first routing (IPv6 added if same interface has it) | ✅ Yes |
 | **Complexity** | ~500 lines of Lua | ~10,000+ lines |
 | **Dependencies** | 4 packages | Many (including iptables, ipset, etc.) |
 | **Firewall Backend** | None (uses kernel routing) | iptables/fw3 required |
@@ -218,7 +230,41 @@ logread | grep mini-mwan
 - Sticky sessions for specific services
 - Advanced traffic rules and policies
 - OpenWrt 23.05 or earlier (where mwan3 is available)
-- IPv6
+- Native IPv6 support with independent routing
+
+## Security Considerations
+
+### IPv6 Leak Prevention
+
+Mini-MWAN uses **IPv4 connectivity as the primary routing decision signal**. This design prevents a specific DNS leak scenario:
+
+**Leak Scenario Prevented:**
+1. WAN1 (eth0) has IPv4 connectivity to ping target (e.g., 1.1.1.1)
+2. WAN2 (wg0 VPN tunnel) has IPv6 connectivity
+3. Without IPv4-first logic, DNS AAAA queries might use IPv6 (WAN2) while traffic routes via IPv4 (WAN1)
+4. This would leak your real public IP because the response routing doesn't match the query path
+
+**How Mini-MWAN Prevents This:**
+- Routing class is determined by IPv4 ping results only
+- IPv6 routes are added *only* on interfaces that also have IPv4 routing
+- If IPv4 connectivity fails, no routing occurs (fail-closed) rather than falling back to IPv6
+
+### Known Security Characteristics
+
+| Aspect | Behavior |
+|--------|----------|
+| **Firewall Rules** | None - uses kernel routing only, no iptables/nftables |
+| **NAT/Masquerading** | None - only manages default routes |
+| **DNS Handling** | None - does not modify DNS configuration |
+| **Packet Inspection** | None - transparent routing only |
+| **Policy Routing** | None - uses main routing table only |
+
+### Configuration-Dependent Security
+
+**The security of your setup depends on:**
+1. **Interface configuration** - Ensure ping targets are reachable only through intended paths
+2. **VPN tunnel setup** - If using VPN in uplink, configure IPv4 ping target within VPN network
+3. **Firewall rules** - External firewall rules (if any) are not managed by Mini-MWAN
 
 ## Repository Structure
 

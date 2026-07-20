@@ -67,15 +67,16 @@ describe("FR-1.6: Interface Routing Class - compute_routing_class()", function()
   end)
 
   describe("Interface with global IPv6 address", function()
-    it("should return 'unconfigured' (IPv6 not supported)", function()
+    it("should return 'usable' if IPv4 connectivity is OK (IPv6 supported as secondary)", function()
       local exec_mock = mocks.build_exec_mock({
         ["ip addr show dev eth0"] = mocks.mock_interface_up(),
         ["ip %-6 addr show dev eth0"] = "inet6 fe80::1/64 scope global",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.0),
       })
       mini_mwan.set_dependencies(mocks.build_deps({ exec = exec_mock }))
 
       local result = mini_mwan.compute_routing_class(eth0_cfg(), fresh_state({ gateway = "192.168.1.1" }))
-      assert.equals("unconfigured", result)
+      assert.equals("usable", result)
     end)
   end)
 

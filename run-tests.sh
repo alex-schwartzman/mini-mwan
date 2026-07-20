@@ -74,7 +74,7 @@ BUSTED_CMD="busted"
 
 # Add config
 if [ "$CONFIG" != "default" ]; then
-	BUSTED_CMD="$BUSTED_CMD --config=$CONFIG"
+	BUSTED_CMD="$BUSTED_CMD --run=$CONFIG"
 fi
 
 # Add coverage

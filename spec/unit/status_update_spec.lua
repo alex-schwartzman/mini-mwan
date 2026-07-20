@@ -43,9 +43,22 @@ describe("FR-4.2: Status Update", function()
 
   describe("ubus status publishing", function()
     it("should publish status via ubus after work cycle", function()
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ip addr show dev eth1"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth1"] = "",
+        ["ip route show default"] = "",
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+        ["ping.*eth1.*8%.8%.8%.8"] = mocks.mock_ping_success(15.2),
+      })
       local deps, ubus_mock = mocks.build_deps({
         exec = exec_mock,
-        time = function() return 1698765432 end
+        time = function() return 1698765432 end,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1" },
+          { l3_device = "eth1", gateway = "192.168.2.1" }
+        })
       })
       mini_mwan.set_dependencies(deps)
 
@@ -66,9 +79,22 @@ describe("FR-4.2: Status Update", function()
       test_config.mode = "multiuplink"
       test_config.check_interval = 60
 
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ip addr show dev eth1"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth1"] = "",
+        ["ip route show default"] = "",
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+        ["ping.*eth1.*8%.8%.8%.8"] = mocks.mock_ping_success(15.2),
+      })
       local deps, ubus_mock = mocks.build_deps({
         exec = exec_mock,
-        time = function() return 9999999999 end
+        time = function() return 9999999999 end,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1" },
+          { l3_device = "eth1", gateway = "192.168.2.1" }
+        })
       })
       mini_mwan.set_dependencies(deps)
 
@@ -202,6 +228,32 @@ describe("FR-4.2: Status Update", function()
       local status = ubus_mock.call_method("mini-mwan", "status")
       assert.equals(0, status.interfaces[1].rx_bytes)
       assert.equals(0, status.interfaces[1].tx_bytes)
+    end)
+
+    it("should include IPv6 gateway when available", function()
+      -- GIVEN: Interface with both IPv4 and IPv6 gateways
+      local exec_mock = mocks.build_exec_mock({
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+        ["ip route show default"] = "",
+      })
+      local deps, ubus_mock = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1", ipv6_gateway = "2001:db8::1" }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Registering ubus and running work
+      mini_mwan.register_ubus()
+      mini_mwan.work(test_config)
+
+      -- THEN: ubus status should include IPv6 gateway
+      local status = ubus_mock.call_method("mini-mwan", "status")
+      assert.is_not_nil(status.interfaces[1].ipv6_gateway)
+      assert.equals("2001:db8::1", status.interfaces[1].ipv6_gateway)
     end)
   end)
 

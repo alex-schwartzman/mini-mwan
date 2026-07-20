@@ -123,10 +123,11 @@ describe("FR-1.3: Gateway Discovery", function()
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Probing all gateways
-      local gateway_map = mini_mwan.probe_all_gateways()
+      local ipv4_map, ipv6_map = mini_mwan.probe_all_gateways()
 
-      -- THEN: Should return default route gateway only
-      assert.equals("192.168.1.1", gateway_map["eth0"])
+      -- THEN: Should return default route gateway only in IPv4 map
+      assert.equals("192.168.1.1", ipv4_map["eth0"])
+      assert.is_nil(ipv6_map["eth0"])
     end)
   end)
 
@@ -144,12 +145,80 @@ describe("FR-1.3: Gateway Discovery", function()
       mini_mwan.set_dependencies(deps)
 
       -- WHEN: Probing all gateways
-      local gateway_map = mini_mwan.probe_all_gateways()
+      local ipv4_map, ipv6_map = mini_mwan.probe_all_gateways()
 
       -- THEN: Should return gateways for interfaces that have them
-      assert.equals("192.168.1.1", gateway_map["eth0"])
-      assert.equals("192.168.2.1", gateway_map["eth1"])
-      assert.is_nil(gateway_map["wg0"])  -- P2P has no gateway
+      assert.equals("192.168.1.1", ipv4_map["eth0"])
+      assert.equals("192.168.2.1", ipv4_map["eth1"])
+      assert.is_nil(ipv4_map["wg0"])  -- P2P has no gateway
+      assert.is_nil(ipv6_map["eth0"])
+      assert.is_nil(ipv6_map["eth1"])
+      assert.is_nil(ipv6_map["wg0"])
+    end)
+  end)
+
+  describe("when IPv6 gateway exists", function()
+    it("should extract IPv6 gateway from default route", function()
+      -- GIVEN: Interface with IPv6 default route
+
+      local deps = mocks.build_deps({
+        ubus_network_dump = {
+          interface = {
+            {
+              l3_device = "wg0",
+              route = {
+                {
+                  target = "::",
+                  mask = 0,
+                  nexthop = "2001:db8::1"
+                }
+              }
+            }
+          }
+        }
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Probing all gateways
+      local ipv4_map, ipv6_map = mini_mwan.probe_all_gateways()
+
+      -- THEN: Should return IPv6 gateway in IPv6 map
+      assert.is_nil(ipv4_map["wg0"])
+      assert.equals("2001:db8::1", ipv6_map["wg0"])
+    end)
+
+    it("should handle IPv6 gateway in mixed IPv4/IPv6 interface", function()
+      -- GIVEN: Interface with both IPv4 and IPv6 gateways
+
+      local deps = mocks.build_deps({
+        ubus_network_dump = {
+          interface = {
+            {
+              l3_device = "eth0",
+              route = {
+                {
+                  target = "0.0.0.0",
+                  mask = 0,
+                  nexthop = "192.168.1.1"
+                },
+                {
+                  target = "::",
+                  mask = 0,
+                  nexthop = "2001:db8::1"
+                }
+              }
+            }
+          }
+        }
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Probing all gateways
+      local ipv4_map, ipv6_map = mini_mwan.probe_all_gateways()
+
+      -- THEN: Should return both gateways
+      assert.equals("192.168.1.1", ipv4_map["eth0"])
+      assert.equals("2001:db8::1", ipv6_map["eth0"])
     end)
   end)
 end)

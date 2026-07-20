@@ -112,6 +112,11 @@ function M.mock_ubus_network_dump(interfaces)
       { l3_device = "eth1", gateway = "192.168.2.1" },
       { l3_device = "wg0", gateway = nil },  -- P2P interface
     })
+
+  For IPv6 support, you can also specify:
+    local mock = M.mock_ubus_network_dump({
+      { l3_device = "eth0", gateway = "192.168.1.1", ipv6_gateway = "2001:db8::1" },
+    })
   ]]
   local interface_list = {}
   for _, iface in ipairs(interfaces) do
@@ -121,6 +126,13 @@ function M.mock_ubus_network_dump(interfaces)
         target = "0.0.0.0",
         mask = 0,
         nexthop = iface.gateway
+      })
+    end
+    if iface.ipv6_gateway then
+      table.insert(routes, {
+        target = "::",
+        mask = 0,
+        nexthop = iface.ipv6_gateway
       })
     end
 

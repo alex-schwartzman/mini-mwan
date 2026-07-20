@@ -77,12 +77,14 @@ This document maps functional requirements to their corresponding test files.
 
 #### FR-1.6: Degradation Detection
 **Test Cases** in `spec/unit/degradation_spec.lua`:
-- ✓ Regular interface without gateway → degraded
-- ✓ P2P interface without gateway → not degraded
-- ✓ Interface with IPv6 → degraded
-- ✓ Regular interface with gateway → healthy
+- ✓ Regular interface without gateway → unconfigured
+- ✓ P2P interface without gateway → not unconfigured (uses IPv4 ping for routing class)
+- ✓ Regular interface with gateway → usable (IPv4 ping determines routing class)
 - ✓ Auto-recovery when gateway appears
-- ✓ Degraded interface skipped in routing
+- ✓ Degraded (unconfigured) interface skipped in routing
+
+**Note**: IPv6 is now supported as a secondary protocol on interfaces that have IPv4 connectivity.
+Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if IPv6 gateway exists.
 
 ---
 
