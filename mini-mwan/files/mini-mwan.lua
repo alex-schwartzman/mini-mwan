@@ -50,8 +50,13 @@ local deps = {
   uci_cursor = function()
     return uci.cursor()
   end,
+  -- Ubus connection with 5 second timeout to prevent hangs
   ubus_connect = function()
-    return ubus.connect()
+    local conn = ubus.connect()
+    if conn then
+      conn.timeout = 5  -- 5 second timeout for ubus operations
+    end
+    return conn
   end,
   uloop_init = function()
     return uloop.init()
@@ -62,6 +67,7 @@ local deps = {
   uloop_run = function()
     return uloop.run()
   end,
+  -- Command execution with timeout
   exec = function(args)
     local rd, wr = nixio.pipe()
     local pid = nixio.fork()
@@ -76,9 +82,17 @@ local deps = {
       os.exit(errno or 1)
     else
       wr:close()
-      local output = rd:readall()
+      -- Wait for process with timeout (10 seconds)
+      local status, elapsed = nixio.waitpid(pid, 10000)  -- 10s timeout
+      local output
+      if status then
+        output = rd:readall()
+      else
+        -- Process timed out - log warning
+        nixio.syslog("warning", string.format("Command timeout after %dms: %s", elapsed, table.concat(args, " ")))
+        output = ""
+      end
       rd:close()
-      nixio.waitpid(pid)
       return output
     end
   end
