@@ -751,25 +751,24 @@ local function set_route_multiuplink(usable_ifaces)
   system_intervention_argv(cmd_args)
 
   -- Set IPv6 multipath route if any interface has IPv6 gateway
-  local ipv6_gateway_count = 0
+  -- Only include interfaces that actually have an IPv6 gateway
+  local usable_ipv6_ifaces = {}
   for _, iface in ipairs(usable_ifaces) do
     if iface.state.ipv6_gateway and iface.state.ipv6_gateway ~= "" then
-      ipv6_gateway_count = ipv6_gateway_count + 1
+      table.insert(usable_ipv6_ifaces, iface)
     end
   end
 
-  if ipv6_gateway_count > 0 then
+  if #usable_ipv6_ifaces > 0 then
     local ipv6_cmd = { "/sbin/ip", "-6", "route", "replace", "default" }
 
-    for _, iface in ipairs(usable_ifaces) do
+    for _, iface in ipairs(usable_ipv6_ifaces) do
       -- Add the nexthop keyword for every interface
       table.insert(ipv6_cmd, "nexthop")
 
-      -- Conditionally add the IPv6 gateway
-      if iface.state.ipv6_gateway and iface.state.ipv6_gateway ~= "" then
-        table.insert(ipv6_cmd, "via")
-        table.insert(ipv6_cmd, iface.state.ipv6_gateway)
-      end
+      -- Add the IPv6 gateway
+      table.insert(ipv6_cmd, "via")
+      table.insert(ipv6_cmd, iface.state.ipv6_gateway)
 
       -- Add device and weight
       table.insert(ipv6_cmd, "dev")
