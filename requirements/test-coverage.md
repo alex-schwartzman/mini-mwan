@@ -14,12 +14,12 @@ This document maps functional requirements to their corresponding test files.
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-1.1 | Connectivity Detection | Critical | `spec/integration/failover_spec.lua` | 🔶 |
+| FR-1.1 | Connectivity Detection | Critical | `spec/unit/latency_spec.lua` + `spec/integration/failover_spec.lua` | ✅ |
 | FR-1.2 | Interface State Detection | Critical | `spec/unit/interface_state_spec.lua` + `spec/integration/failover_spec.lua` | ✅ |
-| FR-1.3 | Gateway Discovery | Critical | `spec/unit/gateway_spec.lua` | 🔶 |
+| FR-1.3 | Gateway Discovery | Critical | `spec/unit/gateway_spec.lua` + `spec/unit/status_update_spec.lua` | ✅ |
 | FR-1.4 | Latency Measurement | Medium | `spec/unit/latency_spec.lua` | ✅ |
-| FR-1.5 | Status Classification | Critical | `spec/integration/failover_spec.lua` | 🔶 |
-| FR-1.6 | Degradation Detection | High | `spec/unit/degradation_spec.lua` | 🔶 |
+| FR-1.5 | Status Classification | Critical | `spec/unit/degradation_spec.lua` + `spec/integration/failover_spec.lua` | ✅ |
+| FR-1.6 | Degradation Detection | High | `spec/unit/degradation_spec.lua` + `spec/unit/status_update_spec.lua` | ✅ |
 
 ### Test Coverage Details
 
@@ -94,7 +94,7 @@ Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if I
 |----|-------------|----------|-----------|--------|
 | FR-2.1 | Failover Mode | Critical | `spec/integration/failover_spec.lua` | ✅ |
 | FR-2.2 | Multiuplink Mode | High | `spec/integration/multiuplink_spec.lua` | ✅ |
-| FR-2.3 | Point-to-Point Interface Support | High | `spec/integration/failover_spec.lua` | ✅ |
+| FR-2.3 | Point-to-Point Interface Support | High | `spec/unit/gateway_spec.lua` + `spec/integration/failover_spec.lua` | ✅ |
 | FR-2.4 | Route Cleanup | Medium | `spec/integration/route_cleanup_spec.lua` | ✅ |
 | FR-2.5 | Metric Management | High | `spec/integration/failover_spec.lua` | ✅ |
 
@@ -125,11 +125,14 @@ Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if I
 - ✓ P2P interface not marked degraded
 
 #### FR-2.4: Route Cleanup
-**Coverage**: ⏳ Feature discussed, not implemented
-**Test Cases Needed**:
-- Remove unmanaged default routes
-- Preserve managed routes
-- Handle duplicate routes
+**Test Cases** in `spec/unit/route_cleanup_spec.lua`:
+- ✓ Flush duplicate routes for same device
+- ✓ Flush routes without explicit metric
+- ✓ Flush multiple routes for same gateway at different metrics
+- ✓ No intervention when route is already correct
+- ✓ Flush and re-add for P2P interfaces with duplicates
+- ✓ Remove unmanaged default routes
+- ✓ Preserve managed routes
 
 #### FR-2.5: Metric Management
 **Test Cases** in `spec/integration/failover_spec.lua`:
@@ -203,18 +206,12 @@ Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if I
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-4.1 | Runtime State Preservation | High | (needs test) | ⏳ |
-| FR-4.2 | Status File Output | High | (needs test) | ⏳ |
+| FR-4.1 | Runtime State Preservation | High | (internal - no direct test) | ⏳ |
+| FR-4.2 | Status File Output | High | `spec/unit/status_update_spec.lua` | ✅ |
 
-### Coverage Gap
-State persistence tests needed. Suggested file: `spec/unit/state_spec.lua`
-
-**Test Cases Needed**:
-- State persists across config reload
-- State resets on daemon restart
-- Status file format correct
-- Status file includes all fields
-- Degradation info in status file
+### Notes
+- **FR-4.1**: State persistence (`interface_state` table) is an internal implementation detail that survives across UCI config reloads. It is not directly tested but verified indirectly through integration tests that check routing class transitions persist correctly.
+- **FR-4.2**: Status via ubus is fully tested. The `status_update_spec.lua` tests verify all interface fields are correctly published.
 
 ---
 
@@ -224,7 +221,7 @@ State persistence tests needed. Suggested file: `spec/unit/state_spec.lua`
 |----|-------------|----------|-----------|--------|
 | FR-5.1 | Event Logging | High | `spec/integration/logging_spec.lua` | ✅ |
 | FR-5.2 | Audit Logging | Medium | `spec/integration/logging_spec.lua` | ✅ |
-| FR-5.3 | Network Statistics | Low | (needs test) | ⏳ |
+| FR-5.3 | Network Statistics | Low | `spec/unit/status_update_spec.lua` | ✅ |
 
 ### Test Coverage Details
 
@@ -259,7 +256,7 @@ State persistence tests needed. Suggested file: `spec/unit/state_spec.lua`
 |----|-------------|----------|-----------|--------|
 | FR-6.1 | Daemon Lifecycle | Critical | (manual test) | ⏳ |
 | FR-6.2 | Service Control | Critical | (manual test) | ⏳ |
-| FR-6.3 | Graceful Degradation | High | `spec/integration/failover_spec.lua` | 🔶 |
+| FR-6.3 | Graceful Degradation | High | `spec/integration/failover_spec.lua` + `spec/unit/config_validation_spec.lua` | ✅ |
 
 ### Notes
 FR-6.1 and FR-6.2 require system-level testing (init scripts, procd integration). Not suitable for unit tests.
@@ -270,15 +267,23 @@ FR-6.1 and FR-6.2 require system-level testing (init scripts, procd integration)
 
 ### Overall Coverage
 
-| Category | Total | Tested | Pending | Planned | Coverage % |
-|----------|-------|--------|---------|---------|------------|
-| FR-1: Monitoring | 6 | 6 | 0 | 0 | 100% |
-| FR-2: Routing | 5 | 5 | 0 | 0 | 100% |
-| FR-3: Configuration | 5 | 4 | 1 | 0 | 80% |
-| FR-4: State | 2 | 1 | 0 | 1 | 50% |
-| FR-5: Logging | 3 | 2 | 0 | 1 | 67% |
-| FR-6: Operational | 3 | 1 | 0 | 2 | 33% |
-| **TOTAL** | **24** | **19** | **1** | **4** | **79%** |
+| Category | Total | Tested | Pending | Coverage % |
+|----------|-------|--------|---------|------------|
+| FR-1: Monitoring | 6 | 6 | 0 | 100% |
+| FR-2: Routing | 5 | 5 | 0 | 100% |
+| FR-3: Configuration | 5 | 5 | 0 | 100% |
+| FR-4: State | 2 | 1 | 1 | 50% |
+| FR-5: Logging | 3 | 3 | 0 | 100% |
+| FR-6: Operational | 3 | 1 | 2 | 33% |
+| **TOTAL** | **24** | **21** | **3** | **88%** |
+
+**Code Coverage:** 75% (75.33% overall, 92.95% for main daemon file)
+
+### Notes on Uncovered Areas
+
+- **FR-4.1 (State Persistence)**: The `interface_state` table persists across UCI config reloads internally, but there's no test that explicitly verifies state survives reloads vs resets. State is verified indirectly through integration tests.
+- **FR-6.1 (Daemon Lifecycle)**: Requires system-level testing with procd/init script - not suitable for unit tests
+- **FR-6.2 (Service Control)**: Requires system-level testing - not suitable for unit tests
 
 ### Priority Coverage
 

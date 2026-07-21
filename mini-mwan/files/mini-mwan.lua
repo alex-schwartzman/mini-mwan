@@ -737,6 +737,9 @@ local function set_route_multiuplink(usable_ifaces)
   end
 
   -- Now cmd_args is a flat table: {"/sbin/ip", "route", "replace", "default", "nexthop", "via", ...}
+  -- Note: 'ip route replace' atomically replaces any existing default route,
+  -- including previous multipath routes, so stale routes are automatically cleaned up.
+  -- Same applies to IPv6 via 'ip -6 route replace' below.
   system_intervention_argv(cmd_args)
 
   -- Set IPv6 multipath route if any interface has IPv6 gateway
