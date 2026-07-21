@@ -178,6 +178,10 @@ local function check_interface_is_up(iface)
   end
 
   -- Check if interface has UP flag
+  -- NOTE: We intentionally ignore the LOWER_UP edge case (cable unplugged but
+  -- interface administratively up). The ping check that follows will detect
+  -- media/link readiness - if there's no physical link, pings will fail and
+  -- the interface will be marked as probe_only or down accordingly.
   -- Example: "3: wan: <BROADCAST,MULTICAST,UP,LOWER_UP>"
   if output:match("<[^>]*UP[^>]*>") then
     return true, true  -- Exists and is UP
@@ -456,6 +460,66 @@ local function load_config()
   return config
 end
 
+-- Validation functions for configuration
+local function is_valid_ip_address(ip)
+  -- Basic IPv4 dotted-quad validation
+  if not ip or ip == "" then return false end
+  local pattern = "^%d+%.%d+%.%d+%.%d+$"
+  if not ip:match(pattern) then return false end
+  -- Check each octet is 0-255
+  for octet in ip:gmatch("%d+") do
+    if tonumber(octet) > 255 then return false end
+  end
+  return true
+end
+
+local function is_valid_interface_name(name)
+  -- Match valid Linux interface names: alphanumeric, dots, underscores, hyphens
+  if not name or name == "" then return false end
+  if #name > 16 then return false end  -- Linux interface name max
+  return name:match("^[a-zA-Z0-9_.%-]+$") ~= nil
+end
+
+local function validate_config(config)
+  local errors = {}
+
+  if not config.enabled then
+    -- Service disabled, no validation needed
+    return errors
+  end
+
+  -- Check minimum 2 interfaces
+  local interface_count = 0
+  for _, iface in ipairs(config.interfaces) do
+    if iface.device and iface.device ~= "" then
+      interface_count = interface_count + 1
+
+      -- Validate device name
+      if not is_valid_interface_name(iface.device) then
+        table.insert(errors, string.format("Invalid device name '%s' for interface %d", iface.device, #errors + 1))
+      end
+
+      -- Validate ping_target (required per requirements)
+      if not iface.ping_target or iface.ping_target == "" then
+        table.insert(errors, string.format("Missing ping_target for interface %s", iface.device or "(unnamed)"))
+      elseif not is_valid_ip_address(iface.ping_target) then
+        table.insert(errors, string.format("Invalid ping_target '%s' for interface %s", iface.ping_target, iface.device or "(unnamed)"))
+      end
+    end
+  end
+
+  if interface_count < 2 then
+    table.insert(errors, string.format("At least 2 interfaces with valid device names must be configured (found %d)", interface_count))
+  end
+
+  -- Validate check_interval range (10-300 per CD-4.2)
+  if config.check_interval and (config.check_interval < 10 or config.check_interval > 300) then
+    table.insert(errors, string.format("check_interval must be between 10 and 300 seconds (got %d)", config.check_interval))
+  end
+
+  return errors
+end
+
 
 local function save_interface_state(device, iface_state)
   iface_state.last_check = deps.time()
@@ -695,16 +759,6 @@ local function set_route_multiuplink(usable_ifaces)
   end
 end
 
-local function count_wans_configured(config)
-  local configured_count = 0
-  for _, iface in ipairs(config.interfaces or {}) do
-    if iface and iface.device and iface.device ~= "" then
-      configured_count = configured_count + 1
-    end
-  end
-  return configured_count
-end
-
 local function work(config)
   local state = probe_state(config)
 
@@ -733,11 +787,17 @@ local function work_cycle()
   nixio.setlogmask(config.log_level)
 
   if config.enabled then
-    if count_wans_configured(config) >= 2 then
-      work(config)
-    else
-      log("Both WAN interfaces must be configured. Refusing to work!", "err")  -- err
+    -- Validate configuration
+    local errors = validate_config(config)
+    if #errors > 0 then
+      for _, err in ipairs(errors) do
+        log(string.format("Configuration error: %s", err), "err")  -- err
+      end
+      log("Configuration invalid. Refusing to work!", "err")  -- err
+      return
     end
+
+    work(config)
   end
 
   -- Reschedule timer with current check_interval
@@ -829,7 +889,10 @@ if os.getenv("MINI_MWAN_TEST_MODE") then
     work = work,
     log = log,
     register_ubus = register_ubus,
-    count_wans_configured = count_wans_configured
+    count_wans_configured = count_wans_configured,
+    validate_config = validate_config,
+    is_valid_ip_address = is_valid_ip_address,
+    is_valid_interface_name = is_valid_interface_name
   }
 else
   -- Normal operation - run daemon

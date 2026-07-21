@@ -147,7 +147,7 @@ Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if I
 | FR-3.2 | Global Settings | Critical | `spec/unit/config_spec.lua` | ✅ |
 | FR-3.3 | Interface Configuration | Critical | `spec/unit/config_spec.lua` | ✅ |
 | FR-3.4 | Dynamic Interface Support | Medium | `spec/unit/config_spec.lua` | ✅ |
-| FR-3.5 | Validation Requirements | High | (partial coverage) | 🔶 |
+| FR-3.5 | Validation Requirements | High | `spec/unit/config_validation_spec.lua` | ✅ |
 
 ### Test Coverage Details
 
@@ -184,11 +184,18 @@ Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if I
 - ✓ All devices loaded correctly (metrics determine priority, not config order)
 
 #### FR-3.5: Validation Requirements
-**Coverage**: Partial - defaults are tested, but missing field validation not yet implemented
-**Test Cases Needed**:
-- Validation when device is nil
-- Validation when ping_target is nil
-- Validation when less than 2 interfaces configured
+**Test Cases** in `spec/unit/config_validation_spec.lua`:
+- ✓ Valid IPv4 address detection
+- ✓ Invalid IPv4 address detection (out of range, malformed)
+- ✓ Valid interface name detection
+- ✓ Invalid interface name detection (spaces, special chars, too long)
+- ✓ Config validation passes for valid config
+- ✓ Config validation fails for missing ping_target
+- ✓ Config validation fails for invalid ping_target
+- ✓ Config validation fails for invalid device name
+- ✓ Config validation fails for less than 2 interfaces
+- ✓ Config validation fails for check_interval out of range
+- ✓ Disabled config bypasses validation
 
 ---
 
