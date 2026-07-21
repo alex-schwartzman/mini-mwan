@@ -366,6 +366,10 @@ end
 -- Otherwise flushes all default routes for the device and adds the desired one.
 -- Used for both usable interfaces (configured metric) and unusable ones (metric 900).
 -- Also sets IPv6 route if IPv6 gateway is available (dual-stack support).
+--
+-- Note: If the interface no longer exists, ip route flush/delete will fail with ENODEV.
+-- We rely on the kernel to report this and ignore such failures since routing state
+-- is re-evaluated on each cycle.
 local function enforce_route_state(iface, target_metric)
   local device = iface.cfg.device
   local desired_gw = (iface.state.gateway and iface.state.gateway ~= "") and iface.state.gateway or nil
@@ -610,6 +614,10 @@ end
 
 -- Remove or demote default routes for interfaces not managed by mini-mwan
 -- Also cleans up duplicate routes for managed interfaces
+--
+-- Note: We intentionally do NOT verify interface existence before route operations
+-- during cleanup. The ip route delete commands will fail gracefully if the interface
+-- no longer exists, and we don't need to act on those failures - cleanup is best-effort.
 local function cleanup_unmanaged_routes(config)
   -- Build list of managed devices
   local managed_devices = {}
@@ -697,6 +705,10 @@ end
 -- Multi-uplink mode logic with multipath routing
 -- Receives only usable interfaces (already classified)
 -- Creates multipath routes for both IPv4 and IPv6 with weighted load balancing
+--
+-- Note: Uses 'ip route replace' which atomically replaces any existing default route,
+-- including previous multipath routes. This ensures no stale routes remain when
+-- interfaces fail or configuration changes.
 local function set_route_multiuplink(usable_ifaces)
   -- Check if any interfaces are available (for IPv4)
   if #usable_ifaces == 0 then
