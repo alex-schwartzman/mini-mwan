@@ -362,4 +362,97 @@ describe("FR-2.1: Failover Mode - End to End", function()
       assert.equals(0, eth0_routes, "Degraded shared medium interface should not have routes set")
     end)
   end)
+
+  describe("Scenario: Switch from multiuplink to failover mode", function()
+    it("should replace multipath route with single routes when mode changes", function()
+      -- First, run in multiuplink mode
+      local multiuplink_config = {
+        mode = "multiuplink",
+        check_interval = 30,
+        interfaces = {
+          { device = "eth0", metric = 10, weight = 3, ping_target = "1.1.1.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth1", metric = 20, weight = 5, ping_target = "8.8.8.8", ping_count = 3, ping_timeout = 2, enabled = true }
+        }
+      }
+
+      local exec_responses_multi = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ip addr show dev eth1"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth1"] = "",
+        ["ip route show default"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.0),
+        ["ping.*eth1"] = mocks.mock_ping_success(15.0),
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses_multi)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1" },
+          { l3_device = "eth1", gateway = "192.168.2.1" }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- First cycle: multiuplink mode
+      mini_mwan.work(multiuplink_config)
+      mocks.assert_multipath_route({
+        { gateway = "192.168.1.1", device = "eth0", weight = 3 },
+        { gateway = "192.168.2.1", device = "eth1", weight = 5 }
+      })
+
+      -- Reset for second cycle
+      mocks.reset()
+
+      -- Second config: switch to failover mode
+      local failover_config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          { device = "eth0", metric = 10, ping_target = "1.1.1.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth1", metric = 20, ping_target = "8.8.8.8", ping_count = 3, ping_timeout = 2, enabled = true }
+        }
+      }
+
+      local exec_responses_failover = {
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ip addr show dev eth1"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth1"] = "",
+        ["ip route show default dev eth0"] = "",
+        ["ip route show default dev eth1"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.0),
+        ["ping.*eth1"] = mocks.mock_ping_success(15.0),
+      }
+
+      exec_mock = mocks.build_exec_mock(exec_responses_failover)
+      deps = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1" },
+          { l3_device = "eth1", gateway = "192.168.2.1" }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle in failover mode
+      mini_mwan.work(failover_config)
+
+      -- THEN: Should have single routes (not multipath) for each interface
+      mocks.assert_route_set("192.168.1.1", "eth0", 10)
+      mocks.assert_route_set("192.168.2.1", "eth1", 20)
+
+      -- AND: No multipath route should exist
+      local route_cmds = mocks.get_route_commands()
+      local multipath_found = false
+      for _, cmd in ipairs(route_cmds) do
+        if cmd:match("ip route replace default nexthop") then
+          multipath_found = true
+          break
+        end
+      end
+      assert.is_false(multipath_found, "Should not have multipath route in failover mode")
+    end)
+  end)
 end)

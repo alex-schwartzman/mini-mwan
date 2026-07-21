@@ -220,5 +220,33 @@ describe("FR-1.3: Gateway Discovery", function()
       assert.equals("192.168.1.1", ipv4_map["eth0"])
       assert.equals("2001:db8::1", ipv6_map["eth0"])
     end)
+
+    it("should handle P2P interface with IPv6 gateway (no IPv4 gateway)", function()
+      -- GIVEN: P2P interface (VPN) with only IPv6 gateway
+      local deps = mocks.build_deps({
+        ubus_network_dump = {
+          interface = {
+            {
+              l3_device = "wg0",
+              route = {
+                {
+                  target = "::",
+                  mask = 0,
+                  nexthop = "2001:db8::1"
+                }
+              }
+            }
+          }
+        }
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Probing all gateways
+      local ipv4_map, ipv6_map = mini_mwan.probe_all_gateways()
+
+      -- THEN: IPv4 map should be empty (no IPv4 gateway), IPv6 map should have gateway
+      assert.is_nil(ipv4_map["wg0"])
+      assert.equals("2001:db8::1", ipv6_map["wg0"])
+    end)
   end)
 end)
