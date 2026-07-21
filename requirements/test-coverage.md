@@ -84,7 +84,12 @@ This document maps functional requirements to their corresponding test files.
 - ✓ Degraded (unconfigured) interface skipped in routing
 
 **Note**: IPv6 is now supported as a secondary protocol on interfaces that have IPv4 connectivity.
-Interfaces are classified based on IPv4 connectivity; IPv6 routes are added if IPv6 gateway exists.
+Interfaces are classified based on IPv4 connectivity; IPv6 routes are added only when:
+1. Interface routing class is `usable` (IPv4 ping succeeds)
+2. Both IPv4 and IPv6 gateways are present
+
+IPv6 routing is **NOT** added when IPv4 connectivity is lost (`probe_only` state) to prevent
+routing leaks - the interface falls back to fail-closed behavior.
 
 ---
 

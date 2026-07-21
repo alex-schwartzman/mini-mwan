@@ -455,4 +455,129 @@ describe("FR-2.1: Failover Mode - End to End", function()
       assert.is_false(multipath_found, "Should not have multipath route in failover mode")
     end)
   end)
+
+  describe("Scenario: IPv4-only routing (IPv6 should not be routed when IPv4 fails)", function()
+    it("should NOT set IPv6 route when interface is probe_only (IPv4 ping fails but IPv6 gateway exists)", function()
+      -- GIVEN: Interface has both IPv4 and IPv6 gateways, but IPv4 ping fails
+      -- This simulates: interface was usable with dual-stack, then IPv4 connectivity lost
+      local config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          {
+            device = "eth0",
+            metric = 10,
+            ping_target = "1.1.1.1",
+            ping_count = 3,
+            ping_timeout = 2,
+            enabled = true,
+          }
+        }
+      }
+
+      local exec_responses = {
+        -- Interface is UP
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+
+        -- IPv4 ping FAILS (connectivity lost)
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_failure(),
+
+        -- Route cleanup - no existing routes
+        ["ip route show default dev eth0"] = "",
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        -- ubus returns both IPv4 and IPv6 gateways
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          {
+            l3_device = "eth0",
+            gateway = "192.168.1.1",  -- IPv4 gateway
+            ipv6_gateway = "2001:db8::1"  -- IPv6 gateway (but IPv4 is down)
+          }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle (interface will be probe_only)
+      mini_mwan.work(config)
+
+      -- THEN: Only IPv4 probe route (metric 900) should be set
+      -- IPv6 route should NOT be set because IPv4 is not usable (fail-closed)
+      mocks.assert_route_set("192.168.1.1", "eth0", 900)
+
+      -- AND: No IPv6 route commands should be executed
+      local route_cmds = mocks.get_route_commands()
+      local ipv6_route_found = false
+      for _, cmd in ipairs(route_cmds) do
+        if cmd:match("-6") and cmd:match("route add") then
+          ipv6_route_found = true
+          break
+        end
+      end
+      assert.is_false(ipv6_route_found, "Should NOT set IPv6 route when IPv4 connectivity is lost")
+    end)
+
+    it("should set both IPv4 and IPv6 routes when interface is usable (dual-stack)", function()
+      -- GIVEN: Interface has both IPv4 and IPv6 gateways, and IPv4 ping succeeds
+      local config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          {
+            device = "eth0",
+            metric = 10,
+            ping_target = "1.1.1.1",
+            ping_count = 3,
+            ping_timeout = 2,
+            enabled = true,
+          }
+        }
+      }
+
+      local exec_responses = {
+        -- Interface is UP
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+
+        -- IPv4 ping SUCCEEDS
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+
+        -- No existing routes
+        ["ip route show default dev eth0"] = "",
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        -- ubus returns both IPv4 and IPv6 gateways
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          {
+            l3_device = "eth0",
+            gateway = "192.168.1.1",  -- IPv4 gateway
+            ipv6_gateway = "2001:db8::1"  -- IPv6 gateway
+          }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle (interface will be usable)
+      mini_mwan.work(config)
+
+      -- THEN: Both IPv4 and IPv6 routes should be set
+      mocks.assert_route_set("192.168.1.1", "eth0", 10)
+
+      -- AND: IPv6 route should also be set
+      local ipv6_route_found = false
+      for _, cmd in ipairs(mocks.executed_commands) do
+        if cmd:match("/sbin/ip %-6 route add default via 2001:db8::1 dev eth0 metric 10") then
+          ipv6_route_found = true
+          break
+        end
+      end
+      assert.is_true(ipv6_route_found, "Should set IPv6 route when IPv4 connectivity is OK (dual-stack)")
+    end)
+  end)
 end)

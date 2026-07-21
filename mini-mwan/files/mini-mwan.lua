@@ -406,8 +406,16 @@ local function enforce_route_state(iface, target_metric)
     system_intervention_argv(cmd)
   end
 
-  -- Set IPv6 route if IPv6 gateway exists (dual-stack)
-  if ipv6_gw then
+  -- Set IPv6 route if IPv6 gateway exists (dual-stack support).
+  -- IPv6 routing is only added when IPv4 routing is also active.
+  -- This ensures fail-closed behavior: if IPv4 connectivity fails,
+  -- no traffic is routed (not even via IPv6) to prevent routing leaks.
+  --
+  -- IPv6 routes are set when:
+  -- - Interface is usable (target_metric < 900): IPv4 gateway exists, IPv6 also added
+  -- - Interface is probe_only with metric 900: only IPv4 route at 900, NO IPv6
+  -- - Interface has no IPv4 gateway: no routes at all
+  if ipv6_gw and desired_gw and target_metric < 900 then
     local ipv6_routes = {}
     local ipv6_output = system_exec({"/sbin/ip", "-6", "route", "show", "default", "dev", device})
     if ipv6_output and ipv6_output ~= "" then
