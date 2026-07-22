@@ -44,10 +44,10 @@ describe("FR-2.4: Route Cleanup - Duplicate Route Handling", function()
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         -- ip route show returns multiple routes
         ["ip route show default dev eth0"] = [[
-default via 192.168.1.1 dev eth0 metric 10
 default dev eth0 scope link metric 21
 default dev eth0 scope link metric 22
 default dev eth0 scope link metric 23
+default via 192.168.1.1 dev eth0 metric 10
 ]],
       }
 
@@ -63,23 +63,23 @@ default dev eth0 scope link metric 23
       -- WHEN: Running work cycle
       mini_mwan.work(default_config)
 
-      -- THEN: Stale routes removed via flush, correct route re-added
+      -- THEN: Stale routes removed via delete, correct route replaced
       mocks.assert_route_set("192.168.1.1", "eth0", 10)
 
       local route_cmds = mocks.get_route_commands()
-      local was_flushed = false
-      local no_individual_deletes = true
+      local has_replace = false
+      local has_deletes = false
       for _, cmd in ipairs(route_cmds) do
-        if cmd:match("ip route flush default dev eth0") then
-          was_flushed = true
+        if cmd:match("ip route replace") then
+          has_replace = true
         end
         if cmd:match("ip route delete") then
-          no_individual_deletes = false
+          has_deletes = true
         end
       end
 
-      assert.is_true(was_flushed, "Should flush routes when duplicates exist")
-      assert.is_true(no_individual_deletes, "Should use flush rather than individual deletes")
+      assert.is_true(has_replace, "Should replace first route")
+      assert.is_true(has_deletes, "Should delete duplicate routes")
     end)
 
     it("should flush and re-add when a route without explicit metric exists", function()
@@ -89,8 +89,8 @@ default dev eth0 scope link metric 23
         ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         ["ip route show default dev eth0"] = [[
-default via 192.168.1.1 dev eth0 metric 10
 default dev eth0 scope link
+default via 192.168.1.1 dev eth0 metric 10
 ]],
       }
 
@@ -106,17 +106,22 @@ default dev eth0 scope link
       -- WHEN: Running work cycle
       mini_mwan.work(default_config)
 
-      -- THEN: Routes flushed and correct one re-added
+      -- THEN: First route replaced, stale route deleted
       mocks.assert_route_set("192.168.1.1", "eth0", 10)
 
       local route_cmds = mocks.get_route_commands()
-      local was_flushed = false
+      local has_replace = false
+      local has_deletes = false
       for _, cmd in ipairs(route_cmds) do
-        if cmd:match("ip route flush default dev eth0") then
-          was_flushed = true
+        if cmd:match("ip route replace") then
+          has_replace = true
+        end
+        if cmd:match("ip route delete") then
+          has_deletes = true
         end
       end
-      assert.is_true(was_flushed, "Should flush when stale no-metric route exists")
+      assert.is_true(has_replace, "Should replace first route")
+      assert.is_true(has_deletes, "Should delete stale route")
     end)
 
     it("should flush and re-add when multiple routes share the same gateway", function()
@@ -126,9 +131,9 @@ default dev eth0 scope link
         ["ip %-6 addr show dev eth0"] = "",
         ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
         ["ip route show default dev eth0"] = [[
-default via 192.168.1.1 dev eth0 metric 10
 default via 192.168.1.1 dev eth0 metric 15
 default via 192.168.1.1 dev eth0 metric 20
+default via 192.168.1.1 dev eth0 metric 10
 ]],
       }
 
@@ -144,23 +149,23 @@ default via 192.168.1.1 dev eth0 metric 20
       -- WHEN: Running work cycle
       mini_mwan.work(default_config)
 
-      -- THEN: Flush clears all, correct route re-added at metric 10
+      -- THEN: First route replaced, duplicates deleted
       mocks.assert_route_set("192.168.1.1", "eth0", 10)
 
       local route_cmds = mocks.get_route_commands()
-      local was_flushed = false
-      local no_individual_deletes = true
+      local has_replace = false
+      local has_deletes = false
       for _, cmd in ipairs(route_cmds) do
-        if cmd:match("ip route flush default dev eth0") then
-          was_flushed = true
+        if cmd:match("ip route replace") then
+          has_replace = true
         end
         if cmd:match("ip route delete") then
-          no_individual_deletes = false
+          has_deletes = true
         end
       end
 
-      assert.is_true(was_flushed, "Should flush duplicate routes")
-      assert.is_true(no_individual_deletes, "Should use flush rather than individual deletes")
+      assert.is_true(has_replace, "Should replace first route")
+      assert.is_true(has_deletes, "Should delete duplicate routes")
     end)
   end)
 
@@ -228,6 +233,70 @@ default via 192.168.1.1 dev eth0 metric 10
         ["ping.*wg0"] = mocks.mock_ping_success(50.0),
         -- P2P interface with duplicate routes
         ["ip route show default dev wg0"] = [[
+default dev wg0 metric 21
+default dev wg0 metric 22
+default dev wg0 metric 10
+]],
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "wg0", gateway = nil }
+          })
+         })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle
+      mini_mwan.work(p2p_config)
+
+      -- THEN: First route replaced, duplicates deleted
+      mocks.assert_p2p_route_set("wg0", 10)
+
+      local route_cmds = mocks.get_route_commands()
+      local has_replace = false
+      local has_deletes = false
+      for _, cmd in ipairs(route_cmds) do
+        if cmd:match("ip route replace") then
+          has_replace = true
+        end
+        if cmd:match("ip route delete") then
+          has_deletes = true
+        end
+      end
+
+      assert.is_true(has_replace, "Should replace first route")
+      assert.is_true(has_deletes, "Should delete duplicate routes")
+    end)
+  end)
+
+
+  describe("Scenario: P2P interface with duplicates but first identical match", function()
+    it("should delete everything except first and not replace nothing", function()
+      -- GIVEN: P2P interface (no gateway) with duplicates
+      local p2p_config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          {
+            device = "wg0",
+            metric = 10,
+            ping_target = "10.0.0.1",
+            ping_count = 3,
+            ping_timeout = 2,
+            enabled = true,
+          }
+        }
+      }
+
+      local exec_responses = {
+        ["ip link show dev wg0"] = "12: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP>",
+        ["ip addr show dev wg0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev wg0"] = "",
+        ["ping.*wg0"] = mocks.mock_ping_success(50.0),
+        -- P2P interface with duplicate routes
+        ["ip route show default dev wg0"] = [[
 default dev wg0 metric 10
 default dev wg0 metric 21
 default dev wg0 metric 22
@@ -246,23 +315,22 @@ default dev wg0 metric 22
       -- WHEN: Running work cycle
       mini_mwan.work(p2p_config)
 
-      -- THEN: Flush clears duplicates, correct P2P route re-added
-      mocks.assert_p2p_route_set("wg0", 10)
-
       local route_cmds = mocks.get_route_commands()
-      local was_flushed = false
-      local no_individual_deletes = true
+      local has_replace = false
+      local has_deletes = false
       for _, cmd in ipairs(route_cmds) do
-        if cmd:match("ip route flush default dev wg0") then
-          was_flushed = true
+        if cmd:match("ip route replace") then
+          has_replace = true
         end
         if cmd:match("ip route delete") then
-          no_individual_deletes = false
+          has_deletes = true
         end
       end
 
-      assert.is_true(was_flushed, "Should flush duplicate P2P routes")
-      assert.is_true(no_individual_deletes, "Should use flush rather than individual deletes")
+      assert.is_false(has_replace, "Should replace first route")
+      assert.is_true(has_deletes, "Should delete duplicate routes")
     end)
   end)
+
+
 end)

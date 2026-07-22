@@ -7,16 +7,15 @@ Manages multi-WAN failover and load balancing
 
 -- Conditionally load OpenWRT-specific dependencies
 -- In test mode, these will be mocked via dependency injection
-local uci, nixio, ubus, uloop, unixio
+local uci, nixio, ubus, uloop
 if not os.getenv("MINI_MWAN_TEST_MODE") then
   uci = require("uci")
   nixio = require("nixio")
-  unixio = require("nixio.util")
   ubus = require("ubus")
   uloop = require("uloop")
 else
   -- Test mode: use standard JSON if available, or it will be mocked
-  local ok, cjson = pcall(require, "cjson")
+  _, _ = pcall(require, "cjson")
 end
 
 -- Persistent interface state (survives config reloads)
@@ -107,8 +106,7 @@ end
 -- Logging function
 -- Uses syslog for centralized logging (standard on OpenWRT)
 local function log(msg, priority)
-  priority = priority or "info"
-  deps.log(msg, priority)
+  deps.log(msg, priority or "info")
 end
 
 -- argv-style probe: no shell, no injection risk
@@ -383,15 +381,29 @@ local function enforce_route_state(iface, target_metric)
     end
   end
 
-  local ipv4_route_correct = (#routes == 1 and
-                               routes[1].metric == target_metric and
-                               routes[1].via == desired_gw)
+  -- first - delete all excess routes
+  for i = 2, #routes do
+    local r = routes[i]
+    local del_cmd = {"/sbin/ip", "route", "delete", "default"}
+    if r.via then
+      table.insert(del_cmd, "via")
+      table.insert(del_cmd, r.via)
+    end
+    table.insert(del_cmd, "dev")
+    table.insert(del_cmd, device)
+    table.insert(del_cmd, "metric")
+    table.insert(del_cmd, tostring(r.metric))
+    system_intervention_argv(del_cmd)
+  end
+
+  local ipv4_route_correct = (#routes > 0 and
+                              routes[1].metric == target_metric and
+                              routes[1].via == desired_gw)
 
   if not ipv4_route_correct then
-    -- we can afford flush here, as there are backup routes are available
-    -- (application won't start with less than 2 configured failover interfaces)
-    system_intervention_argv({"/sbin/ip", "route", "flush", "default", "dev", device})
-    local cmd = {"/sbin/ip", "route", "add", "default"}
+    -- we cannot afford flush here, as conntrack will be confused
+    -- therefore, we always preserve first route and delete only those excess ones.
+    local cmd = {"/sbin/ip", "route", "replace", "default"}
     if desired_gw then
       table.insert(cmd, "via")
       table.insert(cmd, desired_gw)
@@ -432,7 +444,7 @@ local function enforce_route_state(iface, target_metric)
     if not ipv6_route_correct then
       -- Flush IPv6 default routes for this device
       system_intervention_argv({"/sbin/ip", "-6", "route", "flush", "default", "dev", device})
-      local ipv6_cmd = {"/sbin/ip", "-6", "route", "add", "default", "via", ipv6_gw, "dev", device, "metric", tostring(target_metric)}
+      local ipv6_cmd = {"/sbin/ip", "-6", "route", "replace", "default", "via", ipv6_gw, "dev", device, "metric", tostring(target_metric)}
       system_intervention_argv(ipv6_cmd)
     end
   end

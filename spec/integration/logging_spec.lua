@@ -147,7 +147,7 @@ describe("FR-5.3: Audit Logging - Integration", function()
       local found_route_intervention = false
 
       for _, msg in ipairs(notice_msgs) do
-        if msg.message:match("Intervention: /sbin/ip route add default") then
+        if msg.message:match("Intervention: /sbin/ip route replace default") then
           found_route_intervention = true
           break
         end
@@ -172,8 +172,8 @@ describe("FR-5.3: Audit Logging - Integration", function()
         ["ping.*eth0"] = mocks.mock_ping_success(10.5),
         -- Duplicate routes exist
         ["ip route show default dev eth0"] = [[
-default via 192.168.1.1 dev eth0 metric 10
 default via 192.168.1.1 dev eth0 metric 21
+default via 192.168.1.1 dev eth0 metric 10
 ]],
       }
 
@@ -194,7 +194,7 @@ default via 192.168.1.1 dev eth0 metric 21
       local found_delete_intervention = false
 
       for _, msg in ipairs(notice_msgs) do
-        if msg.message:match("Intervention: /sbin/ip route flush default") then
+        if msg.message:match("Intervention: /sbin/ip route delete default") then
           found_delete_intervention = true
           break
         end

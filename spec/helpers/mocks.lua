@@ -438,9 +438,9 @@ end
 -- Assertion helpers
 function M.assert_route_set(gateway, device, metric)
   --[[
-  Assert that a route was added with specific parameters
+  Assert that a route was replaced with specific parameters
   ]]
-  local pattern = string.format("/sbin/ip route add default via %s dev %s metric %d",
+  local pattern = string.format("/sbin/ip route replace default via %s dev %s metric %d",
     gateway, device, metric)
   local found = false
   for _, cmd in ipairs(M.executed_commands) do
@@ -458,9 +458,9 @@ end
 
 function M.assert_p2p_route_set(device, metric)
   --[[
-  Assert that a P2P route (without gateway) was added
+  Assert that a P2P route (without gateway) was replaced
   ]]
-  local pattern = string.format("/sbin/ip route add default dev %s metric %d",
+  local pattern = string.format("/sbin/ip route replace default dev %s metric %d",
     device, metric)
   local found = false
   for _, cmd in ipairs(M.executed_commands) do

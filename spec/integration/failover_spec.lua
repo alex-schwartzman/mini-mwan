@@ -572,7 +572,7 @@ describe("FR-2.1: Failover Mode - End to End", function()
       -- AND: IPv6 route should also be set
       local ipv6_route_found = false
       for _, cmd in ipairs(mocks.executed_commands) do
-        if cmd:match("/sbin/ip %-6 route add default via 2001:db8::1 dev eth0 metric 10") then
+        if cmd:match("/sbin/ip %-6 route replace default via 2001:db8::1 dev eth0 metric 10") then
           ipv6_route_found = true
           break
         end
