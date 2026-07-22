@@ -271,7 +271,6 @@ function M.mock_log()
     -- Verify no debug messages when log level is "err"
     assert.equals(0, #debug_msgs)
   ]]
-  local LOG_FILE = "/var/log/mini-mwan.log"
   local log_file_content = ""
 
   return {

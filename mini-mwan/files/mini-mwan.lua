@@ -19,9 +19,6 @@ else
   local ok, cjson = pcall(require, "cjson")
 end
 
--- Configuration
-local LOG_FILE = "/var/log/mini-mwan.log"
-
 -- Persistent interface state (survives config reloads)
 local interface_state = {}
 
@@ -547,6 +544,12 @@ local function save_interface_state(device, iface_state)
   return iface_state
 end
 
+-- Get interface state for testing (FR-4.1)
+-- Returns reference to internal state - tests should not modify it
+local function get_interface_state()
+  return interface_state
+end
+
 -- Probe state based on config (mutable, ephemeral)
 -- Discovers gateways, computes routing class, logs transitions.
 -- IPv4 gateway determines routing class; IPv6 gateway is added if available.
@@ -913,7 +916,9 @@ if os.getenv("MINI_MWAN_TEST_MODE") then
     register_ubus = register_ubus,
     validate_config = validate_config,
     is_valid_ip_address = is_valid_ip_address,
-    is_valid_interface_name = is_valid_interface_name
+    is_valid_interface_name = is_valid_interface_name,
+    -- Read accessor for interface state (FR-4.1 state persistence test)
+    get_interface_state = get_interface_state
   }
 else
   -- Normal operation - run daemon

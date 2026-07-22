@@ -211,11 +211,23 @@ routing leaks - the interface falls back to fail-closed behavior.
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-4.1 | Runtime State Preservation | High | (internal - no direct test) | ⏳ |
+| FR-4.1 | Runtime State Preservation | High | `spec/unit/state_spec.lua` | ✅ |
 | FR-4.2 | Status File Output | High | `spec/unit/status_update_spec.lua` | ✅ |
 
+### Test Coverage Details
+
+#### FR-4.1: Runtime State Preservation
+**Test Cases** in `spec/unit/state_spec.lua`:
+- ✓ `routing_class` preserved across cycles when interface state unchanged
+- ✓ `latency` preserved across cycles
+- ✓ `does_exist` flag preserved across cycles
+- ✓ `status_since` preserved when routing_class doesn't change (no transition logged)
+- ✓ `status_since` updated when routing_class changes
+- ✓ State survives UCI config reload
+- ✓ State initialized with defaults on first cycle
+- ✓ Interface disappearance and reappearance handled correctly
+
 ### Notes
-- **FR-4.1**: State persistence (`interface_state` table) is an internal implementation detail that survives across UCI config reloads. It is not directly tested but verified indirectly through integration tests that check routing class transitions persist correctly.
 - **FR-4.2**: Status via ubus is fully tested. The `status_update_spec.lua` tests verify all interface fields are correctly published.
 
 ---
