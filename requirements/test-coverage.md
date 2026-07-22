@@ -218,14 +218,10 @@ routing leaks - the interface falls back to fail-closed behavior.
 
 #### FR-4.1: Runtime State Preservation
 **Test Cases** in `spec/unit/state_spec.lua`:
-- ✓ `routing_class` preserved across cycles when interface state unchanged
-- ✓ `latency` preserved across cycles
-- ✓ `does_exist` flag preserved across cycles
-- ✓ `status_since` preserved when routing_class doesn't change (no transition logged)
-- ✓ `status_since` updated when routing_class changes
-- ✓ State survives UCI config reload
-- ✓ State initialized with defaults on first cycle
-- ✓ Interface disappearance and reappearance handled correctly
+- ✓ `status_since` preserved when routing_class is stable (state unchanged)
+- ✓ Clock advancement does not affect preserved `status_since` value
+
+**Note**: The `status_since` field is the only persisted state field that survives across work cycles. Other fields (`routing_class`, `latency`, `does_exist`) are recalculated fresh each cycle from current system state and ping results.
 
 ### Notes
 - **FR-4.2**: Status via ubus is fully tested. The `status_update_spec.lua` tests verify all interface fields are correctly published.
@@ -289,16 +285,16 @@ FR-6.1 and FR-6.2 require system-level testing (init scripts, procd integration)
 | FR-1: Monitoring | 6 | 6 | 0 | 100% |
 | FR-2: Routing | 5 | 5 | 0 | 100% |
 | FR-3: Configuration | 5 | 5 | 0 | 100% |
-| FR-4: State | 2 | 1 | 1 | 50% |
+| FR-4: State | 2 | 2 | 0 | 100% |
 | FR-5: Logging | 3 | 3 | 0 | 100% |
 | FR-6: Operational | 3 | 1 | 2 | 33% |
-| **TOTAL** | **24** | **21** | **3** | **88%** |
+| **TOTAL** | **24** | **22** | **2** | **92%** |
 
 **Code Coverage:** 75% (75.33% overall, 92.95% for main daemon file)
 
 ### Notes on Uncovered Areas
 
-- **FR-4.1 (State Persistence)**: The `interface_state` table persists across UCI config reloads internally, but there's no test that explicitly verifies state survives reloads vs resets. State is verified indirectly through integration tests.
+- **FR-4.1 (State Persistence)**: Directly tested - `status_since` is verified to persist across cycles when routing_class is stable. Other state fields (`routing_class`, `latency`, `does_exist`) are recalculated each cycle and not persisted.
 - **FR-6.1 (Daemon Lifecycle)**: Requires system-level testing with procd/init script - not suitable for unit tests
 - **FR-6.2 (Service Control)**: Requires system-level testing - not suitable for unit tests
 
