@@ -911,7 +911,6 @@ if os.getenv("MINI_MWAN_TEST_MODE") then
     work = work,
     log = log,
     register_ubus = register_ubus,
-    count_wans_configured = count_wans_configured,
     validate_config = validate_config,
     is_valid_ip_address = is_valid_ip_address,
     is_valid_interface_name = is_valid_interface_name
