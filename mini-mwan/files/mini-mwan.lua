@@ -306,6 +306,21 @@ local function detect_point_to_point(device)
   return output:match("POINTOPOINT") ~= nil
 end
 
+-- Check ping connectivity and update state, returning routing class
+-- Called when interface is UP and has routing info
+local function check_ping_and_update_state(iface_cfg, iface_state)
+  local alive, latency = check_ping(iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, iface_cfg.device)
+  if alive then
+    iface_state.alive = true
+    iface_state.latency = latency
+    return "usable"
+  else
+    iface_state.alive = false
+    iface_state.latency = "?"
+    return "probe_only"
+  end
+end
+
 -- Compute the routing class for one interface based on three orthogonal facts:
 --   is_up           — kernel UP flag (ip addr show)
 --   has_routing_info — gateway present (ethernet) OR point-to-point (wg0/tun0)
@@ -347,16 +362,7 @@ local function compute_routing_class(iface_cfg, iface_state)
     return "unconfigured"
   end
 
-  local alive, latency = check_ping(iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, device)
-  if alive then
-    iface_state.alive = true
-    iface_state.latency = latency
-    return "usable"
-  else
-    iface_state.alive = false
-    iface_state.latency = "?"
-    return "probe_only"
-  end
+  return check_ping_and_update_state(iface_cfg, iface_state)
 end
 
 -- Log a routing-class transition at info level (silent when class unchanged).
