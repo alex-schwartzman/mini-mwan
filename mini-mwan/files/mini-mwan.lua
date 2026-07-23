@@ -123,6 +123,29 @@ local function system_intervention_argv(args)
   return deps.exec(args)
 end
 
+-- Helper to append route specification to command table
+-- cmd: table to modify (in-place)
+-- is_multipath: true for multipath routes (uses "nexthop" and "weight"),
+--               false for regular routes (no prefix, uses "metric")
+-- gateway: IPv4/IPv6 gateway (may be nil for P2P)
+-- device: interface name
+-- metric_or_weight: metric (regular routes) or weight (multipath)
+-- Returns: the modified cmd table (for chaining)
+local function append_route_spec(cmd, is_multipath, gateway, device, metric_or_weight)
+  if is_multipath then
+    table.insert(cmd, "nexthop")
+  end
+  if gateway and gateway ~= "" then
+    table.insert(cmd, "via")
+    table.insert(cmd, gateway)
+  end
+  table.insert(cmd, "dev")
+  table.insert(cmd, device)
+  table.insert(cmd, is_multipath and "weight" or "metric")
+  table.insert(cmd, tostring(metric_or_weight))
+  return cmd
+end
+
 -- Ping check function through specific interface
 local function check_ping(target, count, timeout, device)
   count = count or 3
@@ -384,16 +407,7 @@ local function enforce_route_state(iface, target_metric)
   -- first - delete all excess routes
   for i = 2, #routes do
     local r = routes[i]
-    local del_cmd = {"/sbin/ip", "route", "delete", "default"}
-    if r.via then
-      table.insert(del_cmd, "via")
-      table.insert(del_cmd, r.via)
-    end
-    table.insert(del_cmd, "dev")
-    table.insert(del_cmd, device)
-    table.insert(del_cmd, "metric")
-    table.insert(del_cmd, tostring(r.metric))
-    system_intervention_argv(del_cmd)
+    system_intervention_argv(append_route_spec({"/sbin/ip", "route", "delete", "default"}, false, r.via, device, r.metric))
   end
 
   local ipv4_route_correct = (#routes > 0 and
@@ -403,16 +417,7 @@ local function enforce_route_state(iface, target_metric)
   if not ipv4_route_correct then
     -- we cannot afford flush here, as conntrack will be confused
     -- therefore, we always preserve first route and delete only those excess ones.
-    local cmd = {"/sbin/ip", "route", "replace", "default"}
-    if desired_gw then
-      table.insert(cmd, "via")
-      table.insert(cmd, desired_gw)
-    end
-    table.insert(cmd, "dev")
-    table.insert(cmd, device)
-    table.insert(cmd, "metric")
-    table.insert(cmd, tostring(target_metric))
-    system_intervention_argv(cmd)
+    system_intervention_argv(append_route_spec({"/sbin/ip", "route", "replace", "default"}, false, desired_gw, device, target_metric))
   end
 
   -- Set IPv6 route if IPv6 gateway exists (dual-stack support).
@@ -444,8 +449,7 @@ local function enforce_route_state(iface, target_metric)
     if not ipv6_route_correct then
       -- Flush IPv6 default routes for this device
       system_intervention_argv({"/sbin/ip", "-6", "route", "flush", "default", "dev", device})
-      local ipv6_cmd = {"/sbin/ip", "-6", "route", "replace", "default", "via", ipv6_gw, "dev", device, "metric", tostring(target_metric)}
-      system_intervention_argv(ipv6_cmd)
+      system_intervention_argv(append_route_spec({"/sbin/ip", "-6", "route", "replace", "default"}, false, ipv6_gw, device, target_metric))
     end
   end
 end
@@ -743,20 +747,7 @@ local function set_route_multiuplink(usable_ifaces)
   local cmd_args = { "/sbin/ip", "route", "replace", "default" }
 
   for _, iface in ipairs(usable_ifaces) do
-    -- Add the nexthop keyword for every interface
-    table.insert(cmd_args, "nexthop")
-
-    -- Conditionally add the IPv4 gateway
-    if iface.state.gateway and iface.state.gateway ~= "" then
-      table.insert(cmd_args, "via")
-      table.insert(cmd_args, iface.state.gateway)
-    end
-
-    -- Add device and weight
-    table.insert(cmd_args, "dev")
-    table.insert(cmd_args, iface.cfg.device)
-    table.insert(cmd_args, "weight")
-    table.insert(cmd_args, tostring(iface.cfg.weight))
+    append_route_spec(cmd_args, true, iface.state.gateway, iface.cfg.device, iface.cfg.weight)
   end
 
   -- Now cmd_args is a flat table: {"/sbin/ip", "route", "replace", "default", "nexthop", "via", ...}
@@ -778,18 +769,7 @@ local function set_route_multiuplink(usable_ifaces)
     local ipv6_cmd = { "/sbin/ip", "-6", "route", "replace", "default" }
 
     for _, iface in ipairs(usable_ipv6_ifaces) do
-      -- Add the nexthop keyword for every interface
-      table.insert(ipv6_cmd, "nexthop")
-
-      -- Add the IPv6 gateway
-      table.insert(ipv6_cmd, "via")
-      table.insert(ipv6_cmd, iface.state.ipv6_gateway)
-
-      -- Add device and weight
-      table.insert(ipv6_cmd, "dev")
-      table.insert(ipv6_cmd, iface.cfg.device)
-      table.insert(ipv6_cmd, "weight")
-      table.insert(ipv6_cmd, tostring(iface.cfg.weight))
+      append_route_spec(ipv6_cmd, true, iface.state.ipv6_gateway, iface.cfg.device, iface.cfg.weight)
     end
 
     system_intervention_argv(ipv6_cmd)
