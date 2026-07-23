@@ -35,6 +35,8 @@ This document specifies the requirements for mini-mwan, including:
 | Multiuplink | Load balancing traffic across multiple connections |
 | Metric | Route priority value (lower = higher priority) |
 | Degraded | Interface state indicating configuration issues preventing normal operation |
+| Cleanup | Removal of routes created by external tools or stale routes from previous configurations |
+| Enforcement | Ensuring the correct route exists for a managed interface at the configured metric |
 
 ### 1.5 System Context
 
@@ -83,5 +85,5 @@ The following are explicitly **NOT** part of mini-mwan's scope:
 - VPN tunnel establishment (only manages routing for existing tunnels)
 - DHCP client functionality (relies on netifd)
 - DNS management
-- IPv6 support (currently not compatible)
+- IPv6 support (available as secondary protocol on interfaces with IPv4 connectivity)
 - GUI/Web interface (handled separately by luci-app-mini-mwan)

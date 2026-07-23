@@ -196,20 +196,20 @@ apk add lua libuci-lua luci-lib-nixio lua-cjson
 **Description**: Network protocol limitations.
 
 **Constraints**:
-- IPv4 ONLY (IPv6 not supported)
+- IPv4 is the primary routing signal (IPv6 is secondary)
 - ICMP ping for monitoring (no TCP/UDP probes)
 - No BGP, OSPF, or other routing protocols
 - No SNMP or other management protocols
 
-**Current Limitations**:
-- IPv6 detection causes degraded state
-- Cannot monitor HTTPS endpoints
-- Cannot use DNS for monitoring
+**Current Behavior**:
+- IPv6 gateways are discovered for dual-stack routing
+- IPv6 routes are added ONLY when IPv4 routing is also active
+- Interface routing class is determined by IPv4 connectivity only
+- IPv6-only interfaces (without IPv4 gateway) will be classified as `unconfigured`
 
-**Future Considerations**:
-- IPv6 support would require major refactoring
-- Alternative probes (HTTP, DNS) could be added
-- SNMP integration for monitoring could be beneficial
+**Design Principle**:
+- IPv4-first routing prevents DNS leak scenarios where DNS AAAA queries
+  might use IPv6 while traffic routes via IPv4, leaking the real IP.
 
 ---
 

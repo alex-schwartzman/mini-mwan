@@ -406,6 +406,73 @@ Purpose:
 
 ---
 
+## Route Management Implementation
+
+### Route Enforce Logic (`enforce_route_state()`)
+
+The `enforce_route_state()` function manages routes for interfaces configured in mini-mwan. It follows a **no-downtime** approach:
+
+```
+Algorithm:
+  1. Query existing routes: ip route show default dev <device>
+  2. If multiple routes exist:
+     - Delete duplicate routes (routes 2-N)
+     - Keep at least one route at all times
+  3. If the remaining route doesn't match desired state:
+     - Replace it with the correct route
+
+Rationale:
+  - `ip route replace` operates on route key (destination, gateway, device, metric)
+    not on "position" in a list
+  - Deleting duplicates first, then replacing ensures at least one route exists
+  - This prevents routing downtime during state changes
+```
+
+### Route Cleanup Logic (`cleanup_unmanaged_routes()`)
+
+The `cleanup_unmanaged_routes()` function removes routes for interfaces NOT managed by mini-mwan:
+
+```
+Algorithm:
+  1. Build list of managed devices from current config
+  2. Query all default routes: ip route show default
+  3. For each route:
+     - If device is NOT in managed_devices → DELETE
+  4. Repeat for IPv6 routes
+
+Purpose:
+  - Removes routes created by external tools (e.g., VPN clients)
+  - Cleans up stale routes from previous configurations
+  - Does not affect routes for managed interfaces
+```
+
+### Multiuplink Mode Route Management
+
+In multiuplink mode, a single multipath route replaces all existing default routes:
+
+```
+Command:
+  ip route replace default \
+    nexthop via 192.168.1.1 dev eth0 weight 3 \
+    nexthop via 192.168.2.1 dev eth1 weight 5
+
+Behavior:
+  - `ip route replace` atomically replaces the existing default route
+  - All previous routes (including metric 900) are replaced
+  - Traffic distributed proportionally to weights
+```
+
+### Key Design Principles
+
+| Principle | Rationale |
+|-----------|-----------|
+| Keep at least one route during changes | Prevent routing downtime |
+| Delete duplicates first, then replace | Ensures no gap in routing |
+| Use `ip route replace` for specific keys | Creates or updates as needed |
+| Separate cleanup from enforcement | Single responsibility: cleanup unmanaged vs enforce managed |
+
+---
+
 ## IPv4-Only Routing (IPv6 Safety)
 
 Mini-MWAN implements **IPv4-first routing** to prevent DNS leak scenarios:

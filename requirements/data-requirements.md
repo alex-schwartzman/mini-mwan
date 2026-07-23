@@ -136,7 +136,7 @@ config interface '<name>'
 | Startup | `Mini-MWAN daemon starting` |
 | Class transition | `eth0: Interface UP (latency: 12.50 ms)` |
 | Class transition | `eth0: Interface UP but unusable (connectivity lost)` |
-| Class transition | `eth0: Interface UP but unconfigured (no gateway or IPv6 detected)` |
+| Class transition | `eth0: Interface UP but unconfigured (no IPv4 gateway)` |
 | Route Change | `Intervention: /sbin/ip route add default via 192.168.1.1 dev eth0 metric 10` |
 | Configuration | `ERROR: Both WAN interfaces must be configured` |
 | Probe | `Probe: /bin/ping -I eth0 -c 3 -W 2 1.1.1.1` |

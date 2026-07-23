@@ -88,9 +88,10 @@ Requirements use the following ID format:
 
 | Feature | Requirements |
 |---------|--------------|
-| Failover routing | FR-2.1, FR-1.1, FR-1.5, NFR-2.2 |
-| Multiuplink (load balancing) | FR-2.2, FR-1.1, FR-1.5, NFR-2.2 |
+| Failover routing | FR-2.1, FR-1.1, FR-1.5, FR-2.4, NFR-2.2 |
+| Multiuplink (load balancing) | FR-2.2, FR-1.1, FR-1.5, FR-2.4, NFR-2.2 |
 | Interface monitoring | FR-1.1 through FR-1.6, NFR-1.2 |
+| Route management | FR-2.4, FR-2.5 |
 | Configuration management | FR-3.1 through FR-3.5, DR-1.1, CD-5.1 |
 | State persistence | FR-4.1, FR-4.2, DR-4.1, DR-4.2 |
 | Degradation detection | FR-1.6, DR-2.1, DR-4.1 |
@@ -129,13 +130,11 @@ Requirements use the following ID format:
 - ✅ Network statistics (FR-5.4)
 
 ### Planned Enhancements
-- ⏳ Unmanaged route cleanup (discussed but not implemented)
 - ⏳ Alternative health probes (HTTP, DNS instead of just ping)
-- ⏳ IPv6 support (currently causes degraded state)
 - ⏳ Policy-based routing (out of scope for now)
 
 ### Known Limitations
-- ⚠️ IPv4 only (IPv6 not supported - NFR-4.1, CD-3.4)
+- ⚠️ IPv4-first routing (IPv6 available as secondary on interfaces with IPv4 connectivity)
 - ⚠️ ICMP only for monitoring (no TCP/UDP probes - CD-3.4)
 - ⚠️ Polling-based (no event-driven architecture - CD-3.2)
 - ⚠️ No unit tests (limited testing infrastructure - NFR-8.1, CD-7.2)

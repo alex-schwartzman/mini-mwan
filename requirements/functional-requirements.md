@@ -55,7 +55,7 @@
 |-------|-------------|------------|
 | `absent` | Interface not present in kernel | `ip addr show` reports non-existent |
 | `down` | Kernel DOWN flag set | Interface exists but not UP |
-| `unconfigured` | Kernel UP, but routing info unavailable | Ethernet without gateway (DHCP incomplete) OR global IPv6 address detected (not supported) |
+| `unconfigured` | Kernel UP, but routing info unavailable | Ethernet without IPv4 gateway (DHCP incomplete) - IPv6-only gateways do not count |
 | `probe_only` | Kernel UP, routing info present, no connectivity | Ping fails — metric-900 route kept for recovery probing |
 | `usable` | Fully operational | Kernel UP AND routing info present AND ping successful |
 
@@ -76,7 +76,7 @@ Routing info is defined as: gateway present (ethernet/PPP) OR interface is point
 
 **Acceptance Criteria**:
 - Regular (ethernet/WiFi) interfaces without gateways SHALL be classified `unconfigured`
-- Regular interfaces with global IPv6 addresses SHALL be classified `unconfigured` (IPv6 not supported)
+- Regular interfaces without IPv4 gateway SHALL be classified `unconfigured` (IPv6-only gateways do not satisfy routing info requirement)
 - P2P interfaces (POINTOPOINT flag) without gateways SHALL NOT be classified `unconfigured` — no gateway is normal for VPN/tunnels
 - A ubus nexthop of `0.0.0.0` SHALL be treated as no gateway (netifd encoding for P2P routes)
 - Auto-recovery: when a previously `unconfigured` interface gains a gateway, it advances to `probe_only` or `usable` on the next cycle
@@ -120,20 +120,32 @@ Routing info is defined as: gateway present (ethernet/PPP) OR interface is point
 - P2P interfaces without gateways SHALL NOT be classified `unconfigured` (no gateway is normal for VPN/tunnels)
 - Route format: `ip route replace default dev <device> metric <metric>`
 
-### FR-2.4 Route Cleanup
+### FR-2.4 Route Management
 **ID**: FR-2.4
 **Priority**: Medium
-**Description**: The system SHALL manage the routing table to prevent conflicts and clean up duplicate routes.
+**Description**: The system SHALL manage the routing table to prevent conflicts while ensuring
+continuous connectivity (no routing downtime). This includes both cleanup of unmanaged routes
+and enforcement of routes for managed interfaces.
+
+**Definitions**:
+- **Cleanup**: Removal of routes for interfaces not managed by mini-mwan, or removal of duplicate
+  routes for managed interfaces. This removes routes created by external tools or stale routes
+  from previous configurations.
+- **Enforcement**: Ensuring the correct route exists for a managed interface at the configured
+  metric. This uses `ip route replace` to create or update routes.
 
 **Acceptance Criteria**:
-- When setting a route, duplicate default routes for the same device SHALL be cleaned up
-- Cleanup MUST happen AFTER the new route is set (to prevent routing downtime)
-- System SHALL query existing routes using `ip route show default dev <device>`
-- System SHALL preserve the lowest-metric route (our route) and delete all others
-- In multiuplink mode, all existing default routes (except metric 900) SHALL be removed before setting multipath route
-- `unconfigured`, `down`, and `absent` interfaces SHALL NOT have routes configured
-- Route changes SHALL use `replace` operation to handle both creation and update
-- Duplicate routes created by external tools SHALL be removed automatically
+- AC1: When multiple default routes exist for the same device, all duplicates SHALL be removed
+  while ensuring at least one route always exists (no routing downtime)
+- AC2: The route that remains after cleanup MUST match the current configuration (correct gateway
+  and metric for the interface)
+- AC3: System SHALL query existing routes using `ip route show default dev <device>` before
+  making changes
+- AC4: Routes for `unconfigured`, `down`, and `absent` interfaces SHALL NOT be configured
+- AC5: In multiuplink mode, all existing default routes SHALL be replaced with a single
+  multipath route containing all `usable` interfaces
+- AC6: Route changes SHALL use `replace` or `delete` operations as appropriate for the operation
+- AC7: Duplicate routes created by external tools SHALL be removed automatically
 
 ### FR-2.5 Metric Management
 **ID**: FR-2.5
@@ -259,7 +271,7 @@ Routing info is defined as: gateway present (ethernet/PPP) OR interface is point
 - Any `routing_class` change between cycles (e.g. `absent → down`, `probe_only → usable`)
 - `usable` transition includes measured latency
 - `probe_only` transition logs "connectivity lost"
-- `unconfigured` transition logs "no gateway or IPv6 detected"
+- `unconfigured` transition logs "no IPv4 gateway"
 
 **notice** - System interventions:
 - Route additions/replacements
