@@ -25,12 +25,18 @@ With mwan3 unavailable in OpenWrt 24+, Mini-MWAN provides a simpler, more mainta
 - **Compatible with all OpenWrt versions**: No dependency on specific firewall implementations
 - **Less complexity**: Fewer moving parts means fewer things that can break
 
-**IPv6-Safe Routing**: Mini-MWAN uses IPv4 connectivity as the primary routing signal. Interfaces with only IPv6 connectivity are not used for routing. This prevents DNS leak scenarios where:
+**IPv6-Safe Routing**: Mini-MWAN uses IPv4 connectivity as the primary routing signal. This design prevents DNS leak scenarios where:
   - An IPv4 interface has connectivity (ping target reachable)
   - An IPv6 interface has connectivity (e.g., VPN tunnel)
   - Without this protection, DNS AAAA queries could use IPv6 while traffic routes via IPv4, leaking your real IP
 
-  Mini-MWAN ensures that if IPv4 routing is configured for an interface, IPv6 routing is added as well. If IPv4 connectivity fails, no traffic is routed (fail-closed) rather than falling back to IPv6.
+**How It Works:**
+- **Dual-stack interfaces**: If an interface has both IPv4 and IPv6 gateways, both IPv4 and IPv6 routes are added
+- **IPv4-only interfaces**: Only IPv4 routes are added
+- **IPv6-only interfaces**: These are classified as `unconfigured` and receive no routes (IPv4 connectivity is required for routing decisions)
+- **Fail-closed**: If IPv4 connectivity fails (interface becomes `probe_only`), no traffic is routed (not even via IPv6) to prevent routing leaks
+
+This approach ensures that routing is always consistent with the IPv4 connectivity state, preventing scenarios where DNS queries and traffic follow different paths.
 
 **Transparent Route Management**: Routes are visible in the kernel routing table and can be inspected with standard tools:
   - `ip route show` - view all routes
@@ -204,7 +210,7 @@ logread | grep mini-mwan
 
 | Feature | Mini-MWAN | mwan3 |
 |---------|-----------|-------|
-| **IPv6** | ⚠️ IPv4-first routing (IPv6 added if same interface has it) | ✅ Yes |
+| **IPv6** | ⚠️ IPv4-first routing (IPv6 added as secondary on dual-stack interfaces) | ✅ Yes |
 | **Complexity** | ~500 lines of Lua | ~10,000+ lines |
 | **Dependencies** | 4 packages | Many (including iptables, ipset, etc.) |
 | **Firewall Backend** | None (uses kernel routing) | iptables/fw3 required |

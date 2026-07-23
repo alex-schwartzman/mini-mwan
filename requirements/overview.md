@@ -85,5 +85,5 @@ The following are explicitly **NOT** part of mini-mwan's scope:
 - VPN tunnel establishment (only manages routing for existing tunnels)
 - DHCP client functionality (relies on netifd)
 - DNS management
-- IPv6 support (available as secondary protocol on interfaces with IPv4 connectivity)
+- IPv6-only routing (IPv6 routing is only added as secondary on interfaces with IPv4 connectivity)
 - GUI/Web interface (handled separately by luci-app-mini-mwan)
