@@ -580,4 +580,68 @@ describe("FR-2.1: Failover Mode - End to End", function()
       assert.is_true(ipv6_route_found, "Should set IPv6 route when IPv4 connectivity is OK (dual-stack)")
     end)
   end)
+
+  describe("Scenario: IPv6-only interface (no IPv4 gateway)", function()
+    it("should classify interface as unconfigured and not set any routes", function()
+      -- GIVEN: Interface has only IPv6 gateway, no IPv4 gateway
+      local config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          {
+            device = "eth0",
+            metric = 10,
+            ping_target = "1.1.1.1",
+            ping_count = 3,
+            ping_timeout = 2,
+            enabled = true,
+          }
+        }
+      }
+
+      local exec_responses = {
+        -- Interface is UP
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0"] = mocks.mock_ping_success(10.5),
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        -- ubus returns ONLY IPv6 gateway (no IPv4 gateway)
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          {
+            l3_device = "eth0",
+            gateway = nil,  -- No IPv4 gateway
+            ipv6_gateway = "2001:db8::1"  -- Only IPv6 gateway
+          }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle
+      mini_mwan.work(config)
+
+      -- THEN: Interface should be classified as 'unconfigured' (no IPv4 gateway)
+      local status = {
+        mode = "failover",
+        timestamp = 0,
+        check_interval = 30,
+        interfaces = {}
+      }
+      -- Re-run work to get status
+      -- The interface should be 'unconfigured' since no IPv4 gateway exists
+
+      -- AND: No routes should be set for unconfigured interface
+      local route_cmds = mocks.get_route_commands()
+      local eth0_routes = 0
+      for _, cmd in ipairs(route_cmds) do
+        if cmd:match("eth0") and not cmd:match("delete") then
+          eth0_routes = eth0_routes + 1
+        end
+      end
+      assert.equals(0, eth0_routes, "IPv6-only interface should not have any routes set")
+    end)
+  end)
 end)

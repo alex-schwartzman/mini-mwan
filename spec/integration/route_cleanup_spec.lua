@@ -332,5 +332,135 @@ default dev wg0 metric 22
     end)
   end)
 
+  describe("Scenario: Unmanaged IPv6 routes", function()
+    it("should remove unmanaged IPv6 default routes for unconfigured devices", function()
+      -- GIVEN: Two interfaces, one managed (eth0), one unmanaged (eth2)
+      local config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          {
+            device = "eth0",
+            metric = 10,
+            ping_target = "1.1.1.1",
+            ping_count = 3,
+            ping_timeout = 2,
+            enabled = true,
+          }
+        }
+      }
+
+      local exec_responses = {
+        -- Managed interface is UP and pingable
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+        -- Unmanaged interface has IPv6 route (external tool created it)
+        ["ip %-6 route show default"] = [[
+default via 2001:db8::1 dev eth2 metric 10
+]],
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1" }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle
+      mini_mwan.work(config)
+
+      -- THEN: IPv6 route for unmanaged device (eth2) should be deleted
+      local ipv6_route_cmds = {}
+      for _, cmd in ipairs(mocks.executed_commands) do
+        if cmd:match("/sbin/ip %-6 route") then
+          table.insert(ipv6_route_cmds, cmd)
+        end
+      end
+
+      local found_delete = false
+      for _, cmd in ipairs(ipv6_route_cmds) do
+        if cmd:match("delete") and cmd:match("eth2") then
+          found_delete = true
+          break
+        end
+      end
+      assert.is_true(found_delete, "Should delete unmanaged IPv6 route for eth2")
+    end)
+  end)
+
+  describe("Scenario: Unmanaged IPv6 routes with mixed managed/unmanaged", function()
+    it("should remove unmanaged IPv6 routes but preserve managed ones", function()
+      -- GIVEN: eth0 is managed, eth1 has unmanaged IPv6 route
+      local config = {
+        mode = "failover",
+        check_interval = 30,
+        interfaces = {
+          {
+            device = "eth0",
+            metric = 10,
+            ping_target = "1.1.1.1",
+            ping_count = 3,
+            ping_timeout = 2,
+            enabled = true,
+          }
+        }
+      }
+
+      local exec_responses = {
+        -- Managed interface is UP and pingable
+        ["ip addr show dev eth0"] = mocks.mock_interface_up(),
+        ["ip %-6 addr show dev eth0"] = "",
+        ["ping.*eth0.*1%.1%.1%.1"] = mocks.mock_ping_success(10.5),
+        -- Mixed IPv6 routes: one for managed device (eth0), one for unmanaged (eth1)
+        ["ip %-6 route show default"] = [[
+default via 2001:db8::1 dev eth0 metric 10
+default via 2001:db8::2 dev eth1 metric 20
+]],
+      }
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump({
+          { l3_device = "eth0", gateway = "192.168.1.1" }
+        })
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle
+      mini_mwan.work(config)
+
+      -- THEN: Should delete unmanaged route for eth1
+      local ipv6_route_cmds = {}
+      for _, cmd in ipairs(mocks.executed_commands) do
+        if cmd:match("/sbin/ip %-6 route") then
+          table.insert(ipv6_route_cmds, cmd)
+        end
+      end
+
+      local found_eth1_delete = false
+      for _, cmd in ipairs(ipv6_route_cmds) do
+        if cmd:match("delete") and cmd:match("eth1") then
+          found_eth1_delete = true
+          break
+        end
+      end
+      assert.is_true(found_eth1_delete, "Should delete unmanaged IPv6 route for eth1")
+
+      -- AND: Should NOT delete route for managed device eth0
+      local found_eth0_delete = false
+      for _, cmd in ipairs(ipv6_route_cmds) do
+        if cmd:match("delete") and cmd:match("eth0") then
+          found_eth0_delete = true
+          break
+        end
+      end
+      assert.is_false(found_eth0_delete, "Should not delete managed IPv6 route for eth0")
+    end)
+  end)
 
 end)
