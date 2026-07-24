@@ -29,6 +29,10 @@ local current_status = {
   interfaces = {}
 }
 
+-- Probe-only metric for interfaces with IPv4 connectivity lost
+-- Uses metric 900 so ping tests can detect recovery while not handling normal traffic
+local PROBE_METRIC = 900
+
 -- Global ubus connection moved to deps table for better testability
 
 -- Dependencies table (defaults to real implementations)
@@ -388,7 +392,7 @@ end
 -- Enforce a single default route for a device at a given metric.
 -- Reads current kernel routes: if exactly one correct route already exists, does nothing.
 -- Otherwise flushes all default routes for the device and adds the desired one.
--- Used for both usable interfaces (configured metric) and unusable ones (metric 900).
+-- Used for both usable interfaces (configured metric) and unusable ones (PROBE_METRIC).
 -- Also sets IPv6 route if IPv6 gateway is available (dual-stack support).
 --
 -- Note: If the interface no longer exists, ip route flush/delete will fail with ENODEV.
@@ -432,10 +436,10 @@ local function enforce_route_state(iface, target_metric)
   -- no traffic is routed (not even via IPv6) to prevent routing leaks.
   --
   -- IPv6 routes are set when:
-  -- - Interface is usable (target_metric < 900): IPv4 gateway exists, IPv6 also added
-  -- - Interface is probe_only with metric 900: only IPv4 route at 900, NO IPv6
+  -- - Interface is usable (target_metric < PROBE_METRIC): IPv4 gateway exists, IPv6 also added
+  -- - Interface is probe_only with metric PROBE_METRIC: only IPv4 route at PROBE_METRIC, NO IPv6
   -- - Interface has no IPv4 gateway: no routes at all
-  if ipv6_gw and desired_gw and target_metric < 900 then
+  if ipv6_gw and desired_gw and target_metric < PROBE_METRIC then
     local ipv6_routes = {}
     local ipv6_output = system_exec({"/sbin/ip", "-6", "route", "show", "default", "dev", device})
     if ipv6_output and ipv6_output ~= "" then
@@ -719,10 +723,10 @@ local function classify_interfaces(config, state)
   return { usable = usable, probe_only = probe_only }
 end
 
--- Give probe_only interfaces a metric-900 route so `ping -I <dev>` can detect recovery.
+-- Give probe_only interfaces a PROBE_METRIC route so `ping -I <dev>` can detect recovery.
 local function set_probe_routes(probe_only)
   for _, iface in ipairs(probe_only) do
-    enforce_route_state(iface, 900)
+    enforce_route_state(iface, PROBE_METRIC)
   end
 end
 
