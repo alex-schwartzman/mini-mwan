@@ -12,6 +12,7 @@ local uci, nixio, ubus, uloop
 if not os.getenv("MINI_MWAN_TEST_MODE") then
   uci = require("uci")
   nixio = require("nixio")
+  require("nixio.util") -- otherwise readall won't work
   ubus = require("ubus")
   uloop = require("uloop")
 else
@@ -53,14 +54,11 @@ local deps = {
   uci_cursor = function()
     return uci.cursor()
   end,
-  -- Ubus connection with 5 second timeout to prevent hangs
+  -- Ubus connection
+  -- Note: libubus-lua on Lua 5.1 (OpenWrt 25.x) doesn't support conn.timeout
   -- Connection is established once at startup and reused across work cycles
   ubus_connect = function()
-    local conn = ubus.connect()
-    if conn then
-      conn.timeout = 5  -- 5 second timeout for ubus operations
-    end
-    return conn
+    return ubus.connect()
   end,
   uloop_init = function()
     return uloop.init()
@@ -86,17 +84,10 @@ local deps = {
       os.exit(errno or 1)
     else
       wr:close()
-      -- Wait for process with timeout (10 seconds)
-      local status, elapsed = nixio.waitpid(pid, 10000)  -- 10s timeout
-      local output
-      if status then
-        output = rd:readall()
-      else
-        -- Process timed out - log warning
-        nixio.syslog("warning", string.format("Command timeout after %dms: %s", elapsed, table.concat(args, " ")))
-        output = ""
-      end
+      local output = rd:readall()
       rd:close()
+      -- Note: nixio.waitpid on Lua 5.1 doesn't accept timeout parameter
+      nixio.waitpid(pid)
       return output
     end
   end
