@@ -528,4 +528,77 @@ describe("FR-2.2: Multiuplink Mode - End to End", function()
         "IPv6 route should not include wg0 (no IPv6 gateway)")
     end)
   end)
+
+  describe("Scenario: 16 interfaces (scalability test)", function()
+    it("should handle 16 interfaces in multipath route", function()
+      -- GIVEN: 16 interfaces configured in multiuplink mode
+      local config = {
+        mode = "multiuplink",
+        check_interval = 30,
+        interfaces = {
+          -- 16 interfaces with different metrics and weights
+          { device = "eth0",  metric = 10, weight = 3,  ping_target = "1.1.1.1",  ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth1",  metric = 20, weight = 3,  ping_target = "8.8.8.8",  ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth2",  metric = 30, weight = 3,  ping_target = "9.9.9.9",  ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth3",  metric = 40, weight = 3,  ping_target = "208.67.222.222", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth4",  metric = 50, weight = 3,  ping_target = "1.0.0.1",  ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth5",  metric = 60, weight = 3,  ping_target = "8.8.4.4",  ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth6",  metric = 70, weight = 3,  ping_target = "192.168.1.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth7",  metric = 80, weight = 3,  ping_target = "192.168.2.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth8",  metric = 90, weight = 3,  ping_target = "192.168.3.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth9",  metric = 100, weight = 3, ping_target = "192.168.4.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth10", metric = 110, weight = 3, ping_target = "192.168.5.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth11", metric = 120, weight = 3, ping_target = "192.168.6.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth12", metric = 130, weight = 3, ping_target = "192.168.7.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth13", metric = 140, weight = 3, ping_target = "192.168.8.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth14", metric = 150, weight = 3, ping_target = "192.168.9.1", ping_count = 3, ping_timeout = 2, enabled = true },
+          { device = "eth15", metric = 160, weight = 3, ping_target = "192.168.10.1", ping_count = 3, ping_timeout = 2, enabled = true },
+        }
+      }
+
+      -- Build exec responses for all 16 interfaces
+      local exec_responses = {
+        ["ip route show default"] = "",
+      }
+      for i = 0, 15 do
+        local eth = "eth" .. i
+        local ping_target = config.interfaces[i + 1].ping_target
+        exec_responses["ip addr show dev " .. eth] = mocks.mock_interface_up()
+        exec_responses["ip %-6 addr show dev " .. eth] = ""
+        -- Escape dots for regex pattern matching (e.g., "1.1.1.1" -> "1%.1%.1%.1")
+        local escaped_target = ping_target:gsub("%.", "%%.")
+        exec_responses["ping.*" .. eth .. ".*" .. escaped_target] = mocks.mock_ping_success(10.0)
+      end
+
+      local exec_mock = mocks.build_exec_mock(exec_responses)
+      local ubus_interfaces = {}
+      for i = 0, 15 do
+        table.insert(ubus_interfaces, {
+          l3_device = "eth" .. i,
+          gateway = "192.168." .. (i % 256) .. ".1"
+        })
+      end
+
+      local deps = mocks.build_deps({
+        exec = exec_mock,
+        ubus_network_dump = mocks.mock_ubus_network_dump(ubus_interfaces)
+      })
+      mini_mwan.set_dependencies(deps)
+
+      -- WHEN: Running work cycle
+      mini_mwan.work(config)
+
+      -- THEN: Should create multipath route with all 16 interfaces
+      -- Build expected multipath route with all 16 interfaces
+      local expected_nexthops = {}
+      for i = 0, 15 do
+        table.insert(expected_nexthops, {
+          gateway = "192.168." .. (i % 256) .. ".1",
+          device = "eth" .. i,
+          weight = 3
+        })
+      end
+      mocks.assert_multipath_route(expected_nexthops)
+    end)
+  end)
 end)
