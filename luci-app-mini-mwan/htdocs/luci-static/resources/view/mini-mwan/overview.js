@@ -144,7 +144,7 @@ return view.extend({
 
 		o = s.option(form.Value, 'metric', _('Metric'),
 			_('Route metric (lower = higher priority). Used in failover mode.'));
-		o.datatype = 'range(1,255)';
+		o.datatype = 'range(1,899)';
 		o.placeholder = '10';
 		o.cfgvalue = function(section_id) {
 			var value = uci.get('mini-mwan', section_id, 'metric');

@@ -498,6 +498,29 @@ local function load_config()
   return config
 end
 
+-- Validation helper: check if value is within range (inclusive)
+-- Returns error message if invalid, nil if valid
+local function validate_range(value, min, max, field_name, device_name)
+  if value and (value < min or value > max) then
+    return string.format("%s for interface '%s' must be between %d and %d (got %d)",
+      field_name, device_name or "(unnamed)", min, max, value)
+  end
+  return nil
+end
+
+-- Validate interface numeric fields against requirements (DR-1.1)
+-- Fields: metric (1-899), weight (1-100), ping_count (1-10), ping_timeout (1-30)
+local function validate_interface_numeric_fields(iface, errors)
+  local function add_if_invalid(field, min, max, name)
+    local err = validate_range(iface[field], min, max, name, iface.device)
+    if err then table.insert(errors, err) end
+  end
+  add_if_invalid("metric", 1, 899, "Metric")
+  add_if_invalid("weight", 1, 100, "Weight")
+  add_if_invalid("ping_count", 1, 10, "Ping count")
+  add_if_invalid("ping_timeout", 1, 30, "Ping timeout")
+end
+
 -- Validation functions for configuration
 local function is_valid_ip_address(ip)
   -- Basic IPv4 dotted-quad validation
@@ -543,6 +566,9 @@ local function validate_config(config)
       elseif not is_valid_ip_address(iface.ping_target) then
         table.insert(errors, string.format("Invalid ping_target '%s' for interface %s", iface.ping_target, iface.device or "(unnamed)"))
       end
+
+      -- Validate numeric field ranges (DR-1.1)
+      validate_interface_numeric_fields(iface, errors)
     end
   end
 
@@ -551,9 +577,8 @@ local function validate_config(config)
   end
 
   -- Validate check_interval range (10-300 per CD-4.2)
-  if config.check_interval and (config.check_interval < 10 or config.check_interval > 300) then
-    table.insert(errors, string.format("check_interval must be between 10 and 300 seconds (got %d)", config.check_interval))
-  end
+  local check_interval_err = validate_range(config.check_interval, 10, 300, "check_interval", nil)
+  if check_interval_err then table.insert(errors, check_interval_err) end
 
   return errors
 end
