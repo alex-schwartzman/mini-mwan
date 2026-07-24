@@ -19,9 +19,11 @@ else
 end
 
 -- Persistent interface state (survives config reloads)
+-- Only routing_class, does_exist, and status_since persist across config reloads
 local interface_state = {}
 
--- Global state for ubus (shared across work cycles)
+-- Current status object published via ubus (updated each work cycle)
+-- Contains merged config + state for LuCI display
 local current_status = {
   mode = "unknown",
   timestamp = 0,
@@ -33,7 +35,7 @@ local current_status = {
 -- Uses metric 900 so ping tests can detect recovery while not handling normal traffic
 local PROBE_METRIC = 900
 
--- Global ubus connection moved to deps table for better testability
+-- Ubus connection (initialized once at startup, reused across work cycles)
 
 -- Dependencies table (defaults to real implementations)
 -- In production: uses real OpenWrt modules
@@ -51,6 +53,7 @@ local deps = {
     return uci.cursor()
   end,
   -- Ubus connection with 5 second timeout to prevent hangs
+  -- Connection is established once at startup and reused across work cycles
   ubus_connect = function()
     local conn = ubus.connect()
     if conn then
