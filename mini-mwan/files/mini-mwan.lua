@@ -5,7 +5,8 @@ Mini-MWAN Daemon
 Manages multi-WAN failover and load balancing
 ]]--
 
--- Conditionally load OpenWRT-specific dependencies
+-- Lua 5.1 compatibility
+local _unpack = unpack or table.unpack -- luacheck: ignore 113/unpack
 -- In test mode, these will be mocked via dependency injection
 local uci, nixio, ubus, uloop
 if not os.getenv("MINI_MWAN_TEST_MODE") then
@@ -15,7 +16,7 @@ if not os.getenv("MINI_MWAN_TEST_MODE") then
   uloop = require("uloop")
 else
   -- Test mode: use standard JSON if available, or it will be mocked
-  _, _ = pcall(require, "cjson")
+  pcall(require, "cjson")  -- cjson is optional for test mode
 end
 
 -- Persistent interface state (survives config reloads)
@@ -80,7 +81,7 @@ local deps = {
       nixio.dup(wr, nixio.stdout)
       rd:close()
       wr:close()
-      local _, errmsg, errno = nixio.exec(args[1], unpack(args, 2))
+      local _, errmsg, errno = nixio.exec(args[1], _unpack(args, 2))
       nixio.syslog("err", string.format("exec failed: %s", errmsg or "unknown error"))
       os.exit(errno or 1)
     else
@@ -159,13 +160,20 @@ local function check_ping(target, count, timeout, device)
   timeout = timeout or 2
 
   -- Ping through specific interface using source routing
-    -- Use -I to specify interface
+  -- Use -I to specify interface
   local deadline = (count * timeout) + 2
-  local args = {"/bin/ping", "-I", device, "-c", tostring(count), "-W", tostring(timeout), "-w", tostring(deadline), target}
+  local args = {
+    "/bin/ping",
+    "-I", device,
+    "-c", tostring(count),
+    "-W", tostring(timeout),
+    "-w", tostring(deadline),
+    target
+  }
   local output = system_exec(args)
 
   if not output then
-    log(string.format("Ping failed: no output from command for device: %s", device), "err")  -- err
+    log(string.format("Ping failed: no output from command for device: %s", device), "err")
     return false, 0
   end
 
@@ -316,7 +324,8 @@ end
 -- Check ping connectivity and update state, returning routing class
 -- Called when interface is UP and has routing info
 local function check_ping_and_update_state(iface_cfg, iface_state)
-  local alive, latency = check_ping(iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, iface_cfg.device)
+  local alive, latency = check_ping(
+    iface_cfg.ping_target, iface_cfg.ping_count, iface_cfg.ping_timeout, iface_cfg.device)
   if alive then
     iface_state.alive = true
     iface_state.latency = latency
@@ -420,7 +429,8 @@ local function enforce_route_state(iface, target_metric)
   -- first - delete all excess routes
   for i = 2, #routes do
     local r = routes[i]
-    system_intervention_argv(append_route_spec({"/sbin/ip", "route", "delete", "default"}, false, r.via, device, r.metric))
+    system_intervention_argv(append_route_spec(
+      {"/sbin/ip", "route", "delete", "default"}, false, r.via, device, r.metric))
   end
 
   local ipv4_route_correct = (#routes > 0 and
@@ -430,7 +440,8 @@ local function enforce_route_state(iface, target_metric)
   if not ipv4_route_correct then
     -- we cannot afford flush here, as conntrack will be confused
     -- therefore, we always preserve first route and delete only those excess ones.
-    system_intervention_argv(append_route_spec({"/sbin/ip", "route", "replace", "default"}, false, desired_gw, device, target_metric))
+    system_intervention_argv(append_route_spec(
+      {"/sbin/ip", "route", "replace", "default"}, false, desired_gw, device, target_metric))
   end
 
   -- Set IPv6 route if IPv6 gateway exists (dual-stack support).
@@ -462,7 +473,8 @@ local function enforce_route_state(iface, target_metric)
     if not ipv6_route_correct then
       -- Flush IPv6 default routes for this device
       system_intervention_argv({"/sbin/ip", "-6", "route", "flush", "default", "dev", device})
-      system_intervention_argv(append_route_spec({"/sbin/ip", "-6", "route", "replace", "default"}, false, ipv6_gw, device, target_metric))
+      system_intervention_argv(append_route_spec(
+        {"/sbin/ip", "-6", "route", "replace", "default"}, false, ipv6_gw, device, target_metric))
     end
   end
 end
@@ -564,7 +576,8 @@ local function validate_config(config)
       if not iface.ping_target or iface.ping_target == "" then
         table.insert(errors, string.format("Missing ping_target for interface %s", iface.device or "(unnamed)"))
       elseif not is_valid_ip_address(iface.ping_target) then
-        table.insert(errors, string.format("Invalid ping_target '%s' for interface %s", iface.ping_target, iface.device or "(unnamed)"))
+        table.insert(errors, string.format(
+          "Invalid ping_target '%s' for interface %s", iface.ping_target, iface.device or "(unnamed)"))
       end
 
       -- Validate numeric field ranges (DR-1.1)
@@ -573,7 +586,8 @@ local function validate_config(config)
   end
 
   if interface_count < 2 then
-    table.insert(errors, string.format("At least 2 interfaces with valid device names must be configured (found %d)", interface_count))
+    table.insert(errors, string.format(
+      "At least 2 interfaces with valid device names must be configured (found %d)", interface_count))
   end
 
   -- Validate check_interval range (10-300 per CD-4.2)

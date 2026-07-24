@@ -16,6 +16,9 @@ M.logged_messages = {}
 function M.reset()
   M.executed_commands = {}
   M.logged_messages = {}
+  if M._ubus_mock and M._ubus_mock.reset then
+    M._ubus_mock.reset()
+  end
 end
 
 -- Track executed command
