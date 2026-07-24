@@ -46,11 +46,21 @@ Data structures, formats, and interfaces:
 - **DR-2**: Status File Format (INI-style output format)
 - **DR-3**: Log File Format (application logs and syslog)
 - **DR-4**: Runtime Data Structures (internal Lua tables)
+  - **DR-4.1**: State model (Config vs State vs Status)
+  - **DR-4.2**: Interface state object (ephemeral, rebuilt each cycle)
+  - **DR-4.3**: Persistent state table (survives config reloads)
+  - **DR-4.4**: State persistence rules
 - **DR-5**: External Interface Dependencies (netifd, ip commands, ping)
 - **DR-6**: File System Requirements (locations, permissions)
 - **DR-7**: Data Validation Requirements (input sanitization, type coercion)
 
 **Use this** to understand data formats, APIs, and validation rules.
+
+**Note**: Mini-MWAN distinguishes between:
+- **Config**: Immutable data from UCI (device, metric, ping_target, etc.)
+- **State**: Runtime data discovered each cycle (gateway, latency, routing_class)
+- **Status**: Presentation layer for ubus/LuCI display
+- **Persistent State**: Only `routing_class`, `does_exist`, `status_since` survive config reloads
 
 ### 5. [Constraints and Dependencies](./constraints-and-dependencies.md)
 Platform limitations and dependencies:

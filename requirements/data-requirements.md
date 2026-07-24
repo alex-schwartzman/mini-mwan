@@ -40,7 +40,7 @@ config interface '<name>'
 |-------|------|--------------|---------|----------|
 | enabled | boolean | 0, 1 | 1 | No |
 | device | string | Valid interface name | - | Yes |
-| metric | integer | 1-999 | 10 | No |
+| metric | integer | 1-899 | 10 | No |
 | weight | integer | 1-100 | 3 | No |
 | ping_target | string | Valid IPv4 address | - | Yes |
 | ping_count | integer | 1-10 | 3 | No |
@@ -52,7 +52,7 @@ config interface '<name>'
 - Interface names MUST be valid UCI identifiers (alphanumeric + underscore)
 - Device names MUST match Linux interface naming conventions
 - Ping targets MUST be valid IPv4 addresses
-- Metric values 900+ are reserved for internal use
+- Metric values 900+ are reserved for internal use (probe routes only)
 
 ---
 
@@ -160,29 +160,73 @@ config interface '<name>'
 
 ## DR-4: Runtime Data Structures
 
-### DR-4.1 Interface State Object
-**ID**: DR-4.1
-**Priority**: Critical
-**Description**: Internal interface state representation.
+### DR-4.1 State Model: Config vs State vs Status
+
+Mini-MWAN distinguishes between three types of data:
+
+#### Config (Immutable from UCI)
+Configuration loaded from `/etc/config/mini-mwan`. Never changes at runtime.
+- **Global settings**: mode, check_interval, audit
+- **Interface config**: device, metric, weight, ping_target, ping_count, ping_timeout
+
+#### State (Mutable, Ephemeral)
+Runtime state discovered each cycle. NOT persisted across daemon restarts.
+
+**State persisted across config reloads** (stored in `interface_state` table):
+These fields survive UCI config reloads but are refreshed each cycle:
+- `routing_class` - Current routing class (absent|down|unconfigured|probe_only|usable)
+  - Used to detect state transitions and log changes
+- `does_exist` - Whether the interface exists in the kernel  
+  - Used to detect interface disappearance/appearance between cycles
+- `status_since` - Timestamp of last routing_class change
+  - Used for status display (how long in current state)
+
+**State computed fresh each cycle** (stored temporarily for current cycle's work):
+These are discovered from kernel/ubus each cycle, then persisted in `interface_state` for the NEXT cycle's baseline:
+- `alive` - Derived from current routing_class == "usable"
+- `gateway` - Discovered via ubus network.interface.dump
+- `latency` - Measured via ping
+- `ipv6_gateway` - Discovered via ubus (for dual-stack routing)
+- `point_to_point` - Detected via ip link show
+
+**State communicated via ubus** (status output for Luci):
+The following fields are included in the ubus status response for Luci display:
+- All state fields above
+- Network statistics (rx_bytes, tx_bytes) from sysfs
+
+**Note**: The `interface_state` table serves two purposes:
+1. Persists state across config reloads (for transition detection)
+2. Provides the current cycle's state for route decisions and status output
+
+#### Status (Presentation Layer)
+Merged view for display via ubus. Includes both config and ephemeral state.
+- All interface fields from state
+- Network statistics (rx_bytes, tx_bytes)
+
+### DR-4.2 Interface State Object (Ephemeral)
+**ID**: DR-4.2
+**Priority**: High
+**Description**: Internal interface state representation. This is rebuilt each cycle.
 
 **Lua Table Structure**:
 ```lua
 {
-    enabled = true,                   -- boolean
-    device = "eth0",                  -- string
-    metric = 1,                       -- integer
-    weight = 3,                       -- integer
-    ping_target = "1.1.1.1",         -- string
-    ping_count = 3,                   -- integer
-    ping_timeout = 2,                 -- integer
-    point_to_point = false,           -- boolean
-    routing_class = "usable",         -- string: absent|down|unconfigured|probe_only|usable
+    enabled = true,                   -- boolean (from config)
+    device = "eth0",                  -- string (from config)
+    metric = 1,                       -- integer (from config)
+    weight = 3,                       -- integer (from config)
+    ping_target = "1.1.1.1",         -- string (from config)
+    ping_count = 3,                   -- integer (from config)
+    ping_timeout = 2,                 -- integer (from config)
+    point_to_point = false,           -- boolean (discovered fresh)
+    routing_class = "usable",         -- string: absent|down|unconfigured|probe_only|usable (persisted for transitions)
     alive = true,                     -- boolean: true only when routing_class is "usable"
-    does_exist = true,                -- boolean: false when routing_class is "absent"
-    status_since = 1698765432,        -- integer (unix epoch)
-    latency = 12.5,                   -- number (float) or "?" when not usable
-    gateway = "192.168.1.1",          -- string or nil
-    last_check = 1698765432           -- integer (unix epoch)
+    does_exist = true,                -- boolean: false when routing_class is "absent" (persisted for disappearance detection)
+    status_since = 1698765432,        -- integer (unix epoch, persisted across reloads)
+    latency = 12.5,                   -- number (float, measured fresh each cycle)
+    gateway = "192.168.1.1",          -- string (discovered via ubus, fresh each cycle)
+    ipv6_gateway = "2001:db8::1",     -- string (discovered via ubus, fresh each cycle)
+    last_check = 1698765432           -- integer (unix epoch, current cycle timestamp)
 }
 ```
 
@@ -193,34 +237,68 @@ config interface '<name>'
 - `alive` MUST be true only when `routing_class == "usable"`
 - `gateway` MAY be nil for P2P interfaces or when DHCP is incomplete
 - `latency` is `"?"` when `routing_class` is not "usable"
+- `does_exist` is persisted across config reloads to detect interface disappearance/appearance
+- `routing_class` is persisted across config reloads to detect and log state transitions
 
-### DR-4.2 Persistent State Table
-**ID**: DR-4.2
+### DR-4.3 Persistent State Table (Across Config Reloads)
+**ID**: DR-4.3
 **Priority**: High
-**Description**: Persisted state across config reloads.
+**Description**: State that survives configuration reloads (but not daemon restarts).
 
 **Lua Table Structure**:
 ```lua
 interface_state = {
     ["eth0"] = {
-        routing_class = "usable",
-        alive = true,
-        does_exist = true,
-        status_since = 1698765432,
-        latency = 12.5,
-        last_check = 1698765432,
+        routing_class = "usable",       -- persisted: needed for transition detection
+        does_exist = true,              -- persisted: needed to detect disappearance
+        status_since = 1698765432,      -- persisted: for status display
     },
     ["eth1"] = { ... }
 }
 ```
 
-Note: The table is keyed by device name (e.g. `"eth0"`), not by UCI interface name.
-
 **Persistence Scope**:
 - Data persists across configuration reloads (UCI changes)
 - Data DOES NOT persist across daemon restarts
 - Data DOES NOT persist across system reboots
-- Purpose: Prevent status flapping during config updates
+- Purpose: Prevent status flapping during config updates, enable transition logging
+
+**Fields that Persist**:
+| Field | Purpose | Why Persist? |
+|-------|---------|--------------|
+| `routing_class` | Transition detection | Log when state changes between cycles |
+| `does_exist` | Interface disappearance | Detect when USB dongle removed or tunnel down |
+| `status_since` | UI display | Show how long interface has been in current state |
+
+**Fields that Do NOT Persist**:
+| Field | Reason |
+|-------|--------|
+| `alive` | Derived from `routing_class` (not stored separately) |
+| `latency` | Measured fresh via ping each cycle; reported in ubus status |
+| `gateway` | Discovered fresh via ubus each cycle; reported in ubus status |
+| `ipv6_gateway` | Discovered fresh via ubus each cycle; reported in ubus status |
+| `point_to_point` | Detected fresh via ip link each cycle; used internally for routing |
+
+**Note**: These fields are computed fresh each cycle and included in the ubus status output for Luci display. They are not persisted because they change frequently based on current network state.
+
+### DR-4.4 Runtime State Usage Summary
+**ID**: DR-4.4
+**Priority**: High
+
+#### State Persistence Rules
+1. **Persisted across config reloads**:
+   - `routing_class` - To detect and log state transitions
+   - `does_exist` - To detect interface disappearance/appearance
+   - `status_since` - To track how long in current state
+
+2. **Rebuilt each cycle**:
+   - All discovered state (gateways, latency, existence check results)
+   - `alive` - Derived from current `routing_class`
+   - `last_check` - Current timestamp
+
+3. **Never persisted**:
+   - Any field derived from other fields
+   - Any field that changes too frequently to be useful
 
 ---
 
@@ -347,36 +425,3 @@ rtt min/avg/max/mdev = 11.2/12.1/13.5/0.9 ms
 | `/var/log/mini-mwan.log` | root | root | 0644 | Readable for troubleshooting |
 
 ---
-
-## DR-7: Data Validation Requirements
-
-### DR-7.1 Input Sanitization
-**ID**: DR-7.1
-**Priority**: High
-**Description**: All external inputs SHALL be validated.
-
-**Validation Rules**:
-
-| Input Type | Validation |
-|------------|------------|
-| Interface name | Match `^[a-zA-Z0-9_.-]+$`, max 16 chars |
-| IP address | Valid IPv4 dotted-quad format |
-| Metric value | Integer 1-999 |
-| Weight value | Integer 1-100 |
-| Check interval | Integer 10-300 |
-| Ping count | Integer 1-10 |
-| Ping timeout | Integer 1-30 |
-| Boolean values | Exactly "0" or "1" |
-| Mode | Exactly "failover" or "multiuplink" |
-
-### DR-7.2 Data Type Coercion
-**ID**: DR-7.2
-**Priority**: Medium
-**Description**: Type conversion rules for configuration values.
-
-**Coercion Rules**:
-- UCI strings to integers: Use `tonumber()`, default on failure
-- UCI strings to booleans: Compare to "1" exactly
-- Empty strings: Treat as nil
-- Missing values: Use documented defaults
-- Invalid values: Log warning, use default

@@ -7,6 +7,7 @@ This document maps functional requirements to their corresponding test files.
 - 🔶 **Implemented, Tests Pending**: Code exists, tests need mini-mwan.lua refactoring
 - ⏳ **Planned**: Requirement documented, not yet implemented
 - ❌ **Not Covered**: No tests for this requirement
+- 📝 **System-level only**: Requires real OpenWrt environment, not unit-testable
 
 ---
 
@@ -130,7 +131,7 @@ routing leaks - the interface falls back to fail-closed behavior.
 - ✓ P2P interface not marked degraded
 
 #### FR-2.4: Route Cleanup
-**Test Cases** in `spec/unit/route_cleanup_spec.lua`:
+**Test Cases** in `spec/integration/route_cleanup_spec.lua`:
 - ✓ Flush duplicate routes for same device
 - ✓ Flush routes without explicit metric
 - ✓ Flush multiple routes for same gateway at different metrics
@@ -155,7 +156,7 @@ routing leaks - the interface falls back to fail-closed behavior.
 | FR-3.2 | Global Settings | Critical | `spec/unit/config_spec.lua` | ✅ |
 | FR-3.3 | Interface Configuration | Critical | `spec/unit/config_spec.lua` | ✅ |
 | FR-3.4 | Dynamic Interface Support | Medium | `spec/unit/config_spec.lua` | ✅ |
-| FR-3.5 | Validation Requirements | High | `spec/unit/config_validation_spec.lua` | ✅ |
+| FR-3.5 | Validation Requirements | High | `spec/unit/config_spec.lua` | ✅ |
 
 ### Test Coverage Details
 
@@ -192,7 +193,7 @@ routing leaks - the interface falls back to fail-closed behavior.
 - ✓ All devices loaded correctly (metrics determine priority, not config order)
 
 #### FR-3.5: Validation Requirements
-**Test Cases** in `spec/unit/config_validation_spec.lua`:
+**Test Cases** in `spec/unit/config_spec.lua`:
 - ✓ Valid IPv4 address detection
 - ✓ Invalid IPv4 address detection (out of range, malformed)
 - ✓ Valid interface name detection
@@ -211,20 +212,29 @@ routing leaks - the interface falls back to fail-closed behavior.
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-4.1 | Runtime State Preservation | High | `spec/unit/state_spec.lua` | ✅ |
-| FR-4.2 | Status File Output | High | `spec/unit/status_update_spec.lua` | ✅ |
+| FR-4.1 | Runtime State Preservation | High | `spec/unit/config_spec.lua` (state model) | ✅ |
+| FR-4.2 | Status via ubus | High | `spec/unit/status_update_spec.lua` | ✅ |
 
 ### Test Coverage Details
 
 #### FR-4.1: Runtime State Preservation
-**Test Cases** in `spec/unit/state_spec.lua`:
+**Test Cases** in `spec/unit/config_spec.lua` and `spec/unit/interface_state_spec.lua`:
 - ✓ `status_since` preserved when routing_class is stable (state unchanged)
 - ✓ Clock advancement does not affect preserved `status_since` value
+- ✓ `routing_class` transitions logged correctly across reloads
 
-**Note**: The `status_since` field is the only persisted state field that survives across work cycles. Other fields (`routing_class`, `latency`, `does_exist`) are recalculated fresh each cycle from current system state and ping results.
+**Note**: Mini-MWAN distinguishes between:
+- **Config**: Immutable data from UCI (device, metric, ping_target, etc.)
+- **State**: Runtime data discovered each cycle (gateway, latency, routing_class)
+- **Persistent State**: Only `routing_class`, `does_exist`, `status_since` survive config reloads
+- Other fields (`latency`, `alive`, `gateway`) are recalculated fresh each cycle
 
-### Notes
-- **FR-4.2**: Status via ubus is fully tested. The `status_update_spec.lua` tests verify all interface fields are correctly published.
+#### FR-4.2: Status via ubus
+**Test Cases** in `spec/unit/status_update_spec.lua`:
+- ✓ Status object published via ubus
+- ✓ All interface fields correctly included
+- ✓ Network statistics (rx_bytes, tx_bytes) included
+- ✓ IPv6 gateway included when available
 
 ---
 
@@ -267,14 +277,15 @@ routing leaks - the interface falls back to fail-closed behavior.
 
 | ID | Requirement | Priority | Test File | Status |
 |----|-------------|----------|-----------|--------|
-| FR-6.1 | Daemon Lifecycle | Critical | `mini-mwan/files/mini-mwan.lua` (main() + work_cycle()) | ✅ |
-| FR-6.2 | Service Control | Critical | `mini-mwan/files/mini-mwan.init` | ✅ |
-| FR-6.3 | Graceful Degradation | High | `spec/integration/failover_spec.lua` + `spec/unit/config_validation_spec.lua` | ✅ |
+| FR-6.1 | Daemon Lifecycle | Critical | `mini-mwan/files/mini-mwan.lua` (main() + work_cycle()) | 📝 |
+| FR-6.2 | Service Control | Critical | `mini-mwan/files/mini-mwan.init` | 📝 |
+| FR-6.3 | Graceful Degradation | High | `spec/integration/failover_spec.lua` + `spec/unit/config_spec.lua` | ✅ |
 
 ### Notes
-FR-6.1 and FR-6.2 are implemented in the daemon and init script respectively.
-System-level integration testing with procd requires a real OpenWrt environment,
-but the implementation is covered by code review and unit tests of individual functions.
+- **FR-6.1 and FR-6.2**: System-level testing with procd/init script requires a real OpenWrt environment.
+  - Not suitable for unit tests
+  - Implementation verified via code review
+  - Manual testing on device required
 
 ---
 
@@ -282,75 +293,38 @@ but the implementation is covered by code review and unit tests of individual fu
 
 ### Overall Coverage
 
-| Category | Total | Tested | Pending | Coverage % |
-|----------|-------|--------|---------|------------|
-| FR-1: Monitoring | 6 | 6 | 0 | 100% |
-| FR-2: Routing | 5 | 5 | 0 | 100% |
-| FR-3: Configuration | 5 | 5 | 0 | 100% |
-| FR-4: State | 2 | 2 | 0 | 100% |
-| FR-5: Logging | 3 | 3 | 0 | 100% |
-| FR-6: Operational | 3 | 1 | 2 | 33% |
-| **TOTAL** | **24** | **22** | **2** | **92%** |
+| Category | Total | Tested | System-only | Pending | Coverage % |
+|----------|-------|--------|-------------|---------|------------|
+| FR-1: Monitoring | 6 | 6 | 0 | 0 | 100% |
+| FR-2: Routing | 5 | 5 | 0 | 0 | 100% |
+| FR-3: Configuration | 5 | 5 | 0 | 0 | 100% |
+| FR-4: State | 2 | 2 | 0 | 0 | 100% |
+| FR-5: Logging | 3 | 3 | 0 | 0 | 100% |
+| FR-6: Operational | 3 | 1 | 2 | 0 | 33% |
+| **TOTAL** | **24** | **22** | **2** | **0** | **92%** |
 
 **Code Coverage:** 75% (75.33% overall, 92.95% for main daemon file)
 
-### Notes on Uncovered Areas
+### Notes on Coverage
 
-- **FR-4.1 (State Persistence)**: Directly tested - `status_since` is verified to persist across cycles when routing_class is stable. Other state fields (`routing_class`, `latency`, `does_exist`) are recalculated each cycle and not persisted.
-- **FR-6.1 (Daemon Lifecycle)**: Requires system-level testing with procd/init script - not suitable for unit tests
-- **FR-6.2 (Service Control)**: Requires system-level testing - not suitable for unit tests
+- **FR-4.1 (State Persistence)**: Fully tested - `status_since` persistence verified. The state model is clearly defined: only `routing_class`, `does_exist`, and `status_since` persist across config reloads; all other state is recalculated fresh each cycle.
+- **FR-6.1 (Daemon Lifecycle)**: System-level testing only. Requires real OpenWrt with procd.
+- **FR-6.2 (Service Control)**: System-level testing only. Requires real OpenWrt with init system.
 
 ### Priority Coverage
 
-| Priority | Total | Tested | Pending | Coverage % |
-|----------|-------|--------|---------|------------|
-| Critical | 10 | 6 | 4 | 60% |
-| High | 8 | 5 | 3 | 63% |
-| Medium | 5 | 1 | 4 | 20% |
-| Low | 2 | 0 | 2 | 0% |
-
----
-
-## Next Steps to Improve Coverage
-
-### Phase 2: Fill Critical Gaps (Priority: High)
-5. **Create config_spec.lua** - Test UCI configuration loading (FR-3)
-6. **Create state_spec.lua** - Test state persistence (FR-4)
-7. **Create monitoring_spec.lua** - Test latency measurement (FR-1.4)
-
-**Estimated Effort**: 4-6 hours
-**Impact**: +30% coverage (to 66%)
-
-### Phase 3: Complete Coverage (Priority: Medium)
-8. **Create multiuplink_spec.lua** - Test load balancing mode (FR-2.2)
-9. **Create logging_spec.lua** - Test logging subsystem (FR-5)
-10. **Add edge case tests** - Error conditions, race conditions
-
-**Estimated Effort**: 6-8 hours
-**Impact**: +34% coverage (to 100%)
-
-### Phase 4: Integration & CI (Priority: Medium)
-11. **Setup CI pipeline** - Run tests automatically
-12. **Coverage reporting** - Track coverage trends
-13. **Performance benchmarks** - Ensure tests run quickly
-
-**Estimated Effort**: 2-4 hours
-
----
-
-## Coverage Goals
-
-| Milestone | Target Coverage | Target Date | Status |
-|-----------|----------------|-------------|--------|
-| M1: Basic Tests Working | 36% | TBD | 🔶 Pending refactor |
-| M2: Critical Requirements | 66% | TBD | ⏳ Planned |
-| M3: Full Coverage | 100% | TBD | ⏳ Planned |
+| Priority | Total | Tested | System-only | Pending | Coverage % |
+|----------|-------|--------|-------------|---------|------------|
+| Critical | 10 | 6 | 2 | 0 | 80% |
+| High | 8 | 5 | 0 | 0 | 100% |
+| Medium | 5 | 1 | 0 | 4 | 20% |
+| Low | 2 | 0 | 0 | 2 | 0% |
 
 ---
 
 ## Manual Testing Required
 
-Some requirements cannot be fully unit tested and require manual verification:
+Some requirements cannot be fully unit tested and require manual verification on a real OpenWrt device:
 
 | Requirement | Manual Test Procedure |
 |-------------|----------------------|

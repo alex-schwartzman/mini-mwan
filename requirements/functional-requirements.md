@@ -223,24 +223,59 @@ and enforcement of routes for managed interfaces.
 
 ---
 
-## FR-4: State Persistence
+## FR-4: State Management
+
+Mini-MWAN distinguishes between three types of data:
+
+### Config (Immutable from UCI)
+Configuration loaded from `/etc/config/mini-mwan`. Never changes at runtime.
+- **Global settings**: mode, check_interval, audit
+- **Interface config**: device, metric, weight, ping_target, ping_count, ping_timeout
+
+### State (Mutable, Ephemeral)
+Runtime state discovered each cycle. NOT persisted across daemon restarts.
+- **Critical for logic** (persisted across config reloads):
+  - `routing_class` - Current routing class (absent|down|unconfigured|probe_only|usable)
+  - `does_exist` - Whether the interface exists in the kernel
+  - `status_since` - Timestamp of last routing_class change
+- **Discovered fresh each cycle**:
+  - `alive` - Derived from routing_class == "usable"
+  - `gateway` - Discovered via ubus network.interface.dump
+  - `latency` - Measured via ping (fresh each cycle)
+  - `ipv6_gateway` - Discovered via ubus (fresh each cycle)
+  - `point_to_point` - Detected via ip link show (fresh each cycle)
+- **Transient**:
+  - `last_check` - Timestamp of current health check
+
+### Status (Presentation Layer)
+Merged view for display via ubus. Includes both config and ephemeral state.
+- All interface fields from state
+- Network statistics (rx_bytes, tx_bytes)
 
 ### FR-4.1 Runtime State Preservation
 **ID**: FR-4.1
 **Priority**: High
 **Description**: The system SHALL preserve interface state across configuration reloads.
 
-**Persistent State Fields**:
-- `routing_class` - Current routing class (absent/down/unconfigured/probe_only/usable)
-- `alive` - Whether ping connectivity is confirmed
+**Persistent State Fields** (for transition detection and status display):
+- `routing_class` - Current routing class (absent|down|unconfigured|probe_only|usable)
 - `does_exist` - Whether the interface exists in the kernel
 - `status_since` - Timestamp of last routing_class change
-- `latency` - Last measured latency
-- `last_check` - Timestamp of last health check
+
+**Fields that are NOT persisted** (discovered fresh each cycle):
+- `alive` - Derived from current routing_class
+- `latency` - Measured via ping each cycle
+- `last_check` - Current timestamp each cycle
+- `gateway` - Discovered via ubus each cycle
+- `ipv6_gateway` - Discovered via ubus each cycle
 
 **Acceptance Criteria**:
-- State MUST persist in memory across config reloads
+- Persistent state MUST survive configuration reloads (UCI changes)
 - State SHALL NOT persist across daemon restarts
+- Persistent state is used ONLY for:
+  - Detecting routing_class transitions (to log changes)
+  - Detecting interface disappearance/appearance
+  - Reporting status_since in ubus status
 - Timestamp fields MUST use Unix epoch time
 
 ### FR-4.2 Status via ubus
